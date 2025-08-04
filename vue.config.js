@@ -1,7 +1,5 @@
-const { defineConfig } = require('@vue/cli-service')
-
-module.exports = defineConfig({
-  transpileDependencies: true,
+module.exports = {
+  transpileDependencies: [],
   lintOnSave: false, // ESLint 검증 비활성화
   configureWebpack: {
     resolve: {
@@ -14,4 +12,4 @@ module.exports = defineConfig({
     port: 8080,
     open: true
   }
-})
+}

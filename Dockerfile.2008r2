@@ -1,0 +1,22 @@
+# Windows Server 2008 R2용 Dockerfile
+FROM node:12-alpine
+
+WORKDIR /app
+
+# package.json과 package-lock.json 복사
+COPY package*.json ./
+
+# 의존성 설치 (호환성을 위해 legacy peer deps 사용)
+RUN npm install --legacy-peer-deps
+
+# 애플리케이션 코드 복사
+COPY . .
+
+# 애플리케이션 빌드
+RUN npm run build
+
+# 포트 노출
+EXPOSE 8080
+
+# 애플리케이션 시작
+CMD ["npm", "run", "serve"]
