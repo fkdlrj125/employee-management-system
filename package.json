@@ -1,0 +1,61 @@
+{
+  "name": "employee-management-system",
+  "version": "1.0.0",
+  "description": "Vue.js와 Node.js 기반의 현대적인 직원관리시스템",
+  "keywords": [
+    "vue",
+    "vuejs",
+    "employee-management",
+    "mvvm",
+    "frontend",
+    "management-system"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/employee-management-system.git"
+  },
+  "private": false,
+  "scripts": {
+    "serve": "node node_modules/@vue/cli-service/bin/vue-cli-service.js serve",
+    "build": "node node_modules/@vue/cli-service/bin/vue-cli-service.js build",
+    "lint": "node node_modules/@vue/cli-service/bin/vue-cli-service.js lint"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "bcrypt": "^5.1.1",
+    "core-js": "^3.6.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.14.3",
+    "vue": "^2.6.14",
+    "vue-router": "3.5.3",
+    "vuex": "3.6.2",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^4.5.15",
+    "@vue/cli-plugin-eslint": "^4.5.15",
+    "@vue/cli-plugin-router": "4.5.15",
+    "@vue/cli-plugin-vuex": "4.5.15",
+    "@vue/cli-service": "^4.5.15",
+    "@babel/eslint-parser": "^7.12.16",
+    "eslint": "^7.32.0",
+    "eslint-plugin-vue": "^7.20.0",
+    "nodemon": "^3.1.10",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^4.6.3",
+    "vue-template-compiler": "2.6.14"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "ie 11"
+  ],
+  "engines": {
+    "node": "14.21.3",
+    "npm": "6.14.18"
+  }
+}
