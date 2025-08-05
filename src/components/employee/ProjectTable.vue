@@ -1,145 +1,146 @@
 <template>
-  <div>
+  <div class="table-section">
+    <h3>대외경력</h3>
     <table class="info-table" id="projectTable">
       <thead>
         <tr>
-          <th class="project-period-th">기간</th>
-          <th class="project-name-th">프로젝트명</th>
-          <th class="project-client-th">고객사</th>
-          <th class="project-role-th">역할</th>
-          <th class="project-tech-th">사용기술</th>
-          <th class="project-desc-th">설명</th>
-          <th class="manage-th" id="projectManageTh" style="width:70px;min-width:60px;">관리</th>
+          <th class="project-period-th">참여기간</th>
+          <th class="project-name-th">경력명</th>
+          <th class="project-desc-th">경력 내용</th>
+          <th v-if="editMode" class="manage-th" style="width: 70px; min-width: 60px">관리</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(project, index) in projects" :key="index">
           <td>
-            <div class="period-inputs">
-              <input 
-                type="month" 
-                class="project-start-date" 
-                :disabled="!editMode"
-                v-model="project.startDate"
-                placeholder="시작일"
-              >
-              <span>~</span>
-              <input 
-                type="month" 
-                class="project-end-date" 
-                :disabled="!editMode"
-                v-model="project.endDate"
-                placeholder="종료일"
-              >
-            </div>
-          </td>
-          <td>
-            <input 
-              type="text" 
-              class="project-name" 
+            <input
+              type="text"
+              class="project-period"
               :disabled="!editMode"
-              v-model="project.name"
-            >
+              v-model="project.period"
+              placeholder="예: 2025.06"
+            />
           </td>
           <td>
-            <input 
-              type="text" 
-              class="project-client" 
-              :disabled="!editMode"
-              v-model="project.client"
-            >
+            <input type="text" class="project-name" :disabled="!editMode" v-model="project.name" />
           </td>
           <td>
-            <input 
-              type="text" 
-              class="project-role" 
-              :disabled="!editMode"
-              v-model="project.role"
-            >
-          </td>
-          <td>
-            <input 
-              type="text" 
-              class="project-tech" 
-              :disabled="!editMode"
-              v-model="project.technologies"
-            >
-          </td>
-          <td>
-            <textarea 
-              class="project-desc" 
+            <textarea
+              class="project-desc"
               :disabled="!editMode"
               v-model="project.description"
               rows="2"
             ></textarea>
           </td>
-          <td class="manage-td move-btns-cell">
-            <div class="manage-btns" v-if="editMode">
-              <button type="button" class="move-up-btn" :disabled="index === 0" @click="moveUp(index)">▲</button>
-              <button type="button" class="move-down-btn" :disabled="index === projects.length - 1" @click="moveDown(index)">▼</button>
+          <td v-if="editMode" class="manage-td move-btns-cell">
+            <div class="manage-btns">
+              <button
+                type="button"
+                class="move-up-btn"
+                :disabled="index === 0"
+                @click="moveUp(index)"
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                class="move-down-btn"
+                :disabled="index === projects.length - 1"
+                @click="moveDown(index)"
+              >
+                ▼
+              </button>
               <button type="button" class="delete-btn" @click="deleteProject(index)">삭제</button>
-            </div>
-            <div class="manage-btns" v-else>
-              <button type="button" class="move-up-btn" disabled>▲</button>
-              <button type="button" class="move-down-btn" disabled>▼</button>
-              <button type="button" class="delete-btn" disabled>삭제</button>
             </div>
           </td>
         </tr>
       </tbody>
     </table>
+    <div v-if="editMode" class="button-container-right">
+      <button
+        type="button"
+        class="btn btn-secondary add-project-row right-btn add-row-btn"
+        @click="addProject"
+      >
+        + 행 추가
+      </button>
+    </div>
   </div>
 </template>
 
 <script>
+import { computed } from 'vue';
+
 export default {
   name: 'ProjectTable',
   props: {
-    value: {
-      type: Array,
-      default: () => []
+    employee: {
+      type: Object,
+      default: () => ({}),
     },
     editMode: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  computed: {
-    projects: {
+  emits: ['update:employee'],
+  setup(props, { emit }) {
+    const projects = computed({
       get() {
-        return this.value || []
+        return props.employee?.projects || [];
       },
       set(value) {
-        this.$emit('input', value)
-      }
-    }
-  },
-  methods: {
-    moveUp(index) {
+        emit('update:employee', {
+          ...props.employee,
+          projects: value,
+        });
+      },
+    });
+
+    const addProject = () => {
+      const newProject = {
+        period: '',
+        name: '',
+        description: '',
+      };
+      projects.value = [...projects.value, newProject];
+    };
+
+    const moveUp = (index) => {
       if (index > 0) {
-        const projects = [...this.projects]
-        const temp = projects[index]
-        projects[index] = projects[index - 1]
-        projects[index - 1] = temp
-        this.projects = projects
+        const newProjects = [...projects.value];
+        const temp = newProjects[index];
+        newProjects[index] = newProjects[index - 1];
+        newProjects[index - 1] = temp;
+        projects.value = newProjects;
       }
-    },
-    moveDown(index) {
-      if (index < this.projects.length - 1) {
-        const projects = [...this.projects]
-        const temp = projects[index]
-        projects[index] = projects[index + 1]
-        projects[index + 1] = temp
-        this.projects = projects
+    };
+
+    const moveDown = (index) => {
+      if (index < projects.value.length - 1) {
+        const newProjects = [...projects.value];
+        const temp = newProjects[index];
+        newProjects[index] = newProjects[index + 1];
+        newProjects[index + 1] = temp;
+        projects.value = newProjects;
       }
-    },
-    deleteProject(index) {
+    };
+
+    const deleteProject = (index) => {
       if (confirm('정말 삭제하시겠습니까?')) {
-        this.projects = this.projects.filter((_, i) => i !== index)
+        projects.value = projects.value.filter((_, i) => i !== index);
       }
-    }
-  }
-}
+    };
+
+    return {
+      projects,
+      addProject,
+      moveUp,
+      moveDown,
+      deleteProject,
+    };
+  },
+};
 </script>
 
 <style scoped>

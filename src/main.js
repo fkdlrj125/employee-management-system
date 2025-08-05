@@ -1,30 +1,24 @@
-import Vue from 'vue'
-import App from './App.vue'
-import router from './router'
-import store from './store'
-import './assets/css/main.css'
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
+import store from './store';
+import './assets/css/main.css';
 
-Vue.config.productionTip = false
-
-console.log('Vue app initializing...')
-console.log('Router:', router)
-console.log('Store:', store)
+console.log('Vue app initializing...');
+console.log('Router:', router);
+console.log('Store:', store);
 
 // 앱 시작 시 인증 상태 복원
-store.dispatch('auth/initAuth')
+store.dispatch('auth/initAuth');
 
-const vm = new Vue({
-  router,
-  store,
-  render: h => h(App),
-  mounted() {
-    console.log('Vue app mounted successfully!')
-    console.log('Current route:', this.$route)
-    console.log('Store state:', this.$store.state)
-  }
-}).$mount('#app')
+const app = createApp(App);
+
+app.use(router);
+app.use(store);
+
+app.mount('#app');
 
 // 전역에서 접근 가능하도록
-window.vm = vm
+window.app = app;
 
-console.log('Vue instance created:', vm)
+console.log('Vue app created:', app);

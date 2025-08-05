@@ -1,76 +1,71 @@
 <template>
-  <div>
+  <div class="table-section">
+    <h3>자격증</h3>
     <table class="info-table" id="certTable">
       <thead>
         <tr>
           <th class="cert-date-th">발급일</th>
           <th class="cert-name-th">자격증명</th>
           <th class="cert-issuer-th">발급처</th>
-          <th class="manage-th" id="certManageTh" style="width:70px;min-width:60px;">관리</th>
+          <th v-if="editMode" class="manage-th" style="width: 70px; min-width: 60px">관리</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(certificate, index) in certificates" :key="index">
           <td>
-            <input 
-              type="month" 
-              class="cert-date" 
+            <input
+              type="month"
+              class="cert-date"
               :disabled="!editMode"
               v-model="certificate.issueDate"
-            >
+            />
           </td>
           <td>
-            <input 
-              type="text" 
-              class="cert-name" 
-              :disabled="!editMode"
-              v-model="certificate.name"
-            >
+            <input type="text" class="cert-name" :disabled="!editMode" v-model="certificate.name" />
           </td>
           <td>
-            <input 
-              type="text" 
-              class="cert-issuer" 
+            <input
+              type="text"
+              class="cert-issuer"
               :disabled="!editMode"
               v-model="certificate.issuer"
-            >
+            />
           </td>
-          <td class="manage-td move-btns-cell">
-            <div class="manage-btns" v-if="editMode">
-              <button type="button" class="move-up-btn" :disabled="index === 0" @click="moveUp(index)">▲</button>
-              <button type="button" class="move-down-btn" :disabled="index === certificates.length - 1" @click="moveDown(index)">▼</button>
-              <button type="button" class="delete-btn" @click="deleteCertificate(index)">삭제</button>
-            </div>
-            <div class="manage-btns" v-else>
-              <button type="button" class="move-up-btn" disabled>▲</button>
-              <button type="button" class="move-down-btn" disabled>▼</button>
-              <button type="button" class="delete-btn" disabled>삭제</button>
+          <td v-if="editMode" class="manage-td move-btns-cell">
+            <div class="manage-btns">
+              <button
+                type="button"
+                class="move-up-btn"
+                :disabled="index === 0"
+                @click="moveUp(index)"
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                class="move-down-btn"
+                :disabled="index === certificates.length - 1"
+                @click="moveDown(index)"
+              >
+                ▼
+              </button>
+              <button type="button" class="delete-btn" @click="deleteCertificate(index)">
+                삭제
+              </button>
             </div>
           </td>
         </tr>
         <tr v-if="certificates.length === 0">
           <td>
-            <input 
-              type="month" 
-              class="cert-date" 
-              :disabled="!editMode"
-            >
+            <input type="month" class="cert-date" :disabled="!editMode" />
           </td>
           <td>
-            <input 
-              type="text" 
-              class="cert-name" 
-              :disabled="!editMode"
-            >
+            <input type="text" class="cert-name" :disabled="!editMode" />
           </td>
           <td>
-            <input 
-              type="text" 
-              class="cert-issuer" 
-              :disabled="!editMode"
-            >
+            <input type="text" class="cert-issuer" :disabled="!editMode" />
           </td>
-          <td class="manage-td move-btns-cell">
+          <td v-if="editMode" class="manage-td move-btns-cell">
             <div class="manage-btns">
               <button type="button" class="move-up-btn" disabled>▲</button>
               <button type="button" class="move-down-btn" disabled>▼</button>
@@ -80,11 +75,10 @@
         </tr>
       </tbody>
     </table>
-    <div class="button-container-right">
-      <button 
-        type="button" 
-        class="btn btn-secondary add-cert-row right-btn add-row-btn" 
-        :disabled="!editMode"
+    <div v-if="editMode" class="button-container-right">
+      <button
+        type="button"
+        class="btn btn-secondary add-cert-row right-btn add-row-btn"
         @click="addCertificate"
       >
         + 행 추가
@@ -94,62 +88,78 @@
 </template>
 
 <script>
+import { computed } from 'vue';
+
 export default {
   name: 'CertificateTable',
   props: {
-    value: {
-      type: Array,
-      default: () => []
+    employee: {
+      type: Object,
+      default: () => ({}),
     },
     editMode: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  computed: {
-    certificates: {
+  emits: ['update:employee'],
+  setup(props, { emit }) {
+    const certificates = computed({
       get() {
-        return this.value || []
+        return props.employee?.certificates || [];
       },
       set(value) {
-        this.$emit('input', value)
-      }
-    }
-  },
-  methods: {
-    addCertificate() {
+        emit('update:employee', {
+          ...props.employee,
+          certificates: value,
+        });
+      },
+    });
+
+    const addCertificate = () => {
       const newCertificate = {
         name: '',
         issuer: '',
-        issueDate: ''
-      }
-      this.certificates = [...this.certificates, newCertificate]
-    },
-    deleteCertificate(index) {
+        issueDate: '',
+      };
+      certificates.value = [...certificates.value, newCertificate];
+    };
+
+    const deleteCertificate = (index) => {
       if (confirm('정말 삭제하시겠습니까?')) {
-        this.certificates = this.certificates.filter((_, i) => i !== index)
+        certificates.value = certificates.value.filter((_, i) => i !== index);
       }
-    },
-    moveUp(index) {
+    };
+
+    const moveUp = (index) => {
       if (index > 0) {
-        const newCertificates = [...this.certificates]
-        const temp = newCertificates[index]
-        newCertificates[index] = newCertificates[index - 1]
-        newCertificates[index - 1] = temp
-        this.certificates = newCertificates
+        const newCertificates = [...certificates.value];
+        const temp = newCertificates[index];
+        newCertificates[index] = newCertificates[index - 1];
+        newCertificates[index - 1] = temp;
+        certificates.value = newCertificates;
       }
-    },
-    moveDown(index) {
-      if (index < this.certificates.length - 1) {
-        const newCertificates = [...this.certificates]
-        const temp = newCertificates[index]
-        newCertificates[index] = newCertificates[index + 1]
-        newCertificates[index + 1] = temp
-        this.certificates = newCertificates
+    };
+
+    const moveDown = (index) => {
+      if (index < certificates.value.length - 1) {
+        const newCertificates = [...certificates.value];
+        const temp = newCertificates[index];
+        newCertificates[index] = newCertificates[index + 1];
+        newCertificates[index + 1] = temp;
+        certificates.value = newCertificates;
       }
-    }
-  }
-}
+    };
+
+    return {
+      certificates,
+      addCertificate,
+      deleteCertificate,
+      moveUp,
+      moveDown,
+    };
+  },
+};
 </script>
 
 <style scoped>

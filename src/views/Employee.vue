@@ -3,9 +3,7 @@ management\src\views\Employee.vue
   <div class="employee">
     <h1>직원 관리</h1>
     <div class="employee-actions">
-      <button class="btn btn-primary" @click="showForm = true">
-        직원 추가
-      </button>
+      <button class="btn btn-primary" @click="showForm = true">직원 추가</button>
     </div>
 
     <!-- 직원 목록 테이블 -->
@@ -49,59 +47,59 @@ management\src\views\Employee.vue
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
-import EmployeeForm from '@/components/employee/EmployeeForm.vue'
+import { mapGetters, mapActions } from 'vuex';
+import EmployeeForm from '@/components/employee/EmployeeForm.vue';
 
 export default {
   name: 'Employee',
   components: {
-    EmployeeForm
+    EmployeeForm,
   },
   data() {
     return {
       showForm: false,
-      selectedEmployee: null
-    }
+      selectedEmployee: null,
+    };
   },
   computed: {
-    ...mapGetters('employee', ['allEmployees'])
+    ...mapGetters('employee', ['allEmployees']),
   },
   methods: {
     ...mapActions('employee', [
       'fetchEmployees',
       'addEmployee',
       'updateEmployee',
-      'deleteEmployee'
+      'deleteEmployee',
     ]),
     handleEdit(employee) {
-      this.selectedEmployee = { ...employee }
-      this.showForm = true
+      this.selectedEmployee = { ...employee };
+      this.showForm = true;
     },
     async handleSubmit(employee) {
       if (this.selectedEmployee) {
-        await this.updateEmployee({ ...this.selectedEmployee, ...employee })
+        await this.updateEmployee({ ...this.selectedEmployee, ...employee });
       } else {
         await this.addEmployee({
           id: `EMP${Date.now()}`,
-          ...employee
-        })
+          ...employee,
+        });
       }
-      this.handleCancel()
+      this.handleCancel();
     },
     handleCancel() {
-      this.showForm = false
-      this.selectedEmployee = null
+      this.showForm = false;
+      this.selectedEmployee = null;
     },
     async handleDelete(id) {
       if (confirm('정말 삭제하시겠습니까?')) {
-        await this.deleteEmployee(id)
+        await this.deleteEmployee(id);
       }
-    }
+    },
   },
   created() {
-    this.fetchEmployees()
-  }
-}
+    this.fetchEmployees();
+  },
+};
 </script>
 
 <style scoped>
@@ -117,10 +115,11 @@ table {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-th, td {
+th,
+td {
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #eee;

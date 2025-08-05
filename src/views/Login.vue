@@ -5,34 +5,34 @@
         <h1>로그인</h1>
         <p>직원 관리 시스템에 접속하세요</p>
       </div>
-      
+
       <form class="login-form" @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="username">아이디</label>
-          <input 
-            type="text" 
-            id="username" 
-            v-model="username" 
-            placeholder="아이디를 입력하세요" 
+          <input
+            type="text"
+            id="username"
+            v-model="username"
+            placeholder="아이디를 입력하세요"
             required
             :disabled="loading || isLoginBlocked"
-          >
+          />
           <div class="error-message" :class="{ show: usernameError }">{{ usernameError }}</div>
         </div>
-        
+
         <div class="form-group">
           <label for="password">비밀번호</label>
           <div class="password-input-wrapper">
-            <input 
-              :type="showPassword ? 'text' : 'password'" 
-              id="password" 
-              v-model="password" 
-              placeholder="비밀번호를 입력하세요" 
+            <input
+              :type="showPassword ? 'text' : 'password'"
+              id="password"
+              v-model="password"
+              placeholder="비밀번호를 입력하세요"
               required
               :disabled="loading || isLoginBlocked"
-            >
-            <button 
-              type="button" 
+            />
+            <button
+              type="button"
               class="password-toggle"
               @click="togglePasswordVisibility"
               :disabled="loading || isLoginBlocked"
@@ -42,52 +42,46 @@
           </div>
           <div class="error-message" :class="{ show: passwordError }">{{ passwordError }}</div>
         </div>
-        
+
         <!-- 아이디 기억하기 체크박스 -->
         <div class="form-group checkbox-group">
           <label class="checkbox-label">
-            <input 
-              type="checkbox" 
-              v-model="rememberMe"
-              :disabled="loading || isLoginBlocked"
-            >
+            <input type="checkbox" v-model="rememberMe" :disabled="loading || isLoginBlocked" />
             <span class="checkmark"></span>
             아이디 기억하기
           </label>
         </div>
-        
-        <button 
-          type="submit" 
+
+        <button
+          type="submit"
           class="btn btn-primary login-btn"
           :disabled="loading || isLoginBlocked"
         >
-          <span v-if="loading">
-            <i class="fas fa-spinner fa-spin"></i> 로그인 중...
-          </span>
+          <span v-if="loading"> <i class="fas fa-spinner fa-spin"></i> 로그인 중... </span>
           <span v-else-if="isLoginBlocked">
             <i class="fas fa-lock"></i> 차단됨 ({{ blockTimeDisplay }})
           </span>
           <span v-else>로그인</span>
         </button>
-        
+
         <!-- 로그인 시도 횟수 경고 -->
         <div v-if="loginAttempts > 0 && !isLoginBlocked" class="warning-message">
           <i class="fas fa-exclamation-triangle"></i>
-          로그인 실패 {{ loginAttempts }}/{{ maxAttempts }}회. 
-          {{ maxAttempts - loginAttempts }}회 더 실패하면 {{ blockTime / (60 * 1000) }}분간 차단됩니다.
+          로그인 실패 {{ loginAttempts }}/{{ maxAttempts }}회. {{ maxAttempts - loginAttempts }}회
+          더 실패하면 {{ blockTime / (60 * 1000) }}분간 차단됩니다.
         </div>
-        
+
         <!-- 차단 상태 메시지 -->
         <div v-if="isLoginBlocked" class="block-message">
           <i class="fas fa-shield-alt"></i>
-          보안을 위해 로그인이 일시 차단되었습니다.<br>
+          보안을 위해 로그인이 일시 차단되었습니다.<br />
           <strong>{{ blockTimeDisplay }}</strong> 후에 다시 시도해주세요.
         </div>
-        
-        <div v-if="error" class="error-message show" style="margin-top: 15px;">
+
+        <div v-if="error" class="error-message show" style="margin-top: 15px">
           {{ error }}
         </div>
-        
+
         <!-- 테스트 계정 안내 -->
         <div class="test-info">
           <p><strong>테스트 계정:</strong></p>
@@ -99,7 +93,7 @@
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex'
+import { mapActions, mapGetters } from 'vuex';
 
 export default {
   name: 'Login',
@@ -116,178 +110,178 @@ export default {
       isBlocked: false,
       blockTime: 5 * 60 * 1000, // 5분
       blockEndTime: null,
-      showPassword: false
-    }
+      showPassword: false,
+    };
   },
   computed: {
     ...mapGetters('auth', ['authError']),
     error() {
-      return this.authError
+      return this.authError;
     },
     isLoginBlocked() {
-      if (!this.isBlocked) return false
+      if (!this.isBlocked) return false;
       if (this.blockEndTime && Date.now() > this.blockEndTime) {
-        this.clearBlock()
-        return false
+        this.clearBlock();
+        return false;
       }
-      return true
+      return true;
     },
     remainingBlockTime() {
-      if (!this.blockEndTime) return 0
-      const remaining = Math.ceil((this.blockEndTime - Date.now()) / 1000)
-      return Math.max(0, remaining)
+      if (!this.blockEndTime) return 0;
+      const remaining = Math.ceil((this.blockEndTime - Date.now()) / 1000);
+      return Math.max(0, remaining);
     },
     blockTimeDisplay() {
-      const minutes = Math.floor(this.remainingBlockTime / 60)
-      const seconds = this.remainingBlockTime % 60
-      return `${minutes}분 ${seconds}초`
-    }
+      const minutes = Math.floor(this.remainingBlockTime / 60);
+      const seconds = this.remainingBlockTime % 60;
+      return `${minutes}분 ${seconds}초`;
+    },
   },
   methods: {
     ...mapActions('auth', ['login']),
-    
+
     async handleLogin() {
       // 로그인 차단 상태 확인
       if (this.isLoginBlocked) {
-        return
+        return;
       }
-      
+
       // 입력값 검증
-      this.validateForm()
-      
+      this.validateForm();
+
       if (!this.usernameError && !this.passwordError) {
-        this.loading = true
-        
+        this.loading = true;
+
         try {
           const result = await this.login({
             username: this.username,
-            password: this.password
-          })
-          
-          this.loading = false
-          
+            password: this.password,
+          });
+
+          this.loading = false;
+
           if (result.success) {
             // 로그인 성공 시 시도 횟수 초기화
-            this.resetLoginAttempts()
-            
+            this.resetLoginAttempts();
+
             // 아이디 기억하기 처리
             if (this.rememberMe) {
-              localStorage.setItem('remembered_username', this.username)
+              localStorage.setItem('remembered_username', this.username);
             } else {
-              localStorage.removeItem('remembered_username')
+              localStorage.removeItem('remembered_username');
             }
-            
+
             // 직원 목록 페이지로 이동
-            this.$router.push('/employee-list')
+            this.$router.push('/employee-list');
           } else {
             // 로그인 실패 시 시도 횟수 증가
-            this.handleLoginFailure()
+            this.handleLoginFailure();
           }
         } catch (error) {
-          this.loading = false
-          this.handleLoginFailure()
-          console.error('로그인 오류:', error)
+          this.loading = false;
+          this.handleLoginFailure();
+          console.error('로그인 오류:', error);
         }
       }
     },
-    
+
     handleLoginFailure() {
-      this.loginAttempts++
-      
+      this.loginAttempts++;
+
       if (this.loginAttempts >= this.maxAttempts) {
-        this.blockLogin()
+        this.blockLogin();
       }
-      
+
       // localStorage에 시도 횟수 저장
-      localStorage.setItem('login_attempts', this.loginAttempts.toString())
-      localStorage.setItem('last_attempt_time', Date.now().toString())
+      localStorage.setItem('login_attempts', this.loginAttempts.toString());
+      localStorage.setItem('last_attempt_time', Date.now().toString());
     },
-    
+
     blockLogin() {
-      this.isBlocked = true
-      this.blockEndTime = Date.now() + this.blockTime
-      localStorage.setItem('login_blocked_until', this.blockEndTime.toString())
-      
+      this.isBlocked = true;
+      this.blockEndTime = Date.now() + this.blockTime;
+      localStorage.setItem('login_blocked_until', this.blockEndTime.toString());
+
       // 블록 시간 동안 카운트다운 시작
-      this.startBlockTimer()
+      this.startBlockTimer();
     },
-    
+
     startBlockTimer() {
       const timer = setInterval(() => {
         if (this.remainingBlockTime <= 0) {
-          clearInterval(timer)
-          this.clearBlock()
+          clearInterval(timer);
+          this.clearBlock();
         }
-      }, 1000)
+      }, 1000);
     },
-    
+
     clearBlock() {
-      this.isBlocked = false
-      this.blockEndTime = null
-      this.resetLoginAttempts()
-      localStorage.removeItem('login_blocked_until')
+      this.isBlocked = false;
+      this.blockEndTime = null;
+      this.resetLoginAttempts();
+      localStorage.removeItem('login_blocked_until');
     },
-    
+
     resetLoginAttempts() {
-      this.loginAttempts = 0
-      localStorage.removeItem('login_attempts')
-      localStorage.removeItem('last_attempt_time')
+      this.loginAttempts = 0;
+      localStorage.removeItem('login_attempts');
+      localStorage.removeItem('last_attempt_time');
     },
-    
+
     loadSavedData() {
       // 저장된 아이디 불러오기
-      const rememberedUsername = localStorage.getItem('remembered_username')
+      const rememberedUsername = localStorage.getItem('remembered_username');
       if (rememberedUsername) {
-        this.username = rememberedUsername
-        this.rememberMe = true
+        this.username = rememberedUsername;
+        this.rememberMe = true;
       }
-      
+
       // 로그인 시도 횟수 및 차단 상태 복원
-      const savedAttempts = localStorage.getItem('login_attempts')
-      const lastAttemptTime = localStorage.getItem('last_attempt_time')
-      const blockedUntil = localStorage.getItem('login_blocked_until')
-      
+      const savedAttempts = localStorage.getItem('login_attempts');
+      const lastAttemptTime = localStorage.getItem('last_attempt_time');
+      const blockedUntil = localStorage.getItem('login_blocked_until');
+
       if (savedAttempts) {
-        this.loginAttempts = parseInt(savedAttempts)
+        this.loginAttempts = parseInt(savedAttempts);
       }
-      
+
       if (blockedUntil) {
-        const blockEndTime = parseInt(blockedUntil)
+        const blockEndTime = parseInt(blockedUntil);
         if (Date.now() < blockEndTime) {
-          this.isBlocked = true
-          this.blockEndTime = blockEndTime
-          this.startBlockTimer()
+          this.isBlocked = true;
+          this.blockEndTime = blockEndTime;
+          this.startBlockTimer();
         } else {
           // 차단 시간이 지났으면 초기화
-          this.clearBlock()
+          this.clearBlock();
         }
       }
-      
+
       // 24시간이 지난 시도 기록은 초기화
       if (lastAttemptTime) {
-        const hoursPassed = (Date.now() - parseInt(lastAttemptTime)) / (1000 * 60 * 60)
+        const hoursPassed = (Date.now() - parseInt(lastAttemptTime)) / (1000 * 60 * 60);
         if (hoursPassed >= 24) {
-          this.resetLoginAttempts()
+          this.resetLoginAttempts();
         }
       }
     },
-    
+
     togglePasswordVisibility() {
-      this.showPassword = !this.showPassword
+      this.showPassword = !this.showPassword;
     },
-    
+
     validateForm() {
       // 유효성 검사 로직
-      this.usernameError = !this.username.trim() ? '아이디를 입력해주세요.' : ''
-      this.passwordError = !this.password ? '비밀번호를 입력해주세요.' : ''
-    }
+      this.usernameError = !this.username.trim() ? '아이디를 입력해주세요.' : '';
+      this.passwordError = !this.password ? '비밀번호를 입력해주세요.' : '';
+    },
   },
-  
+
   mounted() {
     // 컴포넌트 마운트 시 저장된 데이터 로드
-    this.loadSavedData()
-  }
-}
+    this.loadSavedData();
+  },
+};
 </script>
 
 <style scoped>
@@ -395,7 +389,7 @@ export default {
   margin-bottom: 0;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   width: auto;
   margin: 0;
   margin-right: 8px;

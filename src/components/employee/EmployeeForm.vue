@@ -4,27 +4,25 @@
     <form @submit.prevent="handleSubmit">
       <div class="form-group">
         <label>이름</label>
-        <input type="text" v-model="form.name" required>
+        <input type="text" v-model="form.name" required />
       </div>
       <div class="form-group">
         <label>부서</label>
-        <input type="text" v-model="form.department" required>
+        <input type="text" v-model="form.department" required />
       </div>
       <div class="form-group">
         <label>직급</label>
-        <input type="text" v-model="form.position" required>
+        <input type="text" v-model="form.position" required />
       </div>
       <div class="form-group">
         <label>입사일</label>
-        <input type="date" v-model="form.joinDate" required>
+        <input type="date" v-model="form.joinDate" required />
       </div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">
           {{ isEdit ? '수정' : '등록' }}
         </button>
-        <button type="button" class="btn" @click="$emit('cancel')">
-          취소
-        </button>
+        <button type="button" class="btn" @click="$emit('cancel')">취소</button>
       </div>
     </form>
   </div>
@@ -40,25 +38,25 @@ export default {
         name: '',
         department: '',
         position: '',
-        joinDate: ''
-      })
+        joinDate: '',
+      }),
     },
     isEdit: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   data() {
     return {
-      form: { ...this.employee }
-    }
+      form: { ...this.employee },
+    };
   },
   methods: {
     handleSubmit() {
-      this.$emit('submit', { ...this.form })
-    }
-  }
-}
+      this.$emit('submit', { ...this.form });
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -66,7 +64,7 @@ export default {
   background: #fff;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .form-group {

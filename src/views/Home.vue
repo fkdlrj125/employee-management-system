@@ -12,8 +12,8 @@
 
 <script>
 export default {
-  name: 'Home'
-}
+  name: 'Home',
+};
 </script>
 
 <style scoped>
@@ -34,7 +34,7 @@ export default {
   padding: 20px;
   margin: 10px;
   width: 200px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.3s ease;
 }
