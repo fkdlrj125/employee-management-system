@@ -1,0 +1,33 @@
+/* 직원 목록 색상 테마 - 깔끔한 단색 계열 */
+
+:root {
+  /* 기본 색상 팔레트 */
+  --primary-blue: #007bff;
+  --primary-blue-hover: #0056b3;
+  --primary-blue-light: rgba(0, 123, 255, 0.1);
+  --secondary-blue: #6c757d;
+  --light-blue: #e3f2fd;
+  --success-green: #28a745;
+  --danger-red: #dc3545;
+  
+  /* 그레이 스케일 */
+  --gray-50: #f8f9fa;
+  --gray-100: #e9ecef;
+  --gray-200: #dee2e6;
+  --gray-300: #ced4da;
+  --gray-400: #adb5bd;
+  --gray-500: #6c757d;
+  --gray-600: #495057;
+  --gray-700: #343a40;
+  --gray-800: #212529;
+  
+  /* 배경 색상 */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-hover: #f1f3f4;
+  
+  /* 텍스트 색상 */
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-muted: #adb5bd;
+}

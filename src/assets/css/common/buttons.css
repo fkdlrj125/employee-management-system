@@ -1,0 +1,220 @@
+/* 공통 버튼 스타일 */
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary-blue-light);
+}
+
+/* 기본 버튼 타입들 */
+.btn-primary {
+  background-color: var(--primary-blue);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-blue-hover);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--gray-600);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: var(--gray-700);
+}
+
+.btn-refresh {
+  background-color: var(--primary-blue);
+  color: white;
+}
+
+.btn-refresh:hover {
+  background-color: var(--primary-blue-hover);
+}
+
+.btn-search {
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 12px 20px;
+}
+
+.btn-search:hover {
+  background-color: var(--primary-blue-hover);
+}
+
+.btn-pagination {
+  background-color: var(--gray-50);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-200);
+  min-width: 40px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background-color: var(--gray-100);
+}
+
+.btn-pagination.active {
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: white;
+}
+
+.btn-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 버튼 호버 및 액티브 효과 */
+.btn {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn:active {
+  opacity: 0.8;
+  transition: opacity 0.1s ease;
+}
+
+/* 버튼 크기 변형 */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-lg {
+  padding: 12px 24px;
+  font-size: 16px;
+}
+
+/* 버튼 색상 변형 - 모두 그레이 기반으로 통일 */
+.btn-success {
+  background-color: var(--gray-600);
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: var(--gray-700);
+}
+
+.btn-danger {
+  background-color: var(--gray-700);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: var(--gray-800);
+}
+
+.btn-warning {
+  background-color: var(--gray-500);
+  color: white;
+}
+
+.btn-warning:hover {
+  background-color: var(--gray-600);
+}
+
+.btn-info {
+  background-color: var(--primary-blue);
+  color: white;
+}
+
+.btn-info:hover {
+  background-color: var(--primary-blue-hover);
+}
+
+/* 아웃라인 버튼 */
+.btn-outline-primary {
+  background-color: transparent;
+  color: var(--primary-blue);
+  border: 1px solid var(--primary-blue);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
+}
+
+.btn-outline-secondary {
+  background-color: transparent;
+  color: var(--gray-600);
+  border: 1px solid var(--gray-600);
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--gray-600);
+  color: white;
+  border-color: var(--gray-600);
+}
+
+/* 버튼 그룹 */
+.btn-group {
+  display: flex;
+  gap: 0;
+}
+
+.btn-group .btn {
+  border-radius: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-group .btn:first-child {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.btn-group .btn:last-child {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  border-right: none;
+}
+
+/* 반응형 버튼 */
+@media (max-width: 768px) {
+  .btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .btn-sm {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .btn-lg {
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .btn-search {
+    padding: 10px 16px;
+  }
+}

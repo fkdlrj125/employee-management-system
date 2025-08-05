@@ -1,0 +1,288 @@
+/* EmployeeList 테이블 관련 스타일 */
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: visible;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  min-height: 200px;
+  display: block !important;
+  visibility: visible !important;
+}
+
+.employee-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  display: table !important;
+  table-layout: fixed;
+}
+
+.employee-table th {
+  background-color: #f8f9fa;
+  padding: 15px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  white-space: nowrap;
+}
+
+.employee-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.employee-table th.sortable:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.employee-table th.sortable i {
+  margin-left: 8px;
+  opacity: 0.5;
+  font-size: 12px;
+  transition: color 0.2s ease;
+}
+
+.employee-table th.sortable:hover i {
+  opacity: 1;
+  color: #007bff;
+}
+
+.employee-table td {
+  padding: 12px;
+  border-bottom: 1px solid #dee2e6;
+  vertical-align: middle;
+  color: #495057;
+  background-color: #ffffff;
+  height: auto;
+  min-height: 40px;
+}
+
+.employee-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  background-color: #ffffff !important;
+  display: table-row !important;
+  visibility: visible !important;
+}
+
+.employee-row:hover {
+  background-color: #f8f9fa !important;
+}
+
+/* 부서별 행 색상 코딩 */
+.employee-row.dept-dss1 {
+  border-left: 4px solid #007bff;
+}
+
+.employee-row.dept-dss1:hover {
+  border-left-width: 5px;
+}
+
+.employee-row.dept-dss2 {
+  border-left: 4px solid #17a2b8;
+}
+
+.employee-row.dept-dss2:hover {
+  border-left-width: 5px;
+}
+
+.employee-row.dept-csc {
+  border-left: 4px solid #28a745;
+}
+
+.employee-row.dept-csc:hover {
+  border-left-width: 5px;
+}
+
+.employee-row.dept-hr {
+  border-left: 4px solid #dc3545;
+}
+
+.employee-row.dept-hr:hover {
+  border-left-width: 5px;
+}
+
+.employee-row.dept-default {
+  border-left: 4px solid #6c757d;
+}
+
+.employee-row.dept-default:hover {
+  border-left-width: 5px;
+}
+
+/* 부서 배지 스타일 */
+.department-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  text-align: center;
+  min-width: 50px;
+  transition: opacity 0.2s ease;
+}
+
+.department-badge.dept-dss1 {
+  background-color: #007bff;
+}
+
+.department-badge.dept-dss2 {
+  background-color: #17a2b8;
+}
+
+.department-badge.dept-csc {
+  background-color: #28a745;
+}
+
+.department-badge.dept-hr {
+  background-color: #dc3545;
+}
+
+.department-badge.dept-default {
+  background-color: #6c757d;
+}
+
+/* 직급 배지 스타일 */
+.position-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  min-width: 40px;
+  border: 1px solid;
+  transition: opacity 0.2s ease;
+}
+
+/* 직급별 색상 - 그라데이션으로 계층 표현 */
+.position-badge.pos-junior {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border-color: #bbdefb;
+}
+
+.position-badge.pos-associate {
+  background-color: #e8f5e8;
+  color: #388e3c;
+  border-color: #c8e6c9;
+}
+
+.position-badge.pos-manager {
+  background-color: #fff3e0;
+  color: #f57c00;
+  border-color: #ffcc02;
+}
+
+.position-badge.pos-deputy {
+  background-color: #fce4ec;
+  color: #c2185b;
+  border-color: #f8bbd9;
+}
+
+.position-badge.pos-director {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+  border-color: #e1bee7;
+}
+
+.position-badge.pos-head {
+  background-color: #e8eaf6;
+  color: #303f9f;
+  border-color: #c5cae9;
+}
+
+.position-badge.pos-division {
+  background-color: #e0f2f1;
+  color: #00695c;
+  border-color: #b2dfdb;
+}
+
+.position-badge.pos-executive {
+  background-color: #fff8e1;
+  color: #ef6c00;
+  border-color: #ffecb3;
+}
+
+.position-badge.pos-vp {
+  background-color: #ffebee;
+  color: #c62828;
+  border-color: #ffcdd2;
+}
+
+.position-badge.pos-president {
+  background-color: #1a1a1a;
+  color: #ffd700;
+  border-color: #333;
+  font-weight: 600;
+}
+
+.position-badge.pos-default {
+  background-color: #f5f5f5;
+  color: #757575;
+  border-color: #e0e0e0;
+}
+
+.loading-cell,
+.no-data-cell {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* 페이지네이션 컨테이너 */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 20px;
+}
+
+/* 테이블 반응형 스타일 */
+@media (max-width: 1200px) {
+  .employee-table {
+    font-size: 14px;
+  }
+  
+  .employee-table th,
+  .employee-table td {
+    padding: 10px 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-container {
+    overflow-x: auto;
+  }
+  
+  .employee-table {
+    min-width: 800px;
+  }
+  
+  .pagination-container {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* 테이블을 모바일에서 숨김 */
+  .table-container {
+    display: none;
+  }
+  
+  /* 페이지네이션 모바일 최적화 */
+  .pagination-container {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 10px;
+  }
+}

@@ -1,0 +1,64 @@
+/* EmployeeList 반응형 스타일 */
+
+/* 데스크톱 기본 스타일 */
+.employee-list-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* 태블릿 반응형 */
+@media (max-width: 1200px) {
+  .employee-list-container {
+    max-width: 100%;
+    padding: 15px;
+  }
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .employee-list-container {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .employee-list-container {
+    padding: 5px;
+  }
+}
+
+/* 다크모드 호환성 */
+@media (prefers-color-scheme: dark) {
+  .employee-list-container {
+    background-color: #1a1a1a;
+    color: #e9ecef;
+  }
+  
+  .header-section,
+  .search-filter-section {
+    background: #2d2d2d;
+    color: #e9ecef;
+  }
+  
+  .employee-table {
+    background: #2d2d2d;
+    color: #e9ecef;
+  }
+  
+  .employee-table th {
+    background: #3a3a3a;
+    border-color: #4a4a4a;
+  }
+  
+  .employee-table td {
+    border-color: #4a4a4a;
+  }
+  
+  .employee-card {
+    background: #2d2d2d;
+    color: #e9ecef;
+  }
+}

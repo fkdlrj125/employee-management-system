@@ -1,0 +1,246 @@
+/* 직원 목록 페이지 - 반응형 스타일 */
+
+/* 태블릿 반응형 */
+@media (max-width: 1200px) {
+  .employee-list-container {
+    max-width: 100%;
+    padding: 15px;
+  }
+  
+  .employee-table {
+    font-size: 14px;
+  }
+  
+  .employee-table th,
+  .employee-table td {
+    padding: 10px 8px;
+  }
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .employee-list-container {
+    padding: 10px;
+  }
+  
+  .header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .search-bar {
+    flex-direction: column;
+  }
+  
+  .filter-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+  }
+  
+  .employee-table {
+    min-width: 800px;
+  }
+  
+  .pagination-container {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .employee-list-container {
+    padding: 5px;
+  }
+  
+  .header-section {
+    padding: 15px;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .user-info {
+    order: 2;
+  }
+  
+  .search-filter-section {
+    padding: 10px;
+  }
+  
+  .filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .filter-group select {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 5px;
+  }
+}
+
+/* 모바일 카드 스타일 */
+@media (max-width: 768px) {
+  .mobile-card-container {
+    display: block;
+  }
+  
+  .loading-card, .no-data-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .loading-card i {
+    font-size: 20px;
+    margin-right: 10px;
+    color: #007bff;
+  }
+  
+  .employee-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-left: 4px solid #007bff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    animation: fadeIn 0.8s ease-in-out;
+  }
+  
+  .employee-card:hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .employee-card:active {
+    background-color: #e9ecef;
+  }
+  
+  .employee-card.dept-dss1 { border-left-color: #007bff; }
+  .employee-card.dept-dss2 { border-left-color: #17a2b8; }
+  .employee-card.dept-csc { border-left-color: #28a745; }
+  .employee-card.dept-hr { border-left-color: #dc3545; }
+  
+  .employee-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .employee-card-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .employee-card-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  
+  .employee-card-badges .department-badge,
+  .employee-card-badges .position-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+  
+  .employee-card-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 15px;
+    font-size: 14px;
+  }
+  
+  .employee-card-item {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  
+  .employee-card-label {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 3px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .employee-card-value {
+    color: #495057;
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.3;
+  }
+  
+  /* 주소가 있는 경우 전체 너비 사용 */
+  .employee-card-item:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-card-container {
+    display: none;
+  }
+}
+
+/* 다크모드 호환성 */
+@media (prefers-color-scheme: dark) {
+  .employee-list-container {
+    background-color: #1a1a1a;
+    color: #e9ecef;
+  }
+  
+  .header-section,
+  .search-filter-section {
+    background: #2d2d2d;
+    color: #e9ecef;
+  }
+  
+  .employee-table {
+    background: #2d2d2d;
+    color: #e9ecef;
+  }
+  
+  .employee-table th {
+    background: #3a3a3a;
+    border-color: #4a4a4a;
+  }
+  
+  .employee-table td {
+    border-color: #4a4a4a;
+  }
+  
+  .employee-card {
+    background: #2d2d2d;
+    color: #e9ecef;
+  }
+}

@@ -5,8 +5,12 @@
 /* Common Styles */
 @import './common.css';
 
-/* Table Styles */
-@import './table.css';
+/* Common Components */
+@import './common/buttons.css';
+@import './common/tables.css';
 
-/* Employee List Styles */
-@import './employee-list.css';
+/* Employee List Page */
+@import './employee-list/colors.css';
+@import './employee-list/index.css';
+@import './employee-list/responsive.css';
+@import './employee-list/animations.css';
