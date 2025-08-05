@@ -46,6 +46,8 @@
             <option value="DSS2">DSS2</option>
             <option value="CSC">CSC</option>
             <option value="HR">HR</option>
+            <option value="IT">IT</option>
+            <option value="Finance">Finance</option>
           </select>
         </div>
         
@@ -138,6 +140,62 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- 모바일 카드 컨테이너 -->
+    <div class="mobile-card-container">
+      <div v-if="loading" class="loading-card">
+        <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+      </div>
+      <div v-else-if="filteredEmployees.length === 0" class="no-data-card">
+        검색 결과가 없습니다.
+      </div>
+      <div 
+        v-else
+        v-for="(employee, index) in paginatedEmployees" 
+        :key="employee.id"
+        class="employee-card"
+        :class="getDepartmentCardClass(employee.department)"
+        @click="navigateToDetail(employee.id)"
+      >
+        <div class="employee-card-header">
+          <div class="employee-card-name">{{ employee.name }}</div>
+          <div class="employee-card-badges">
+            <span :class="['department-badge', getDepartmentClass(employee.department)]">
+              {{ employee.department }}
+            </span>
+            <span :class="['position-badge', getPositionClass(employee.position)]">
+              {{ employee.position }}
+            </span>
+          </div>
+        </div>
+        <div class="employee-card-info">
+          <div class="employee-card-item">
+            <span class="employee-card-label">번호</span>
+            <span class="employee-card-value">{{ (currentPage - 1) * pageSize + index + 1 }}</span>
+          </div>
+          <div class="employee-card-item">
+            <span class="employee-card-label">근무지</span>
+            <span class="employee-card-value">{{ employee.workplace }}</span>
+          </div>
+          <div class="employee-card-item">
+            <span class="employee-card-label">입사일</span>
+            <span class="employee-card-value">{{ formatDate(employee.hire_date) }}</span>
+          </div>
+          <div class="employee-card-item">
+            <span class="employee-card-label">평가점수</span>
+            <span class="employee-card-value">{{ employee.total_score || '-' }}</span>
+          </div>
+          <div class="employee-card-item">
+            <span class="employee-card-label">MITMAS 경력</span>
+            <span class="employee-card-value">{{ formatCareer(employee.mitmas_total_career) }}</span>
+          </div>
+          <div class="employee-card-item" v-if="employee.address">
+            <span class="employee-card-label">주소</span>
+            <span class="employee-card-value">{{ employee.address }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 페이지네이션 -->
@@ -441,6 +499,10 @@ export default {
           return 'dept-csc'
         case 'HR':
           return 'dept-hr'
+        case 'IT':
+          return 'dept-it'
+        case 'Finance':
+          return 'dept-finance'
         default:
           return 'dept-default'
       }
@@ -471,12 +533,39 @@ export default {
         default:
           return 'pos-default'
       }
-    }
+    },
+    
+    getDepartmentCardClass(department) {
+      switch (department) {
+        case 'DSS1':
+          return 'dept-dss1'
+        case 'DSS2':
+          return 'dept-dss2'
+        case 'CSC':
+          return 'dept-csc'
+        case 'HR':
+          return 'dept-hr'
+        case 'IT':
+          return 'dept-it'
+        case 'Finance':
+          return 'dept-finance'
+        default:
+          return 'dept-default'
+      }
     }
   }
+}
 </script>
 
+<style>
+/* 외부 CSS 파일 import */
+@import '@/assets/css/common.css';
+@import '@/assets/css/table.css';
+@import '@/assets/css/employee-list.css';
+</style>
+
 <style scoped>
+/* 이 컴포넌트에만 특별히 필요한 스타일만 작성 */
 .employee-list-container {
   padding: 20px;
   max-width: 1400px;
@@ -611,20 +700,14 @@ export default {
 .table-container {
   background: white;
   border-radius: 12px;
-  overflow: visible;
+  overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
-  min-height: 200px;
-  display: block !important;
-  visibility: visible !important;
 }
 
 .employee-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: #ffffff;
-  display: table !important;
-  table-layout: fixed;
 }
 
 .employee-table th {
@@ -662,22 +745,19 @@ export default {
   padding: 12px;
   border-bottom: 1px solid #dee2e6;
   vertical-align: middle;
-  color: #495057;
-  background-color: #ffffff;
-  height: auto;
-  min-height: 40px;
 }
 
 .employee-row {
   cursor: pointer;
   transition: background-color 0.2s ease;
-  background-color: #ffffff !important;
-  display: table-row !important;
-  visibility: visible !important;
 }
 
 .employee-row:hover {
-  background-color: #f8f9fa !important;
+  background-color: #f8f9fa;
+}
+
+.employee-row:active {
+  background-color: #e9ecef;
 }
 
 /* 부서별 행 색상 코딩 */
@@ -705,16 +785,36 @@ export default {
   border-left-width: 5px;
 }
 
-.employee-row.dept-csc:hover {
-  border-left-width: 5px;
-}
-
 .employee-row.dept-hr {
   border-left: 4px solid #dc3545;
 }
 
+.employee-row.dept-hr:hover {
+  border-left-width: 5px;
+}
+
+.employee-row.dept-it {
+  border-left: 4px solid #6610f2;
+}
+
+.employee-row.dept-it:hover {
+  border-left-width: 5px;
+}
+
+.employee-row.dept-finance {
+  border-left: 4px solid #fd7e14;
+}
+
+.employee-row.dept-finance:hover {
+  border-left-width: 5px;
+}
+
 .employee-row.dept-default {
   border-left: 4px solid #6c757d;
+}
+
+.employee-row.dept-default:hover {
+  border-left-width: 5px;
 }
 
 /* 부서 배지 스타일 */
@@ -743,6 +843,14 @@ export default {
 
 .department-badge.dept-hr {
   background-color: #dc3545;
+}
+
+.department-badge.dept-it {
+  background-color: #6610f2;
+}
+
+.department-badge.dept-finance {
+  background-color: #fd7e14;
 }
 
 .department-badge.dept-default {
@@ -918,23 +1026,217 @@ export default {
   cursor: not-allowed;
 }
 
+/* 애니메이션 정의 - 차분하게 수정 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 로딩 애니메이션만 유지 */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 로딩 애니메이션 */
+.loading-cell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
 /* 반응형 디자인 */
+/* 반응형 개선 - 테이블 액션 버튼 */
 @media (max-width: 1200px) {
-  .employee-table {
-    font-size: 14px;
+  .employee-table .btn {
+    padding: 4px 8px;
+    font-size: 12px;
+    margin: 1px;
   }
   
-  .employee-table th,
-  .employee-table td {
-    padding: 10px 8px;
+  .employee-table .btn i {
+    font-size: 11px;
+  }
+  
+  .employee-table .btn-sm {
+    padding: 3px 6px;
+  }
+}
+
+@media (max-width: 992px) {
+  .employee-table th:nth-child(7), /* 주소 */
+  .employee-table td:nth-child(7) {
+    display: none;
+  }
+  
+  .employee-table th:nth-child(8), /* 통합 평가 점수 */
+  .employee-table td:nth-child(8) {
+    font-size: 12px;
+    padding: 8px 4px;
   }
 }
 
 @media (max-width: 768px) {
-  .employee-list-container {
-    padding: 10px;
+  /* 테이블을 모바일에서 숨김 */
+  .table-container {
+    display: none;
   }
   
+  /* 페이지네이션 모바일 최적화 */
+  .pagination-container {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 10px;
+  }
+  
+  .btn-pagination {
+    min-width: 40px;
+    padding: 8px 12px;
+    font-size: 13px;
+    margin: 2px;
+  }
+  
+  .btn-pagination.active {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+    font-weight: 600;
+  }
+}
+
+/* 로딩 및 빈 데이터 스타일 개선 */
+.loading-cell, .no-data-cell {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+  font-size: 16px;
+  background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+}
+
+.loading-cell i {
+  font-size: 20px;
+  margin-right: 10px;
+  color: #007bff;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 검색 및 필터 섹션 반응형 */
+@media (max-width: 576px) {
+  .search-filter-section {
+    padding: 15px 10px;
+    margin: 0 5px 15px 5px;
+  }
+  
+  .search-bar {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .search-input-group {
+    width: 100%;
+  }
+  
+  .filter-controls {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .filter-group label {
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  .filter-group select {
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    font-size: 14px;
+  }
+  
+  .results-info {
+    font-size: 13px;
+    text-align: center;
+    margin-top: 10px;
+  }
+}
+
+/* 헤더 섹션 반응형 개선 */
+@media (max-width: 576px) {
+  .header-section {
+    padding: 15px 10px;
+    margin: 0 5px 15px 5px;
+  }
+  
+  .header-section h1 {
+    font-size: 22px;
+    margin-bottom: 0;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 10px;
+  }
+  
+  .user-info {
+    order: 1;
+    width: 100%;
+    justify-content: space-between;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+  }
+  
+  .user-name {
+    font-size: 14px;
+  }
+  
+  .btn-logout {
+    order: 2;
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 1200px) {
   .header-section {
     flex-direction: column;
     align-items: flex-start;
@@ -946,21 +1248,67 @@ export default {
     justify-content: space-between;
   }
   
+  .search-filter-section {
+    padding: 15px;
+  }
+  
+  .employee-table th:nth-child(7), /* 주소 */
+  .employee-table td:nth-child(7) {
+    display: none;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .employee-table {
+    min-width: 1000px;
+  }
+}
+
+@media (max-width: 768px) {
+  .employee-list-container {
+    padding: 10px;
+  }
+  
+  .header-section h1 {
+    font-size: 20px;
+  }
+  
   .search-bar {
     flex-direction: column;
+    gap: 10px;
+  }
+  
+  .search-input-group {
+    width: 100%;
   }
   
   .filter-controls {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
   }
   
+  .filter-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .filter-group select {
+    min-width: 150px;
+    flex: 1;
+    margin-left: 10px;
+  }
+  
+  /* 모바일에서 테이블 카드 형태로 변경 */
   .table-container {
-    overflow-x: auto;
+    display: none;
   }
   
-  .employee-table {
-    min-width: 800px;
+  .mobile-card-container {
+    display: block;
   }
   
   .pagination-container {
@@ -1057,6 +1405,8 @@ export default {
   .employee-card.dept-dss2 { border-left-color: #17a2b8; }
   .employee-card.dept-csc { border-left-color: #28a745; }
   .employee-card.dept-hr { border-left-color: #dc3545; }
+  .employee-card.dept-it { border-left-color: #6610f2; }
+  .employee-card.dept-finance { border-left-color: #fd7e14; }
   
   .employee-card-header {
     display: flex;
@@ -1144,19 +1494,7 @@ export default {
 
 .employee-table tbody tr {
   animation: fadeIn 0.8s ease-out forwards;
-  opacity: 1;
-}
-
-/* fadeIn 애니메이션 정의 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  opacity: 0;
 }
 
 /* 순차 등장 간격을 더 짧게 */

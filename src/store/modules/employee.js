@@ -69,6 +69,10 @@ const actions = {
           phone: '010-1234-5678',
           address: '서울시 강남구',
           birth: '1985-05-15',
+          hire_date: '2008-03-01',
+          workplace: '서울 본사',
+          total_score: 85.5,
+          mitmas_total_career: 186, // 15년 6개월 = 186개월
           photoUrl: null
         },
         {
@@ -80,6 +84,10 @@ const actions = {
           phone: '010-9876-5432',
           address: '서울시 서초구',
           birth: '1990-08-22',
+          hire_date: '2015-06-15',
+          workplace: '서울 본사',
+          total_score: 92.3,
+          mitmas_total_career: 100, // 8년 4개월 = 100개월
           photoUrl: null
         },
         {
@@ -91,6 +99,10 @@ const actions = {
           phone: '010-5555-1234',
           address: '서울시 송파구',
           birth: '1982-12-10',
+          hire_date: '2005-01-10',
+          workplace: '서울 본사',
+          total_score: 78.9,
+          mitmas_total_career: 224, // 18년 8개월 = 224개월
           photoUrl: null
         },
         {
@@ -102,6 +114,40 @@ const actions = {
           phone: '010-7777-8888',
           address: '서울시 마포구',
           birth: '1978-03-05',
+          hire_date: '2001-09-01',
+          workplace: '서울 본사',
+          total_score: 88.7,
+          mitmas_total_career: 265, // 22년 1개월 = 265개월
+          photoUrl: null
+        },
+        {
+          id: 5,
+          name: '윤성호',
+          department: 'DSS1',
+          position: '이사',
+          email: 'yoon@company.com',
+          phone: '010-9999-0000',
+          address: '서울시 강동구',
+          birth: '1975-04-12',
+          hire_date: '1998-02-15',
+          workplace: '서울 본사',
+          total_score: 95.8,
+          mitmas_total_career: 312, // 26년 = 312개월
+          photoUrl: null
+        },
+        {
+          id: 6,
+          name: '한지영',
+          department: 'CSC',
+          position: '본부장',
+          email: 'han@company.com',
+          phone: '010-1111-2222',
+          address: '서울시 서대문구',
+          birth: '1973-09-25',
+          hire_date: '1995-07-01',
+          workplace: '서울 본사',
+          total_score: 91.2,
+          mitmas_total_career: 341, // 28년 5개월 = 341개월
           photoUrl: null
         }
       ]

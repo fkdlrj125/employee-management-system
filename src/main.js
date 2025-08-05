@@ -10,6 +10,9 @@ console.log('Vue app initializing...')
 console.log('Router:', router)
 console.log('Store:', store)
 
+// 앱 시작 시 인증 상태 복원
+store.dispatch('auth/initAuth')
+
 const vm = new Vue({
   router,
   store,
