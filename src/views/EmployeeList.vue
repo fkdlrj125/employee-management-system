@@ -3,176 +3,72 @@
     <!-- 헤더 섹션 -->
     <div class="header-section">
       <h1>직원 목록</h1>
-      <div class="header-actions">
-        <div class="user-info">
-          <span class="user-name">{{ currentUser?.username }}님</span>
-          <button @click="logout" class="btn btn-secondary">로그아웃</button>
-        </div>
-        <button @click="refreshData" class="btn btn-refresh" title="새로고침">
-          <i class="fas fa-sync-alt"></i> 새로고침
-        </button>
-        <button @click="navigateToDetail('new')" class="btn btn-primary">
-          <i class="fas fa-plus"></i> 새 직원 등록
-        </button>
-      </div>
+      <HeaderActions
+        :current-user="currentUser"
+        @logout="logout"
+        @refresh="refreshData"
+        @add="navigateToDetail('new')"
+      />
     </div>
 
     <!-- 검색 및 필터 섹션 -->
     <div class="search-filter-section">
-      <div class="search-bar">
-        <div class="search-input-group">
-          <i class="fas fa-search"></i>
-          <input
-            type="text"
-            v-model="searchQuery"
-            @input="handleSearch"
-            @keyup.enter="performSearch"
-            placeholder="직원명, 이메일, 부서, 직급으로 검색..."
-            class="search-input"
-          />
-          <button v-if="searchQuery" @click="clearSearch" class="clear-search">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <button @click="performSearch" class="btn btn-search">검색</button>
-      </div>
+      <SearchBar
+        v-model="searchQuery"
+        :placeholder="'직원명, 이메일, 부서, 직급으로 검색...'"
+        @input="handleSearch"
+        @enter="performSearch"
+        @clear="clearSearch"
+        @search="performSearch"
+      />
 
-      <div class="filter-controls">
-        <div class="filter-group">
-          <label>부서:</label>
-          <select v-model="filters.department" @change="applyFilters">
-            <option value="">전체 부서</option>
-            <option value="DSS1">DSS1</option>
-            <option value="DSS2">DSS2</option>
-            <option value="CSC">CSC</option>
-            <option value="HR">HR</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label>직급:</label>
-          <select v-model="filters.position" @change="applyFilters">
-            <option value="">전체 직급</option>
-            <option value="사원">사원</option>
-            <option value="대리">대리</option>
-            <option value="과장">과장</option>
-            <option value="차장">차장</option>
-            <option value="부장">부장</option>
-            <option value="실장">실장</option>
-            <option value="본부장">본부장</option>
-            <option value="이사">이사</option>
-            <option value="부사장">부사장</option>
-            <option value="사장">사장</option>
-          </select>
-        </div>
-
-        <button @click="clearFilters" class="btn btn-secondary">필터 초기화</button>
-      </div>
+      <FilterControls
+        :filters="filters"
+        @update:filters="val => { filters = val; applyFilters(); }"
+        @clear="clearFilters"
+      />
     </div>
 
     <!-- 직원 목록 테이블 -->
-    <div class="table-container">
-      <table class="employee-table">
-        <thead>
-          <tr>
-            <th>번호</th>
-            <th class="sortable" @click="sortByColumn('name')">
-              이름 <i :class="getSortIcon('name')"></i>
-            </th>
-            <th class="sortable" @click="sortByColumn('department')">
-              부서 <i :class="getSortIcon('department')"></i>
-            </th>
-            <th class="sortable" @click="sortByColumn('workplace')">
-              근무지 <i :class="getSortIcon('workplace')"></i>
-            </th>
-            <th class="sortable" @click="sortByColumn('position')">
-              직급 <i :class="getSortIcon('position')"></i>
-            </th>
-            <th class="sortable" @click="sortByColumn('hire_date')">
-              입사일 <i :class="getSortIcon('hire_date')"></i>
-            </th>
-            <th>주소</th>
-            <th class="sortable" @click="sortByColumn('total_score')">
-              통합 평가 점수 <i :class="getSortIcon('total_score')"></i>
-            </th>
-            <th class="sortable" @click="sortByColumn('mitmas_total_career')">
-              MITMAS 경력 <i :class="getSortIcon('mitmas_total_career')"></i>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td colspan="9" class="loading-cell">
-              <i class="fas fa-spinner fa-spin"></i> 로딩 중...
-            </td>
-          </tr>
-          <tr v-else-if="filteredEmployees.length === 0">
-            <td colspan="9" class="no-data-cell">검색 결과가 없습니다.</td>
-          </tr>
-          <tr
-            v-else
-            v-for="(employee, index) in paginatedEmployees"
-            :key="employee.id"
-            @click="navigateToDetail(employee.id)"
-            :class="['employee-row', getDepartmentClass(employee.department)]"
-          >
-            <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
-            <td>{{ employee.name }}</td>
-            <td>
-              <span :class="['department-badge', getDepartmentClass(employee.department)]">
-                {{ employee.department }}
-              </span>
-            </td>
-            <td>{{ employee.workplace }}</td>
-            <td>
-              <span :class="['position-badge', getPositionClass(employee.position)]">
-                {{ employee.position }}
-              </span>
-            </td>
-            <td>{{ formatDate(employee.hire_date) }}</td>
-            <td>{{ employee.address || '-' }}</td>
-            <td>{{ employee.total_score || '-' }}</td>
-            <td>{{ formatCareer(employee.mitmas_total_career) }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <EmployeeTable
+        :loading="loading"
+        :filtered-employees="filteredEmployees"
+        :paginated-employees="paginatedEmployees"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        :get-sort-icon="getSortIcon"
+        :get-department-class="getDepartmentClass"
+        :get-position-class="getPositionClass"
+        :format-date="formatDate"
+        :format-career="formatCareer"
+        @sort="sortByColumn"
+        @detail="navigateToDetail"
+      />
 
     <!-- 페이지네이션 -->
-    <div class="pagination-container" v-if="totalPages > 1">
-      <button
-        @click="changePage(currentPage - 1)"
-        :disabled="currentPage === 1"
-        class="btn btn-pagination"
-      >
-        이전
-      </button>
-
-      <button
-        v-for="page in visiblePages"
-        :key="page"
-        @click="changePage(page)"
-        :class="['btn', 'btn-pagination', { active: page === currentPage }]"
-      >
-        {{ page }}
-      </button>
-
-      <button
-        @click="changePage(currentPage + 1)"
-        :disabled="currentPage === totalPages"
-        class="btn btn-pagination"
-      >
-        다음
-      </button>
-    </div>
+    <Pagination
+      v-if="totalPages > 1"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      @change="changePage"
+    />
   </div>
 </template>
 
+
 <script>
 import { mapActions, mapGetters } from 'vuex';
+import Button from '../components/common/Button.vue';
+import HeaderActions from '../components/employee/HeaderActions.vue';
+import CommonInput from '../components/common/CommonInput.vue';
+import SearchBar from '../components/employee/SearchBar.vue';
+import FilterControls from '../components/employee/FilterControls.vue';
+import EmployeeTable from '../components/employee/EmployeeTable.vue';
+import Pagination from '../components/employee/Pagination.vue';
 
 export default {
   name: 'EmployeeList',
+  components: { Button, CommonInput, HeaderActions, SearchBar, FilterControls, EmployeeTable, Pagination },
   data() {
     return {
       searchQuery: '',

@@ -48,22 +48,24 @@
         <div class="resume-left">
           <!-- 프로필+기본정보+연락처를 하나의 카드로 묶음 -->
           <div class="table-container">
-            <EmployeeBasicInfo
-              :employee="employee"
-              :edit-mode="editMode"
-              :errors="errors"
-              @update:employee="updateEmployee"
-              @photo-change="onPhotoChange"
-              @validate-field="validateField"
-              @career-change="onCareerChange"
-            />
-            <EmployeeContactInfo
-              :employee="employee"
-              :edit-mode="editMode"
-              :errors="errors"
-              @update:employee="updateEmployee"
-              @validate-field="validateField"
-            />
+          <EmployeeBasicInfo
+            :employee="employee"
+            :edit-mode="editMode"
+            :errors="errors"
+            @update:employee="updateEmployee"
+            @photo-change="onPhotoChange"
+            @validate-field="validateField"
+            @career-change="onCareerChange"
+            :key="'basic-' + editMode"
+          />
+          <EmployeeContactInfo
+            :employee="employee"
+            :edit-mode="editMode"
+            :errors="errors"
+            @update:employee="updateEmployee"
+            @validate-field="validateField"
+            :key="'contact-' + editMode"
+          />
           </div>
 
           <!-- 학력 테이블 -->
@@ -72,6 +74,7 @@
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
+            :key="'edu-' + editMode"
           />
 
           <!-- 자격증 테이블 -->
@@ -80,6 +83,7 @@
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
+            :key="'cert-' + editMode"
           />
 
           <!-- 경력사항 테이블 -->
@@ -88,6 +92,7 @@
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
+            :key="'career-' + editMode"
           />
 
           <!-- 프로젝트 테이블 -->
@@ -96,6 +101,7 @@
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
+            :key="'proj-' + editMode"
           />
         </div>
 
@@ -107,6 +113,7 @@
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
+            :key="'skill-' + editMode"
           />
 
           <!-- 기간별 성과 분석 -->
@@ -518,8 +525,7 @@ export default {
 
     // 로그아웃
     logout() {
-      localStorage.removeItem('currentUser');
-      this.$router.push('/login');
+      this.$store.dispatch('auth/logout');
     },
 
     // 리포트 생성

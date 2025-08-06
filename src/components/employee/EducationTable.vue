@@ -13,13 +13,12 @@
       <tbody>
         <tr v-for="(education, index) in educations" :key="index">
           <td>
-            <input
-              type="text"
-              class="info-input plain-input"
+            <CommonInput
+              :model-value="formatPeriod(education.startDate, education.endDate)"
               placeholder="클릭하여 기간 선택"
-              readonly
+              input-class="info-input plain-input"
+              :readonly="true"
               :disabled="!editMode"
-              :value="formatPeriod(education.startDate, education.endDate)"
               @click="editMode ? openPeriodPicker(index) : null"
               style="cursor: pointer;"
             />
@@ -34,70 +33,58 @@
             />
           </td>
           <td>
-            <input
-              type="text"
-              class="info-input plain-input"
-              :disabled="!editMode"
+            <CommonInput
               v-model="education.school"
+              input-class="info-input plain-input"
+              :disabled="!editMode"
             />
           </td>
           <td>
-            <input type="text" class="info-input plain-input" :disabled="!editMode" v-model="education.major" />
+            <CommonInput v-model="education.major" input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td v-if="editMode" class="manage-td move-btns-cell">
             <div class="manage-btns">
-              <button
-                type="button"
-                class="move-up-btn"
-                :disabled="index === 0"
-                @click="moveUp(index)"
-              >▲</button>
-              <button
-                type="button"
-                class="move-down-btn"
-                :disabled="index === educations.length - 1"
-                @click="moveDown(index)"
-              >▼</button>
-              <button type="button" class="delete-btn" @click="deleteEducation(index)">삭제</button>
+              <Button type="button" btn-class="move-up-btn" :disabled="index === 0" @click="moveUp(index)">▲</Button>
+              <Button type="button" btn-class="move-down-btn" :disabled="index === educations.length - 1" @click="moveDown(index)">▼</Button>
+              <Button type="button" btn-class="delete-btn" @click="deleteEducation(index)">삭제</Button>
             </div>
           </td>
         </tr>
         <tr v-if="educations.length === 0">
           <td>
-            <input
-              type="text"
-              class="info-input plain-input"
+            <CommonInput
               placeholder="클릭하여 기간 선택"
-              readonly
+              input-class="info-input plain-input"
+              :readonly="true"
               :disabled="!editMode"
             />
           </td>
           <td>
-            <input type="text" class="edu-school plain-input" :disabled="!editMode" />
-            <input type="text" class="info-input plain-input" :disabled="!editMode" />
+            <CommonInput input-class="edu-school plain-input" :disabled="!editMode" />
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td>
-            <input type="text" class="edu-major plain-input" :disabled="!editMode" />
-            <input type="text" class="info-input plain-input" :disabled="!editMode" />
+            <CommonInput input-class="edu-major plain-input" :disabled="!editMode" />
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td v-if="editMode" class="manage-td move-btns-cell">
             <div class="manage-btns">
-              <button type="button" class="move-up-btn" disabled>▲</button>
-              <button type="button" class="move-down-btn" disabled>▼</button>
-              <button type="button" class="delete-btn" disabled>삭제</button>
+              <Button type="button" btn-class="move-up-btn" disabled>▲</Button>
+              <Button type="button" btn-class="move-down-btn" disabled>▼</Button>
+              <Button type="button" btn-class="delete-btn" disabled>삭제</Button>
             </div>
           </td>
         </tr>
       </tbody>
     </table>
     <div v-if="editMode" class="button-container-right">
-      <button
+      <Button
         type="button"
-        class="btn btn-secondary add-edu-row right-btn add-row-btn"
+        btn-class="btn btn-secondary add-edu-row right-btn add-row-btn"
         @click="addEducation"
       >
         + 행 추가
-      </button>
+      </Button>
     </div>
   </div>
 </template>
@@ -105,10 +92,12 @@
 <script>
 import { computed, ref } from 'vue';
 import DateRangePicker from '../common/DateRangePicker.vue';
+import Button from '../common/Button.vue';
+import CommonInput from '../common/CommonInput.vue';
 
 export default {
   name: 'EducationTable',
-  components: { DateRangePicker },
+  components: { DateRangePicker, Button, CommonInput },
   props: {
     employee: {
       type: Object,

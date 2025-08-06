@@ -14,13 +14,12 @@
       <tbody>
         <tr v-for="(career, index) in careers" :key="index">
           <td>
-            <input
-              type="text"
-              class="info-input plain-input"
+            <CommonInput
+              :model-value="formatPeriod(career.startDate, career.endDate)"
               placeholder="클릭하여 기간 선택"
-              readonly
+              input-class="info-input plain-input"
+              :readonly="true"
               :disabled="!editMode"
-              :value="formatPeriod(career.startDate, career.endDate)"
               @click="editMode ? openPeriodPicker(index) : null"
               style="cursor: pointer;"
             />
@@ -35,20 +34,10 @@
             />
           </td>
           <td>
-            <input
-              type="text"
-              class="info-input plain-input"
-              :disabled="!editMode"
-              v-model="career.company"
-            />
+            <CommonInput v-model="career.company" input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td>
-            <input
-              type="text"
-              class="info-input plain-input"
-              :disabled="!editMode"
-              v-model="career.position"
-            />
+            <CommonInput v-model="career.position" input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td class="td-narrow">
             <textarea
@@ -60,36 +49,22 @@
           </td>
           <td v-if="editMode" class="manage-td move-btns-cell">
             <div class="manage-btns">
-              <button
-                type="button"
-                class="move-up-btn"
-                :disabled="index === 0"
-                @click="moveUp(index)"
-              >
-                ▲
-              </button>
-              <button
-                type="button"
-                class="move-down-btn"
-                :disabled="index === careers.length - 1"
-                @click="moveDown(index)"
-              >
-                ▼
-              </button>
-              <button type="button" class="delete-btn" @click="deleteCareer(index)">삭제</button>
+              <Button type="button" btn-class="move-up-btn" :disabled="index === 0" @click="moveUp(index)">▲</Button>
+              <Button type="button" btn-class="move-down-btn" :disabled="index === careers.length - 1" @click="moveDown(index)">▼</Button>
+              <Button type="button" btn-class="delete-btn" @click="deleteCareer(index)">삭제</Button>
             </div>
           </td>
         </tr>
       </tbody>
     </table>
     <div v-if="editMode" class="button-container-right">
-      <button
+      <Button
         type="button"
-        class="btn btn-secondary add-career-row right-btn add-row-btn"
+        btn-class="btn btn-secondary add-career-row right-btn add-row-btn"
         @click="addCareer"
       >
         + 행 추가
-      </button>
+      </Button>
     </div>
   </div>
 </template>
@@ -97,10 +72,12 @@
 <script>
 import { computed, ref } from 'vue';
 import DateRangePicker from '../common/DateRangePicker.vue';
+import Button from '../common/Button.vue';
+import CommonInput from '../common/CommonInput.vue';
 
 export default {
   name: 'CareerTable',
-  components: { DateRangePicker },
+  components: { DateRangePicker, Button, CommonInput },
   props: {
     employee: {
       type: Object,

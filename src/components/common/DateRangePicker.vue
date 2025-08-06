@@ -4,25 +4,34 @@
       <div class="date-range-modal">
         <h3>기간 선택</h3>
         <div class="date-range-fields">
-          <label>시작일
-            <input type="month" v-model="localStart" />
-          </label>
+          <DateInput
+            label="시작일"
+            v-model="localStart"
+            type="month"
+            input-class="date-range-input"
+          />
           <span>~</span>
-          <label>종료일
-            <input type="month" v-model="localEnd" />
-          </label>
+          <DateInput
+            label="종료일"
+            v-model="localEnd"
+            type="month"
+            input-class="date-range-input"
+          />
         </div>
         <div class="date-range-modal-actions">
-          <button class="btn btn-primary" @click="confirm">확인</button>
-          <button class="btn btn-secondary" @click="emit('close')">취소</button>
+          <Button btn-class="btn-primary" @click="confirm">확인</Button>
+          <Button btn-class="btn-secondary" @click="emit('close')">취소</Button>
         </div>
       </div>
     </div>
   </transition>
 </template>
 
+
 <script setup>
 import { ref, watch } from 'vue';
+import DateInput from './DateInput.vue';
+import Button from './Button.vue';
 
 const props = defineProps({
   visible: { type: Boolean, default: false },

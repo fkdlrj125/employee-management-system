@@ -5,27 +5,26 @@
           <i class="fas fa-home"></i>
         </router-link>
         <div class="search-group">
-          <input
-            type="text"
+          <CommonInput
             v-model="searchName"
             placeholder="직원명 검색..."
-            @keyup.enter="$emit('search', searchName)"
-            class="search-input"
+            input-class="search-input"
+            @enter="$emit('search', searchName)"
           />
-          <button class="btn btn-primary" @click="$emit('search', searchName)">
+          <Button btn-class="btn-primary" @click="$emit('search', searchName)">
             <i class="fas fa-search"></i> 검색
-          </button>
+          </Button>
         </div>
         <div class="employee-btn-group">
-          <button v-if="!editMode" class="btn btn-primary" @click="$emit('toggle-edit')">
+          <Button v-if="!editMode" btn-class="btn-primary" @click="$emit('toggle-edit')">
             <i class="fas fa-edit"></i> {{ isAddMode ? '작성' : '수정' }}
-          </button>
-          <button v-if="editMode" class="btn btn-primary" @click="$emit('save')">
+          </Button>
+          <Button v-if="editMode" btn-class="btn-primary" @click="$emit('save')">
             <i class="fas fa-save"></i> 저장
-          </button>
-          <button v-if="editMode" class="btn btn-secondary" @click="$emit('cancel-edit')">
+          </Button>
+          <Button v-if="editMode" btn-class="btn-secondary" @click="$emit('cancel-edit')">
             <i class="fas fa-times"></i> 취소
-          </button>
+          </Button>
         </div>
       </div>
       
@@ -35,17 +34,20 @@
       <div class="header-actions">
         <div class="user-info">
           <span class="user-name">{{ currentUser?.username }}님</span>
-          <button @click="logout" class="btn btn-secondary">로그아웃</button>
+          <Button @click="logout" btn-class="btn-secondary">로그아웃</Button>
         </div>
-        <button v-if="!isAddMode" class="btn btn-danger delete-detail-btn" @click="$emit('delete')">
-        <i class="fas fa-trash"></i> 삭제
-      </button>
+        <Button v-if="!isAddMode" btn-class="btn-danger delete-detail-btn" @click="$emit('delete')">
+          <i class="fas fa-trash"></i> 삭제
+        </Button>
       </div>
     </div>
 </template>
 
 <script>
+import Button from '../common/Button.vue';
+import CommonInput from '../common/CommonInput.vue';
 export default {
+  components: { Button, CommonInput },
   name: 'EmployeeDetailHeader',
   props: {
     editMode: {

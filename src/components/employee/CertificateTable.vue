@@ -23,13 +23,13 @@
               >
                 {{ certificate.issueDate ? formatIssueDate(certificate.issueDate) : '클릭하여 발급일 선택' }}
               </span>
-              <input
+              <DateInput
                 v-else
                 ref="monthInputs"
                 type="month"
-                class="info-input plain-input real-month-input"
-                :value="certificate.issueDate"
-                @input="e => updateIssueDate(index, e.target.value)"
+                input-class="info-input plain-input real-month-input"
+                :model-value="certificate.issueDate"
+                @update:modelValue="value => updateIssueDate(index, value)"
                 @blur="hideMonthInput"
                 style="min-width:110px;"
               />
@@ -44,68 +44,47 @@
             </template>
           </td>
           <td>
-            <input type="text" class="info-input plain-input" :disabled="!editMode" v-model="certificate.name" />
+            <CommonInput v-model="certificate.name" input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td>
-            <input
-              type="text"
-              class="info-input plain-input"
-              :disabled="!editMode"
-              v-model="certificate.issuer"
-            />
+            <CommonInput v-model="certificate.issuer" input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td v-if="editMode" class="manage-td move-btns-cell">
             <div class="manage-btns">
-              <button
-                type="button"
-                class="move-up-btn"
-                :disabled="index === 0"
-                @click="moveUp(index)"
-              >
-                ▲
-              </button>
-              <button
-                type="button"
-                class="move-down-btn"
-                :disabled="index === certificates.length - 1"
-                @click="moveDown(index)"
-              >
-                ▼
-              </button>
-              <button type="button" class="delete-btn" @click="deleteCertificate(index)">
-                삭제
-              </button>
+              <Button type="button" btn-class="move-up-btn" :disabled="index === 0" @click="moveUp(index)">▲</Button>
+              <Button type="button" btn-class="move-down-btn" :disabled="index === certificates.length - 1" @click="moveDown(index)">▼</Button>
+              <Button type="button" btn-class="delete-btn" @click="deleteCertificate(index)">삭제</Button>
             </div>
           </td>
         </tr>
         <tr v-if="certificates.length === 0">
           <td>
-            <input type="month" class="info-input plain-input" :disabled="!editMode" />
+            <DateInput type="month" input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td>
-            <input type="text" class="info-input plain-input" :disabled="!editMode" />
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td>
-            <input type="text" class="info-input plain-input" :disabled="!editMode" />
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td v-if="editMode" class="manage-td move-btns-cell">
             <div class="manage-btns">
-              <button type="button" class="move-up-btn" disabled>▲</button>
-              <button type="button" class="move-down-btn" disabled>▼</button>
-              <button type="button" class="delete-btn" disabled>삭제</button>
+              <Button type="button" btn-class="move-up-btn" disabled>▲</Button>
+              <Button type="button" btn-class="move-down-btn" disabled>▼</Button>
+              <Button type="button" btn-class="delete-btn" disabled>삭제</Button>
             </div>
           </td>
         </tr>
       </tbody>
     </table>
     <div v-if="editMode" class="button-container-right">
-      <button
+      <Button
         type="button"
-        class="btn btn-secondary add-cert-row right-btn add-row-btn"
+        btn-class="btn btn-secondary add-cert-row right-btn add-row-btn"
         @click="addCertificate"
       >
         + 행 추가
-      </button>
+      </Button>
     </div>
   </div>
 </template>
@@ -113,10 +92,13 @@
 <script>
 import { computed, ref, nextTick } from 'vue';
 import DateRangePicker from '../common/DateRangePicker.vue';
+import Button from '../common/Button.vue';
+import CommonInput from '../common/CommonInput.vue';
+import DateInput from '../common/DateInput.vue';
 
 export default {
   name: 'CertificateTable',
-  components: { DateRangePicker },
+  components: { DateRangePicker, Button, CommonInput, DateInput },
   props: {
     employee: {
       type: Object,
