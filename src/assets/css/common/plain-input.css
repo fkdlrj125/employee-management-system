@@ -1,0 +1,35 @@
+/* input placeholder 색상을 span.placeholder와 완전히 일치시킴 */
+.plain-input::placeholder {
+  color: #adb5bd !important;
+  opacity: 1;
+}
+/* 비활성화 select에서 드롭다운 화살표 숨기기 */
+select:disabled {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none !important;
+  background-color: transparent !important;
+}
+/* 공통 input 스타일: 테두리 없이 텍스트처럼 보이게 */
+.plain-input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  font-size: 15px;
+  color: #212529;
+}
+.plain-input:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* 비활성화 입력란 커서 기본화 */
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: default !important;
+}

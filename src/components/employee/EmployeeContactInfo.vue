@@ -1,78 +1,77 @@
 <template>
   <div class="contact-info-section">
-    <div class="contact-layout">
-      <div class="contact-row">
-        <label for="email" class="contact-label">이메일</label>
-        <input
-          id="email"
-          type="email"
-          v-model="localEmployee.email"
-          :disabled="!editMode"
-          :class="{ error: errors.email }"
-          @blur="validateField('email')"
-          @input="updateEmployee"
-          class="contact-input"
-        />
-        <div v-if="errors.email" class="error-message">{{ errors.email }}</div>
-      </div>
-
-      <div class="contact-row">
-        <label for="phone" class="contact-label">전화번호</label>
-        <input
-          id="phone"
-          type="tel"
-          v-model="localEmployee.phone"
-          placeholder="하이픈 없이 숫자만 입력 (예: 01012345678)"
-          :disabled="!editMode"
-          :class="{ error: errors.phone }"
-          @input="handlePhoneInput"
-          @blur="validateField('phone')"
-          class="contact-input"
-        />
-        <div v-if="errors.phone" class="error-message">{{ errors.phone }}</div>
-      </div>
-    </div>
-
-    <div class="contact-layout">
-      <div class="contact-row address-row">
-        <label for="address" class="contact-label">주소</label>
-        <input
-          id="address"
-          type="text"
-          v-model="localEmployee.address"
-          :disabled="!editMode"
-          :class="{ error: errors.address }"
-          @blur="validateField('address')"
-          @input="updateEmployee"
-          class="contact-input address-input"
-        />
-        <div v-if="errors.address" class="error-message">{{ errors.address }}</div>
-      </div>
-
-      <div class="contact-row address-row">
-        <label for="workplace" class="contact-label">근무지</label>
-        <input
-          id="workplace"
-          type="text"
-          v-model="localEmployee.workplace"
-          :disabled="!editMode"
-          @input="updateEmployee"
-          class="contact-input address-input"
-        />
-      </div>
-    </div>
-
-    <div class="contact-row skills-row">
-      <label for="skills" class="contact-label">보유 기술</label>
-      <textarea
-        id="skills"
-        v-model="localEmployee.skills"
-        :disabled="!editMode"
-        rows="3"
-        @input="updateEmployee"
-        class="skills-textarea"
-      ></textarea>
-    </div>
+    <table class="info-table">
+      <tbody>
+        <tr>
+          <th class="info-label">이메일</th>
+          <td>
+            <input
+              id="email"
+              type="email"
+              v-model="localEmployee.email"
+              :disabled="!editMode"
+              :class="['info-input', 'plain-input', { error: errors.email } ]"
+              @blur="validateField('email')"
+              @input="updateEmployee"
+            />
+            <div v-if="errors.email" class="error-message">{{ errors.email }}</div>
+          </td>
+          <th class="info-label">전화번호</th>
+          <td>
+            <input
+              id="phone"
+              type="tel"
+              v-model="localEmployee.phone"
+              placeholder="하이픈 없이 숫자만 입력 (예: 01012345678)"
+              :disabled="!editMode"
+              :class="['info-input', 'plain-input', { error: errors.phone } ]"
+              @input="handlePhoneInput"
+              @blur="validateField('phone')"
+            />
+            <div v-if="errors.phone" class="error-message">{{ errors.phone }}</div>
+          </td>
+        </tr>
+        <tr>
+          <th class="info-label">주소</th>
+          <td>
+            <input
+              id="address"
+              type="text"
+              v-model="localEmployee.address"
+              :disabled="!editMode"
+              :class="['info-input', 'plain-input', { error: errors.address } ]"
+              @blur="validateField('address')"
+              @input="updateEmployee"
+            />
+            <div v-if="errors.address" class="error-message">{{ errors.address }}</div>
+          </td>
+          <th class="info-label">근무지</th>
+          <td>
+            <input
+              id="workplace"
+              type="text"
+              v-model="localEmployee.workplace"
+              :disabled="!editMode"
+              @input="updateEmployee"
+              class="info-input plain-input"
+            />
+          </td>
+        </tr>
+        <tr>
+          <th class="info-label">보유 기술</th>
+          <td colspan="3" class="td-narrow">
+            <textarea
+              id="skills"
+              v-model="localEmployee.skills"
+              :disabled="!editMode"
+              rows="3"
+              @input="updateEmployee"
+              class="info-textarea plain-input skills-textarea"
+            ></textarea>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
@@ -153,88 +152,8 @@ export default {
 </script>
 
 <style scoped>
-.contact-info-section {
-  margin-top: 20px;
-}
 
-.contact-layout {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-}
 
-.contact-row {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.address-row {
-  flex: 1;
-}
-
-.skills-row {
-  margin-top: 10px;
-}
-
-.contact-label {
-  font-weight: 500;
-  margin-bottom: 5px;
-  color: #495057;
-}
-
-.contact-input {
-  padding: 8px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.contact-input:disabled {
-  background-color: transparent;
-  border: none;
-  padding: 0;
-}
-
-.contact-input.error {
-  border-color: #dc3545;
-}
-
-.address-input {
-  min-width: 200px;
-}
-
-.skills-textarea {
-  padding: 8px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 14px;
-  resize: vertical;
-  min-height: 80px;
-  font-family: inherit;
-}
-
-.skills-textarea:disabled {
-  background-color: transparent;
-  border: none;
-  padding: 0;
-  resize: none;
-}
-
-.error-message {
-  color: #dc3545;
-  font-size: 12px;
-  margin-top: 4px;
-}
-
-@media (max-width: 768px) {
-  .contact-layout {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .address-input {
-    min-width: auto;
-  }
-}
+@import '../../assets/css/common/plain-input.css';
+@import '../../assets/css/common/tables.css';
 </style>

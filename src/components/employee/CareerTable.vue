@@ -4,38 +4,40 @@
     <table class="info-table" id="careerTable">
       <thead>
         <tr>
-          <th class="career-period-th">근무기간</th>
-          <th class="career-company-th">회사명</th>
-          <th class="career-position-th">직위</th>
-          <th class="career-duties-th">담당업무</th>
+          <th class="info-label">근무기간</th>
+          <th class="info-label">회사명</th>
+          <th class="info-label">직위</th>
+          <th class="info-label">담당업무</th>
           <th v-if="editMode" class="manage-th" style="width: 70px; min-width: 60px">관리</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(career, index) in careers" :key="index">
           <td>
-            <div class="period-inputs">
-              <input
-                type="month"
-                class="career-start-date"
-                :disabled="!editMode"
-                v-model="career.startDate"
-                placeholder="시작일"
-              />
-              <span>~</span>
-              <input
-                type="month"
-                class="career-end-date"
-                :disabled="!editMode"
-                v-model="career.endDate"
-                placeholder="종료일"
-              />
-            </div>
+            <input
+              type="text"
+              class="info-input plain-input"
+              placeholder="클릭하여 기간 선택"
+              readonly
+              :disabled="!editMode"
+              :value="formatPeriod(career.startDate, career.endDate)"
+              @click="editMode ? openPeriodPicker(index) : null"
+              style="cursor: pointer;"
+            />
+            <DateRangePicker
+              v-if="periodModalVisible && selectedPeriodIndex === index"
+              :visible="periodModalVisible"
+              :start="periodTemp.start"
+              :end="periodTemp.end"
+              type="month"
+              @select="onPeriodSelect"
+              @close="periodModalVisible = false"
+            />
           </td>
           <td>
             <input
               type="text"
-              class="career-company"
+              class="info-input plain-input"
               :disabled="!editMode"
               v-model="career.company"
             />
@@ -43,14 +45,14 @@
           <td>
             <input
               type="text"
-              class="career-position"
+              class="info-input plain-input"
               :disabled="!editMode"
               v-model="career.position"
             />
           </td>
-          <td>
+          <td class="td-narrow">
             <textarea
-              class="career-duties"
+              class="info-textarea plain-input"
               :disabled="!editMode"
               v-model="career.duties"
               rows="2"
@@ -93,10 +95,12 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import DateRangePicker from '../common/DateRangePicker.vue';
 
 export default {
   name: 'CareerTable',
+  components: { DateRangePicker },
   props: {
     employee: {
       type: Object,
@@ -120,6 +124,34 @@ export default {
         });
       },
     });
+
+    // 기간 선택 모달 상태
+    const periodModalVisible = ref(false);
+    const periodTemp = ref({ start: '', end: '' });
+    const selectedPeriodIndex = ref(-1);
+
+    const openPeriodPicker = (index) => {
+      if (!props.editMode) return;
+      selectedPeriodIndex.value = index;
+      const career = careers.value[index];
+      periodTemp.value = {
+        start: career.startDate || '',
+        end: career.endDate || '',
+      };
+      periodModalVisible.value = true;
+    };
+
+    const onPeriodSelect = ({ start, end }) => {
+      if (selectedPeriodIndex.value < 0) return;
+      const newList = [...careers.value];
+      newList[selectedPeriodIndex.value] = {
+        ...newList[selectedPeriodIndex.value],
+        startDate: start,
+        endDate: end,
+      };
+      careers.value = newList;
+      periodModalVisible.value = false;
+    };
 
     const addCareer = () => {
       const newCareer = {
@@ -158,31 +190,37 @@ export default {
       }
     };
 
+    const formatPeriod = (startDate, endDate) => {
+      if (!startDate || !endDate) return '';
+      const start = new Date(startDate).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+      });
+      const end = new Date(endDate).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+      });
+      return `${start} ~ ${end}`;
+    };
+
     return {
       careers,
       addCareer,
       moveUp,
       moveDown,
       deleteCareer,
+      openPeriodPicker,
+      periodModalVisible,
+      periodTemp,
+      selectedPeriodIndex,
+      onPeriodSelect,
+      formatPeriod,
     };
   },
 };
 </script>
 
 <style scoped>
-/* 기존 HTML 구조에 맞는 스타일은 main.css에서 관리 */
-.period-inputs {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.period-inputs input {
-  flex: 1;
-  min-width: 100px;
-}
-
-.period-inputs span {
-  margin: 0 5px;
-}
+@import '../../assets/css/common/plain-input.css';
+@import '../../assets/css/common/tables.css';
 </style>

@@ -4,9 +4,9 @@
     <table class="info-table" id="projectTable">
       <thead>
         <tr>
-          <th class="project-period-th">참여기간</th>
-          <th class="project-name-th">경력명</th>
-          <th class="project-desc-th">경력 내용</th>
+          <th class="info-label">참여기간</th>
+          <th class="info-label">경력명</th>
+          <th class="info-label">경력 내용</th>
           <th v-if="editMode" class="manage-th" style="width: 70px; min-width: 60px">관리</th>
         </tr>
       </thead>
@@ -15,18 +15,30 @@
           <td>
             <input
               type="text"
-              class="project-period"
+              class="info-input plain-input"
+              placeholder="클릭하여 기간 선택"
+              readonly
               :disabled="!editMode"
-              v-model="project.period"
-              placeholder="예: 2025.06"
+              :value="formatPeriod(project.startDate, project.endDate)"
+              @click="editMode ? openPeriodPicker(index) : null"
+              style="cursor: pointer;"
+            />
+            <DateRangePicker
+              v-if="periodModalVisible && selectedPeriodIndex === index"
+              :visible="periodModalVisible"
+              :start="periodTemp.start"
+              :end="periodTemp.end"
+              type="month"
+              @select="onPeriodSelect"
+              @close="periodModalVisible = false"
             />
           </td>
           <td>
-            <input type="text" class="project-name" :disabled="!editMode" v-model="project.name" />
+            <input type="text" class="info-input plain-input" :disabled="!editMode" v-model="project.name" />
           </td>
-          <td>
+          <td class="td-narrow">
             <textarea
-              class="project-desc"
+              class="info-textarea plain-input"
               :disabled="!editMode"
               v-model="project.description"
               rows="2"
@@ -69,10 +81,12 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import DateRangePicker from '../common/DateRangePicker.vue';
 
 export default {
   name: 'ProjectTable',
+  components: { DateRangePicker },
   props: {
     employee: {
       type: Object,
@@ -97,9 +111,38 @@ export default {
       },
     });
 
+    // 기간 선택 모달 상태
+    const periodModalVisible = ref(false);
+    const periodTemp = ref({ start: '', end: '' });
+    const selectedPeriodIndex = ref(-1);
+
+    const openPeriodPicker = (index) => {
+      if (!props.editMode) return;
+      selectedPeriodIndex.value = index;
+      const project = projects.value[index];
+      periodTemp.value = {
+        start: project.startDate || '',
+        end: project.endDate || '',
+      };
+      periodModalVisible.value = true;
+    };
+
+    const onPeriodSelect = ({ start, end }) => {
+      if (selectedPeriodIndex.value < 0) return;
+      const newList = [...projects.value];
+      newList[selectedPeriodIndex.value] = {
+        ...newList[selectedPeriodIndex.value],
+        startDate: start,
+        endDate: end,
+      };
+      projects.value = newList;
+      periodModalVisible.value = false;
+    };
+
     const addProject = () => {
       const newProject = {
-        period: '',
+        startDate: '',
+        endDate: '',
         name: '',
         description: '',
       };
@@ -132,31 +175,37 @@ export default {
       }
     };
 
+    const formatPeriod = (startDate, endDate) => {
+      if (!startDate || !endDate) return '';
+      const start = new Date(startDate).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+      });
+      const end = new Date(endDate).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+      });
+      return `${start} ~ ${end}`;
+    };
+
     return {
       projects,
       addProject,
       moveUp,
       moveDown,
       deleteProject,
+      openPeriodPicker,
+      periodModalVisible,
+      periodTemp,
+      selectedPeriodIndex,
+      onPeriodSelect,
+      formatPeriod,
     };
   },
 };
 </script>
 
 <style scoped>
-/* 기존 HTML 구조에 맞는 스타일은 main.css에서 관리 */
-.period-inputs {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.period-inputs input {
-  flex: 1;
-  min-width: 100px;
-}
-
-.period-inputs span {
-  margin: 0 5px;
-}
+@import '../../assets/css/common/plain-input.css';
+@import '../../assets/css/common/tables.css';
 </style>

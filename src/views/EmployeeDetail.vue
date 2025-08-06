@@ -24,7 +24,7 @@
 
     <!-- 직원 정보 표시 -->
     <div class="resume-container resume-container-relative" id="employeeDetailContainer" v-else>
-      <!-- 상단 바 -->
+      <!-- 상단 바: EmployeeDetailHeader 컴포넌트 복원 -->
       <EmployeeDetailHeader
         :edit-mode="editMode"
         :is-add-mode="isAddMode"
@@ -46,28 +46,29 @@
       <div class="resume-content">
         <!-- 좌측 영역 - 직원 정보 및 테이블들 -->
         <div class="resume-left">
-          <!-- 사진 및 기본 정보 -->
-          <EmployeeBasicInfo
-            :employee="employee"
-            :edit-mode="editMode"
-            :errors="errors"
-            @update:employee="updateEmployee"
-            @photo-change="onPhotoChange"
-            @validate-field="validateField"
-            @career-change="onCareerChange"
-          />
-
-          <!-- 연락처 정보 -->
-          <EmployeeContactInfo
-            :employee="employee"
-            :edit-mode="editMode"
-            :errors="errors"
-            @update:employee="updateEmployee"
-            @validate-field="validateField"
-          />
+          <!-- 프로필+기본정보+연락처를 하나의 카드로 묶음 -->
+          <div class="table-container">
+            <EmployeeBasicInfo
+              :employee="employee"
+              :edit-mode="editMode"
+              :errors="errors"
+              @update:employee="updateEmployee"
+              @photo-change="onPhotoChange"
+              @validate-field="validateField"
+              @career-change="onCareerChange"
+            />
+            <EmployeeContactInfo
+              :employee="employee"
+              :edit-mode="editMode"
+              :errors="errors"
+              @update:employee="updateEmployee"
+              @validate-field="validateField"
+            />
+          </div>
 
           <!-- 학력 테이블 -->
           <EducationTable
+            class="table-container"
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
@@ -75,6 +76,7 @@
 
           <!-- 자격증 테이블 -->
           <CertificateTable
+            class="table-container"
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
@@ -82,6 +84,7 @@
 
           <!-- 경력사항 테이블 -->
           <CareerTable
+            class="table-container"
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
@@ -89,6 +92,7 @@
 
           <!-- 프로젝트 테이블 -->
           <ProjectTable
+            class="table-container"
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
@@ -99,13 +103,18 @@
         <div class="resume-right">
           <!-- 기술 역량 차트 -->
           <EmployeeSkillChart
+            class="table-container"
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
           />
 
           <!-- 기간별 성과 분석 -->
-          <EmployeePeriodSelector :employee="employee" @generate-report="onGenerateReport" />
+          <EmployeePeriodSelector
+            class="table-container"
+            :employee="employee"
+            @generate-report="onGenerateReport"
+          />
         </div>
       </div>
     </div>
@@ -113,7 +122,6 @@
 </template>
 
 <script>
-import EmployeeDetailHeader from '@/components/employee/EmployeeDetailHeader.vue';
 import EmployeeBasicInfo from '@/components/employee/EmployeeBasicInfo.vue';
 import EmployeeContactInfo from '@/components/employee/EmployeeContactInfo.vue';
 import EmployeeSkillChart from '@/components/employee/EmployeeSkillChart.vue';
@@ -123,11 +131,11 @@ import CareerTable from '@/components/employee/CareerTable.vue';
 import CertificateTable from '@/components/employee/CertificateTable.vue';
 import ProjectTable from '@/components/employee/ProjectTable.vue';
 import EmployeeApiService from '@/services/EmployeeApiService';
+import EmployeeDetailHeader from '@/components/employee/EmployeeDetailHeader.vue';
 
 export default {
   name: 'EmployeeDetail',
   components: {
-    EmployeeDetailHeader,
     EmployeeBasicInfo,
     EmployeeContactInfo,
     EmployeeSkillChart,
@@ -136,9 +144,11 @@ export default {
     CareerTable,
     CertificateTable,
     ProjectTable,
+    EmployeeDetailHeader,
   },
   data() {
     return {
+      searchQuery: '',
       employee: {
         id: null,
         name: '',
@@ -257,6 +267,11 @@ export default {
       } catch (error) {
         this.searchError = '해당 사원번호의 직원을 찾을 수 없습니다.';
       }
+    },
+
+    // 상단바 검색
+    onSearch() {
+      this.$emit('search', this.searchQuery);
     },
 
     // 편집 모드 토글
@@ -521,18 +536,23 @@ export default {
 </script>
 
 <style scoped>
-/* ===== 기본 레이아웃 ===== */
+/* 공통 스타일은 아래 css 파일에서 import됨
+   - src/assets/css/buttons.css
+   - src/assets/css/employee-list/index.css
+   - src/assets/css/employee-list/colors.css
+   - src/assets/css/employee-list/responsive.css
+*/
+
+/* ===== 상세페이지 특화 레이아웃 ===== */
 .resume-bg {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   padding: 20px;
 }
 
 .resume-container {
-  max-width: 1400px;
+  max-width: 1800px;
   margin: 0 auto;
-  background: white;
-  border-radius: 16px;
+  background: #f8f9fa;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   position: relative;
@@ -545,10 +565,29 @@ export default {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #007bff, #6f42c1, #e83e8c);
 }
 
-/* ===== 로딩 및 에러 상태 ===== */
+.resume-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  padding: 30px;
+  min-height: 600px;
+}
+
+.resume-left {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.resume-right {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* ===== 로딩/에러/메시지 컨테이너 ===== */
 .loading-container,
 .error-container {
   display: flex;
@@ -571,12 +610,8 @@ export default {
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .error-container .error-message {
@@ -592,7 +627,6 @@ export default {
   margin-top: 0;
 }
 
-/* ===== 메시지 컨테이너 ===== */
 .message-container {
   padding: 0 20px 20px;
 }
@@ -617,283 +651,10 @@ export default {
   border: 1px solid #f5c6cb;
 }
 
-/* ===== 메인 콘텐츠 영역 ===== */
-.resume-content {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 30px;
-  padding: 30px;
-  min-height: 600px;
-}
-
-.resume-left {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-}
-
-.resume-right {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-}
-
-/* ===== 섹션 타이틀 ===== */
-.section-title {
-  color: #2c3e50;
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0 0 20px 0;
-  padding-bottom: 12px;
-  position: relative;
-}
-
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 60px;
-  height: 3px;
-  background: linear-gradient(90deg, #007bff, #6f42c1);
-  border-radius: 2px;
-}
-
-.modern-title {
-  font-size: 18px;
-  color: #495057;
-}
-
-/* ===== 테이블 스타일 ===== */
-.table-container {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e9ecef;
-  margin-bottom: 25px;
-}
-
-.employee-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.employee-table th {
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-  color: #495057;
-  font-weight: 600;
-  padding: 15px 12px;
-  text-align: left;
-  border-bottom: 2px solid #dee2e6;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.employee-table td {
-  padding: 12px;
-  border-bottom: 1px solid #f1f3f4;
-  vertical-align: top;
-}
-
-.employee-table tr:hover {
-  background-color: #f8f9fa;
-}
-
-.employee-table tr:last-child td {
-  border-bottom: none;
-}
-
-.employee-table input,
-.employee-table select {
-  width: 100%;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  background: white;
-}
-
-.employee-table input:disabled,
-.employee-table select:disabled {
-  background: transparent;
-  border: 1px solid transparent;
-  color: #495057;
-}
-
-.employee-table input:focus,
-.employee-table select:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-  background: white;
-}
-
-/* ===== 버튼 스타일 ===== */
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.btn:hover::before {
-  left: 100%;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #007bff, #0056b3);
-  color: white;
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
-}
-
-.btn-secondary {
-  background: linear-gradient(135deg, #6c757d, #545b62);
-  color: white;
-  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
-}
-
-.btn-secondary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-}
-
-.btn-remove {
-  background: linear-gradient(135deg, #dc3545, #c82333);
-  color: white;
-  padding: 6px 12px;
-  font-size: 12px;
-  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
-}
-
-.btn-remove:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-}
-
-/* ===== 행 추가 컨테이너 ===== */
-.add-row-container {
-  padding: 15px;
-  text-align: center;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
-}
-
-/* ===== 에러 메시지 ===== */
-.error-message {
-  color: #dc3545;
-  font-size: 12px;
-  margin-top: 5px;
-  font-weight: 500;
-}
-
-/* ===== 반응형 디자인 ===== */
-@media (max-width: 1200px) {
-  .resume-content {
-    grid-template-columns: 1fr;
-    gap: 25px;
-  }
-
-  .resume-left {
-    order: 1;
-  }
-
-  .resume-right {
-    order: 2;
-  }
-}
-
-@media (max-width: 768px) {
-  .resume-bg {
-    padding: 10px;
-  }
-
-  .resume-container {
-    border-radius: 12px;
-  }
-
-  .resume-content {
-    padding: 20px;
-    gap: 20px;
-  }
-
-  .section-title {
-    font-size: 18px;
-  }
-
-  .employee-table {
-    font-size: 13px;
-  }
-
-  .employee-table th,
-  .employee-table td {
-    padding: 10px 8px;
-  }
-
-  .btn {
-    padding: 8px 16px;
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 576px) {
-  .resume-content {
-    padding: 15px;
-  }
-
-  .employee-table th,
-  .employee-table td {
-    padding: 8px 6px;
-  }
-
-  .section-title {
-    font-size: 16px;
-  }
-
-  .btn {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-}
-
 /* ===== 애니메이션 ===== */
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .table-container {
@@ -905,67 +666,22 @@ export default {
   animation: fadeInUp 0.6s ease-out;
 }
 
-.resume-left > *:nth-child(1) {
-  animation-delay: 0.1s;
-}
-.resume-left > *:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.resume-right > *:nth-child(1) {
-  animation-delay: 0.3s;
-}
-.resume-right > *:nth-child(2) {
-  animation-delay: 0.4s;
-}
-.resume-right > *:nth-child(3) {
-  animation-delay: 0.5s;
-}
+.resume-left > *:nth-child(1) { animation-delay: 0.1s; }
+.resume-left > *:nth-child(2) { animation-delay: 0.2s; }
+.resume-right > *:nth-child(1) { animation-delay: 0.3s; }
+.resume-right > *:nth-child(2) { animation-delay: 0.4s; }
+.resume-right > *:nth-child(3) { animation-delay: 0.5s; }
 
-/* ===== 스크롤바 스타일링 ===== */
-::-webkit-scrollbar {
-  width: 8px;
-}
+/* ===== 스크롤바/인쇄 등 기타 ===== */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #007bff, #6f42c1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(135deg, #0056b3, #5a2d91); }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #007bff, #6f42c1);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #0056b3, #5a2d91);
-}
-
-/* ===== 포커스 개선 ===== */
-.btn:focus,
-input:focus,
-select:focus {
-  outline: 2px solid #007bff;
-  outline-offset: 2px;
-}
-
-/* ===== 인쇄 스타일 ===== */
 @media print {
-  .resume-bg {
-    background: white !important;
-    padding: 0;
-  }
-
-  .resume-container {
-    box-shadow: none;
-    border-radius: 0;
-  }
-
-  .btn {
-    display: none;
-  }
-
-  .add-row-container {
-    display: none;
-  }
+  .resume-bg { background: white !important; padding: 0; }
+  .resume-container { box-shadow: none; border-radius: 0; }
+  .btn { display: none; }
+  .add-row-container { display: none; }
 }
 </style>

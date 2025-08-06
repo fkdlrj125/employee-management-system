@@ -2,138 +2,137 @@
   <div class="photo-info-layout">
     <!-- 사진 영역 -->
     <div class="resume-photo">
-      <label class="detail-photo-container" :class="{ disabled: !editMode }">
-        <img
-          v-if="employee.photoUrl"
-          :src="employee.photoUrl"
-          alt="직원 사진"
-          class="detail-photo"
-        />
-        <div v-else class="photo-icon">
-          <i class="fas fa-user"></i>
-        </div>
-        <input
-          type="file"
-          accept="image/*"
-          class="detail-photo-input"
-          :disabled="!editMode"
-          @change="onPhotoChange"
-          style="display: none"
-        />
-      </label>
+      <div class="frame-photo-container">
+        <label class="detail-photo-container" :class="{ disabled: !editMode }">
+          <img
+            v-if="employee.photoUrl"
+            :src="employee.photoUrl"
+            alt="직원 사진"
+            class="detail-photo"
+          />
+          <div v-else class="photo-icon">
+            <i class="fas fa-user"></i>
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            class="detail-photo-input"
+            :disabled="!editMode"
+            @change="onPhotoChange"
+            style="display: none"
+          />
+        </label>
+      </div>
     </div>
 
     <!-- 기본 정보 테이블 -->
     <div class="info-table-container">
       <table class="info-table">
-        <tr>
-          <th class="required-field">성명</th>
-          <td>
-            <input
-              type="text"
-              v-model="localEmployee.name"
-              :disabled="!editMode"
-              :class="{ error: errors.name }"
-              @blur="validateField('name')"
-              @input="updateEmployee"
-            />
-            <div v-if="errors.name" class="error-message">{{ errors.name }}</div>
-          </td>
-          <th class="required-field">생년월일</th>
-          <td>
-            <input
-              type="date"
-              v-model="localEmployee.birth_date"
-              :disabled="!editMode"
-              :class="{ error: errors.birth_date }"
-              @change="validateField('birth_date')"
-              @input="updateEmployee"
-            />
-            <div v-if="errors.birth_date" class="error-message">{{ errors.birth_date }}</div>
-          </td>
-        </tr>
-        <tr>
-          <th class="required-field">부서</th>
-          <td>
-            <select
-              v-model="localEmployee.department"
-              :disabled="!editMode"
-              :class="{ error: errors.department }"
-              @change="
-                validateField('department');
-                updateEmployee();
-              "
-            >
-              <option value="">부서 선택</option>
-              <option value="DSS1">DSS1</option>
-              <option value="DSS2">DSS2</option>
-              <option value="CSC">CSC</option>
-              <option value="HR">HR</option>
-            </select>
-            <div v-if="errors.department" class="error-message">{{ errors.department }}</div>
-          </td>
-          <th class="required-field">직급</th>
-          <td>
-            <select
-              v-model="localEmployee.position"
-              :disabled="!editMode"
-              :class="{ error: errors.position }"
-              @change="
-                validateField('position');
-                updateEmployee();
-              "
-            >
-              <option value="">직급 선택</option>
-              <option value="사원">사원</option>
-              <option value="대리">대리</option>
-              <option value="과장">과장</option>
-              <option value="차장">차장</option>
-              <option value="부장">부장</option>
-              <option value="실장">실장</option>
-              <option value="본부장">본부장</option>
-              <option value="이사">이사</option>
-              <option value="부사장">부사장</option>
-              <option value="사장">사장</option>
-            </select>
-            <div v-if="errors.position" class="error-message">{{ errors.position }}</div>
-          </td>
-        </tr>
-        <tr>
-          <th class="required-field">입사일</th>
-          <td>
-            <input
-              type="date"
-              v-model="localEmployee.hire_date"
-              :disabled="!editMode"
-              :class="{ error: errors.hire_date }"
-              @change="handleHireDateChange"
-            />
-            <div v-if="errors.hire_date" class="error-message">{{ errors.hire_date }}</div>
-          </td>
-          <th class="mitmas-career-header">
-            <div>MITMAS</div>
-            <div>총 경력</div>
-          </th>
-          <td>
-            <span class="career-box">{{ formatCareer(mitmasCareer) }}</span>
-          </td>
-        </tr>
-        <tr>
-          <th>EUS 경력(수기 작성)</th>
-          <td>
-            <input
-              type="text"
-              v-model="localEmployee.eus_career"
-              :disabled="!editMode"
-              placeholder="년 + 개월로 입력하세요"
-              @input="handleEusCareerChange"
-            />
-          </td>
-          <th>총 경력</th>
-          <td>
-            <input type="text" :value="totalCareer" disabled placeholder="자동 계산됨" readonly />
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <th class="info-label required-field">성명</th>
+            <td>
+              <input
+                type="text"
+                v-model="localEmployee.name"
+                :disabled="!editMode"
+                :class="['info-input', 'plain-input', { error: errors.name } ]"
+                @blur="validateField('name')"
+                @input="updateEmployee"
+              />
+              <div v-if="errors.name" class="error-message">{{ errors.name }}</div>
+            </td>
+            <th class="info-label required-field">생년월일</th>
+            <td>
+              <input
+                type="date"
+                v-model="localEmployee.birth_date"
+                :disabled="!editMode"
+                :class="['info-input', 'plain-input', { error: errors.birth_date } ]"
+                @change="validateField('birth_date')"
+                @input="updateEmployee"
+              />
+              <div v-if="errors.birth_date" class="error-message">{{ errors.birth_date }}</div>
+            </td>
+          </tr>
+          <tr>
+            <th class="info-label required-field">부서</th>
+            <td>
+              <select
+                v-model="localEmployee.department"
+                :disabled="!editMode"
+                :class="['info-input', 'plain-input', { error: errors.department } ]"
+                @change="validateField('department'); updateEmployee();"
+              >
+                <option value="">부서 선택</option>
+                <option value="DSS1">DSS1</option>
+                <option value="DSS2">DSS2</option>
+                <option value="CSC">CSC</option>
+                <option value="HR">HR</option>
+              </select>
+              <div v-if="errors.department" class="error-message">{{ errors.department }}</div>
+            </td>
+            <th class="info-label required-field">직급</th>
+            <td>
+              <select
+                v-model="localEmployee.position"
+                :disabled="!editMode"
+                :class="['info-input', 'plain-input', { error: errors.position } ]"
+                @change="validateField('position'); updateEmployee();"
+              >
+                <option value="">직급 선택</option>
+                <option value="사원">사원</option>
+                <option value="대리">대리</option>
+                <option value="과장">과장</option>
+                <option value="차장">차장</option>
+                <option value="부장">부장</option>
+                <option value="실장">실장</option>
+                <option value="본부장">본부장</option>
+                <option value="이사">이사</option>
+                <option value="부사장">부사장</option>
+                <option value="사장">사장</option>
+              </select>
+              <div v-if="errors.position" class="error-message">{{ errors.position }}</div>
+            </td>
+          </tr>
+          <tr>
+            <th class="info-label required-field">입사일</th>
+            <td>
+              <input
+                type="month"
+                v-model="localEmployee.hire_date"
+                :disabled="!editMode"
+                :class="['info-input', 'plain-input', { error: errors.hire_date } ]"
+                @change="handleHireDateChange"
+              />
+              <div v-if="errors.hire_date" class="error-message">{{ errors.hire_date }}</div>
+            </td>
+            <th class="info-label mitmas-career-header">
+              <div><b>MITMAS</b></div>
+              <div><b>총 경력</b></div>
+            </th>
+            <td>
+              <span class="career-box">{{ formatCareer(mitmasCareer) }}</span>
+            </td>
+          </tr>
+          <tr>
+            <th class="info-label">EUS 경력(수기 작성)</th>
+            <td>
+              <input
+                type="text"
+                v-model="localEmployee.eus_career"
+                :disabled="!editMode"
+                placeholder="년 + 개월로 입력하세요"
+                @input="handleEusCareerChange"
+                class="info-input plain-input"
+              />
+            </td>
+            <th class="info-label">총 경력</th>
+            <td>
+              <input type="text" :value="totalCareer" disabled placeholder="자동 계산됨" readonly class="info-input plain-input" style="cursor: default;" />
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
   </div>
@@ -274,40 +273,56 @@ export default {
 </script>
 
 <style scoped>
+
+@import '../../assets/css/common/plain-input.css';
+@import '../../assets/css/common/tables.css';
+
+/* 사진 관련 스타일만 남김 */
 .photo-info-layout {
   display: flex;
-  gap: 30px;
-  align-items: flex-start;
+  gap: 36px;
+  align-items: center;
   margin-bottom: 20px;
 }
-
 .resume-photo {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
 }
-
+.frame-photo-container {
+  padding: 10px;
+  border: 2.5px solid #adb5bd;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+}
 .detail-photo-container {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
+  width: 120px;
+  height: 160px;
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #ddd;
-  background-color: #f8f9fa;
+  background-color: #fff;
   cursor: pointer;
+  transition: box-shadow 0.2s;
+  border: none;
+  box-shadow: none;
 }
-
 .detail-photo-container.disabled {
   cursor: default;
 }
-
 .detail-photo {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 12px;
 }
-
 .photo-icon {
   width: 100%;
   height: 100%;
@@ -316,74 +331,7 @@ export default {
   justify-content: center;
   background-color: #e9ecef;
   color: #6c757d;
-  font-size: 48px;
-}
-
-.info-table-container {
-  flex: 1;
-}
-
-.info-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.info-table th,
-.info-table td {
-  padding: 12px;
-  border: 1px solid #ddd;
-  text-align: left;
-}
-
-.info-table th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-  width: 120px;
-}
-
-.info-table input,
-.info-table select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.info-table input:disabled,
-.info-table select:disabled {
-  background-color: transparent;
-  border: none;
-  padding: 0;
-}
-
-.info-table input.error,
-.info-table select.error {
-  border-color: #dc3545;
-}
-
-.required-field::after {
-  content: ' *';
-  color: #dc3545;
-}
-
-.mitmas-career-header {
-  text-align: center;
-}
-
-.career-box {
-  display: inline-block;
-  background-color: #f8f9fa;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-weight: 500;
-  color: #495057;
-}
-
-.error-message {
-  color: #dc3545;
-  font-size: 12px;
-  margin-top: 4px;
-  display: block;
+  font-size: 56px;
+  border-radius: 12px;
 }
 </style>

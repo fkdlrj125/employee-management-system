@@ -4,29 +4,52 @@
     <table class="info-table" id="certTable">
       <thead>
         <tr>
-          <th class="cert-date-th">발급일</th>
-          <th class="cert-name-th">자격증명</th>
-          <th class="cert-issuer-th">발급처</th>
+          <th class="info-label">발급일</th>
+          <th class="info-label">자격증명</th>
+          <th class="info-label">발급처</th>
           <th v-if="editMode" class="manage-th" style="width: 70px; min-width: 60px">관리</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(certificate, index) in certificates" :key="index">
-          <td>
-            <input
-              type="month"
-              class="cert-date"
-              :disabled="!editMode"
-              v-model="certificate.issueDate"
-            />
+          <td class="td-narrow">
+            <template v-if="editMode">
+              <span
+                v-if="activeMonthInput !== index"
+                class="info-input plain-input"
+                :class="{ placeholder: !certificate.issueDate }"
+                @click="showMonthInput(index)"
+                style="display:inline-block; min-width:110px; cursor:pointer;"
+              >
+                {{ certificate.issueDate ? formatIssueDate(certificate.issueDate) : '클릭하여 발급일 선택' }}
+              </span>
+              <input
+                v-else
+                ref="monthInputs"
+                type="month"
+                class="info-input plain-input real-month-input"
+                :value="certificate.issueDate"
+                @input="e => updateIssueDate(index, e.target.value)"
+                @blur="hideMonthInput"
+                style="min-width:110px;"
+              />
+            </template>
+            <template v-else>
+              <span
+                class="info-input plain-input"
+                :class="{ placeholder: !certificate.issueDate }"
+              >
+                {{ certificate.issueDate ? formatIssueDate(certificate.issueDate) : '클릭하여 발급일 선택' }}
+              </span>
+            </template>
           </td>
           <td>
-            <input type="text" class="cert-name" :disabled="!editMode" v-model="certificate.name" />
+            <input type="text" class="info-input plain-input" :disabled="!editMode" v-model="certificate.name" />
           </td>
           <td>
             <input
               type="text"
-              class="cert-issuer"
+              class="info-input plain-input"
               :disabled="!editMode"
               v-model="certificate.issuer"
             />
@@ -57,13 +80,13 @@
         </tr>
         <tr v-if="certificates.length === 0">
           <td>
-            <input type="month" class="cert-date" :disabled="!editMode" />
+            <input type="month" class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td>
-            <input type="text" class="cert-name" :disabled="!editMode" />
+            <input type="text" class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td>
-            <input type="text" class="cert-issuer" :disabled="!editMode" />
+            <input type="text" class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td v-if="editMode" class="manage-td move-btns-cell">
             <div class="manage-btns">
@@ -88,10 +111,12 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, ref, nextTick } from 'vue';
+import DateRangePicker from '../common/DateRangePicker.vue';
 
 export default {
   name: 'CertificateTable',
+  components: { DateRangePicker },
   props: {
     employee: {
       type: Object,
@@ -115,6 +140,30 @@ export default {
         });
       },
     });
+
+    // 발급일 선택 모달 상태
+    const issueDateModalVisible = ref(false);
+    const issueDateTemp = ref('');
+    const selectedIssueIndex = ref(-1);
+
+    const openIssueDatePicker = (index) => {
+      if (!props.editMode) return;
+      selectedIssueIndex.value = index;
+      const cert = certificates.value[index];
+      issueDateTemp.value = cert.issueDate || '';
+      issueDateModalVisible.value = true;
+    };
+
+    const onIssueDateSelect = ({ start }) => {
+      if (selectedIssueIndex.value < 0) return;
+      const newList = [...certificates.value];
+      newList[selectedIssueIndex.value] = {
+        ...newList[selectedIssueIndex.value],
+        issueDate: start,
+      };
+      certificates.value = newList;
+      issueDateModalVisible.value = false;
+    };
 
     const addCertificate = () => {
       const newCertificate = {
@@ -151,17 +200,56 @@ export default {
       }
     };
 
+    const formatIssueDate = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit' });
+    };
+
+    // 발급일(month) 변경 핸들러
+    const updateIssueDate = (index, value) => {
+      const newList = [...certificates.value];
+      newList[index] = {
+        ...newList[index],
+        issueDate: value,
+      };
+      certificates.value = newList;
+      hideMonthInput();
+    };
+
+    // month input show/hide 관리
+    const activeMonthInput = ref(-1);
+    const monthInputs = ref([]);
+    const showMonthInput = (index) => {
+      activeMonthInput.value = index;
+      nextTick(() => {
+        if (monthInputs.value && monthInputs.value[index]) {
+          monthInputs.value[index].focus();
+        }
+      });
+    };
+    const hideMonthInput = () => {
+      activeMonthInput.value = -1;
+    };
+
     return {
       certificates,
       addCertificate,
       deleteCertificate,
       moveUp,
       moveDown,
+      formatIssueDate,
+      updateIssueDate,
+      activeMonthInput,
+      showMonthInput,
+      hideMonthInput,
+      monthInputs,
     };
   },
 };
 </script>
 
 <style scoped>
-/* 컴포넌트별 스타일은 main.css에서 관리 */
+@import '../../assets/css/common/plain-input.css';
+@import '../../assets/css/common/tables.css';
 </style>

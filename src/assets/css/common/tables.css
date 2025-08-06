@@ -1,0 +1,111 @@
+/* textarea가 들어가는 td에만 padding을 줄이고 높이를 맞추는 클래스 */
+.td-narrow {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+/* 공통 테이블 wrapper 스타일 */
+.table-container {
+  padding: 32px 24px 24px 24px;
+  margin-bottom: 28px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* 공통 테이블 스타일: EmployeeBasicInfo, EmployeeContactInfo, EducationTable에서 사용 */
+.info-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border-radius: 8px;
+  font-size: 15px;
+  margin-bottom: 0;
+}
+.info-table th {
+  background: #f5f6fa;
+  color: #495057;
+  font-weight: bold;
+  text-align: left;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e9ecef;
+  width: 120px;
+  letter-spacing: -0.5px;
+}
+.info-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+  background: #fff;
+  font-size: 15px;
+  color: #212529;
+}
+.info-table tr {
+  transition: background 0.2s;
+}
+.info-table tr:last-child td {
+  border-bottom: none;
+}
+.info-label {
+  font-weight: bold;
+  color: #495057;
+}
+.info-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #fff;
+  box-sizing: border-box;
+}
+.info-input:disabled {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+.info-input.error {
+  border-color: #dc3545;
+}
+.info-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: none; /* textarea 크기 조절 불가 */
+  min-height: 36px; /* input과 유사한 높이 */
+  font-family: inherit;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+/* 보유기술 textarea만 기존 높이 유지 */
+.skills-textarea {
+  min-height: 80px !important;
+}
+/* 열 구분선: 학력, 자격증, 경력, 대외경력 테이블에 적용 */
+.info-table th:not(:last-child),
+.info-table td:not(:last-child) {
+  border-right: 1px solid #e9ecef;
+}
+.info-textarea:disabled {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  resize: none;
+}
+.error-message {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 4px;
+}
+@media (max-width: 768px) {
+  .info-table th, .info-table td {
+    padding: 8px 8px;
+    font-size: 14px;
+  }
+}

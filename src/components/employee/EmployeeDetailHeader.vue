@@ -1,44 +1,47 @@
 <template>
-  <div class="search-employee-bar">
-    <div class="employee-bar-left">
-      <router-link to="/employee-list" class="home-btn" title="메인으로">
-        <i class="fas fa-home"></i>
-      </router-link>
-      <div class="search-group">
-        <input
-          type="text"
-          v-model="searchName"
-          placeholder="직원명 검색..."
-          @keyup.enter="$emit('search', searchName)"
-          class="search-input"
-        />
-        <button class="btn btn-primary" @click="$emit('search', searchName)">
-          <i class="fas fa-search"></i> 검색
-        </button>
+    <div class="header-section">
+      <div class="employee-bar-left">
+        <router-link to="/employee-list" class="home-btn" title="메인으로">
+          <i class="fas fa-home"></i>
+        </router-link>
+        <div class="search-group">
+          <input
+            type="text"
+            v-model="searchName"
+            placeholder="직원명 검색..."
+            @keyup.enter="$emit('search', searchName)"
+            class="search-input"
+          />
+          <button class="btn btn-primary" @click="$emit('search', searchName)">
+            <i class="fas fa-search"></i> 검색
+          </button>
+        </div>
+        <div class="employee-btn-group">
+          <button v-if="!editMode" class="btn btn-primary" @click="$emit('toggle-edit')">
+            <i class="fas fa-edit"></i> {{ isAddMode ? '작성' : '수정' }}
+          </button>
+          <button v-if="editMode" class="btn btn-primary" @click="$emit('save')">
+            <i class="fas fa-save"></i> 저장
+          </button>
+          <button v-if="editMode" class="btn btn-secondary" @click="$emit('cancel-edit')">
+            <i class="fas fa-times"></i> 취소
+          </button>
+        </div>
       </div>
+      
       <div v-if="searchError" class="error-message">{{ searchError }}</div>
 
-      <div class="employee-btn-group">
-        <button v-if="!editMode" class="btn btn-primary" @click="$emit('toggle-edit')">
-          <i class="fas fa-edit"></i> {{ isAddMode ? '작성' : '수정' }}
-        </button>
-        <button v-if="editMode" class="btn btn-primary" @click="$emit('save')">
-          <i class="fas fa-save"></i> 저장
-        </button>
-        <button v-if="editMode" class="btn btn-secondary" @click="$emit('cancel-edit')">
-          <i class="fas fa-times"></i> 취소
-        </button>
-      </div>
-    </div>
-
-    <div class="user-action-bar">
-      <span class="user-name">{{ currentUser?.username }}님</span>
-      <button class="btn btn-secondary" @click="$emit('logout')">로그아웃</button>
-      <button v-if="!isAddMode" class="btn btn-danger delete-detail-btn" @click="$emit('delete')">
+      
+      <div class="header-actions">
+        <div class="user-info">
+          <span class="user-name">{{ currentUser?.username }}님</span>
+          <button @click="logout" class="btn btn-secondary">로그아웃</button>
+        </div>
+        <button v-if="!isAddMode" class="btn btn-danger delete-detail-btn" @click="$emit('delete')">
         <i class="fas fa-trash"></i> 삭제
       </button>
+      </div>
     </div>
-  </div>
 </template>
 
 <script>
@@ -118,6 +121,7 @@ export default {
 .home-btn {
   background-color: #28a745;
   color: white;
+  height: 20px;
   padding: 8px 12px;
   border-radius: 4px;
   text-decoration: none;
