@@ -91,10 +91,10 @@
 
 <script>
 import { computed, ref, nextTick } from 'vue';
-import DateRangePicker from '../common/DateRangePicker.vue';
-import Button from '../common/Button.vue';
-import CommonInput from '../common/CommonInput.vue';
-import DateInput from '../common/DateInput.vue';
+import DateRangePicker from '@/components/common/DateRangePicker.vue';
+import Button from '@/components/common/Button.vue';
+import CommonInput from '@/components/common/CommonInput.vue';
+import DateInput from '@/components/common/DateInput.vue';
 
 export default {
   name: 'CertificateTable',
@@ -232,6 +232,6 @@ export default {
 </script>
 
 <style scoped>
-@import '../../assets/css/common/plain-input.css';
-@import '../../assets/css/common/tables.css';
+@import '@/assets/css/common/plain-input.css';
+@import '@/assets/css/common/tables.css';
 </style>

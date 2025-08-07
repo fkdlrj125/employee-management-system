@@ -274,8 +274,8 @@ export default {
 
 <style scoped>
 
-@import '../../assets/css/common/plain-input.css';
-@import '../../assets/css/common/tables.css';
+@import '@/assets/css/common/plain-input.css';
+@import '@/assets/css/common/tables.css';
 
 /* 사진 관련 스타일만 남김 */
 .photo-info-layout {

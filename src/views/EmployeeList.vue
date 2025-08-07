@@ -56,15 +56,18 @@
 </template>
 
 
+
 <script>
 import { mapActions, mapGetters } from 'vuex';
 import Button from '../components/common/Button.vue';
-import HeaderActions from '../components/employee/HeaderActions.vue';
+import HeaderActions from '../components/employee/common/HeaderActions.vue';
 import CommonInput from '../components/common/CommonInput.vue';
-import SearchBar from '../components/employee/SearchBar.vue';
-import FilterControls from '../components/employee/FilterControls.vue';
-import EmployeeTable from '../components/employee/EmployeeTable.vue';
-import Pagination from '../components/employee/Pagination.vue';
+import SearchBar from '../components/employee/list/SearchBar.vue';
+import FilterControls from '../components/employee/list/FilterControls.vue';
+import EmployeeTable from '../components/employee/list/EmployeeTable.vue';
+import Pagination from '../components/employee/list/Pagination.vue';
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 export default {
   name: 'EmployeeList',
@@ -238,7 +241,7 @@ export default {
     },
   },
   async created() {
-    await this.loadEmployees();
+    await this.loadEmployees('created');
   },
   beforeUnmount() {
     // 컴포넌트 파괴 시 타이머 정리
@@ -250,21 +253,21 @@ export default {
     ...mapActions('employee', ['fetchEmployees']),
     ...mapActions('auth', ['logout']),
 
-    async loadEmployees() {
+    async loadEmployees(trigger = '') {
       this.loading = true;
       try {
         await this.fetchEmployees();
       } catch (error) {
         console.error('직원 목록 로드 실패:', error);
-        alert('직원 목록을 불러오는데 실패했습니다.');
+        toast.error('직원 목록을 불러오는데 실패했습니다.');
       } finally {
         this.loading = false;
       }
     },
 
     async refreshData() {
-      await this.loadEmployees();
-      alert('데이터가 새로고침되었습니다.');
+      await this.loadEmployees('refreshData');
+      toast.success('데이터가 새로고침되었습니다.');
     },
 
     handleSearch() {
@@ -422,4 +425,8 @@ export default {
 /* EmployeeList 컴포넌트 특화 스타일 */
 /* 대부분의 스타일은 분할된 CSS 파일로 이동했습니다 */
 /* 이 컴포넌트에서만 필요한 특별한 스타일이 있으면 여기에 추가 */
+.searchbar-root{
+  margin-bottom: 16px;
+}
+
 </style>

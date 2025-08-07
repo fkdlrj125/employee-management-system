@@ -45,8 +45,8 @@
 </template>
 
 <script>
-import Button from '../common/Button.vue';
-import CommonInput from '../common/CommonInput.vue';
+import Button from '@/components/common/Button.vue';
+import CommonInput from '@/components/common/CommonInput.vue';
 export default {
   components: { Button, CommonInput },
   name: 'EmployeeDetailHeader',

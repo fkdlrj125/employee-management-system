@@ -129,16 +129,17 @@
 </template>
 
 <script>
-import EmployeeBasicInfo from '@/components/employee/EmployeeBasicInfo.vue';
-import EmployeeContactInfo from '@/components/employee/EmployeeContactInfo.vue';
-import EmployeeSkillChart from '@/components/employee/EmployeeSkillChart.vue';
-import EmployeePeriodSelector from '@/components/employee/EmployeePeriodSelector.vue';
-import EducationTable from '@/components/employee/EducationTable.vue';
-import CareerTable from '@/components/employee/CareerTable.vue';
-import CertificateTable from '@/components/employee/CertificateTable.vue';
-import ProjectTable from '@/components/employee/ProjectTable.vue';
+import EmployeeBasicInfo from '@/components/employee/detail/EmployeeBasicInfo.vue';
+import EmployeeContactInfo from '@/components/employee/detail/EmployeeContactInfo.vue';
+import EmployeeSkillChart from '@/components/employee/detail/EmployeeSkillChart.vue';
+import EmployeePeriodSelector from '@/components/employee/detail/EmployeePeriodSelector.vue';
+// (중복 import 제거)
 import EmployeeApiService from '@/services/EmployeeApiService';
-import EmployeeDetailHeader from '@/components/employee/EmployeeDetailHeader.vue';
+import EmployeeDetailHeader from '@/components/employee/detail/EmployeeDetailHeader.vue';
+import EducationTable from '@/components/employee/detail/EducationTable.vue';
+import CareerTable from '@/components/employee/detail/CareerTable.vue';
+import CertificateTable from '@/components/employee/detail/CertificateTable.vue';
+import ProjectTable from '@/components/employee/detail/ProjectTable.vue';
 
 export default {
   name: 'EmployeeDetail',

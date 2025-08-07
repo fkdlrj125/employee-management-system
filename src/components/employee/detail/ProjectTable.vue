@@ -1,21 +1,20 @@
 <template>
   <div class="table-section">
-    <h3>경력 사항 (2개월)</h3>
-    <table class="info-table" id="careerTable">
+    <h3>대외경력</h3>
+    <table class="info-table" id="projectTable">
       <thead>
         <tr>
-          <th class="info-label">근무기간</th>
-          <th class="info-label">회사명</th>
-          <th class="info-label">직위</th>
-          <th class="info-label">담당업무</th>
+          <th class="info-label">참여기간</th>
+          <th class="info-label">경력명</th>
+          <th class="info-label">경력 내용</th>
           <th v-if="editMode" class="manage-th" style="width: 70px; min-width: 60px">관리</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(career, index) in careers" :key="index">
+        <tr v-for="(project, index) in projects" :key="index">
           <td>
             <CommonInput
-              :model-value="formatPeriod(career.startDate, career.endDate)"
+              :model-value="formatPeriod(project.startDate, project.endDate)"
               placeholder="클릭하여 기간 선택"
               input-class="info-input plain-input"
               :readonly="true"
@@ -34,24 +33,21 @@
             />
           </td>
           <td>
-            <CommonInput v-model="career.company" input-class="info-input plain-input" :disabled="!editMode" />
-          </td>
-          <td>
-            <CommonInput v-model="career.position" input-class="info-input plain-input" :disabled="!editMode" />
+            <CommonInput v-model="project.name" input-class="info-input plain-input" :disabled="!editMode" />
           </td>
           <td class="td-narrow">
             <textarea
               class="info-textarea plain-input"
               :disabled="!editMode"
-              v-model="career.duties"
+              v-model="project.description"
               rows="2"
             ></textarea>
           </td>
           <td v-if="editMode" class="manage-td move-btns-cell">
             <div class="manage-btns">
               <Button type="button" btn-class="move-up-btn" :disabled="index === 0" @click="moveUp(index)">▲</Button>
-              <Button type="button" btn-class="move-down-btn" :disabled="index === careers.length - 1" @click="moveDown(index)">▼</Button>
-              <Button type="button" btn-class="delete-btn" @click="deleteCareer(index)">삭제</Button>
+              <Button type="button" btn-class="move-down-btn" :disabled="index === projects.length - 1" @click="moveDown(index)">▼</Button>
+              <Button type="button" btn-class="delete-btn" @click="deleteProject(index)">삭제</Button>
             </div>
           </td>
         </tr>
@@ -60,8 +56,8 @@
     <div v-if="editMode" class="button-container-right">
       <Button
         type="button"
-        btn-class="btn btn-secondary add-career-row right-btn add-row-btn"
-        @click="addCareer"
+        btn-class="btn btn-secondary add-project-row right-btn add-row-btn"
+        @click="addProject"
       >
         + 행 추가
       </Button>
@@ -71,12 +67,12 @@
 
 <script>
 import { computed, ref } from 'vue';
-import DateRangePicker from '../common/DateRangePicker.vue';
-import Button from '../common/Button.vue';
-import CommonInput from '../common/CommonInput.vue';
+import DateRangePicker from '@/components/common/DateRangePicker.vue';
+import Button from '@/components/common/Button.vue';
+import CommonInput from '@/components/common/CommonInput.vue';
 
 export default {
-  name: 'CareerTable',
+  name: 'ProjectTable',
   components: { DateRangePicker, Button, CommonInput },
   props: {
     employee: {
@@ -90,14 +86,14 @@ export default {
   },
   emits: ['update:employee'],
   setup(props, { emit }) {
-    const careers = computed({
+    const projects = computed({
       get() {
-        return props.employee?.careers || [];
+        return props.employee?.projects || [];
       },
       set(value) {
         emit('update:employee', {
           ...props.employee,
-          careers: value,
+          projects: value,
         });
       },
     });
@@ -110,60 +106,59 @@ export default {
     const openPeriodPicker = (index) => {
       if (!props.editMode) return;
       selectedPeriodIndex.value = index;
-      const career = careers.value[index];
+      const project = projects.value[index];
       periodTemp.value = {
-        start: career.startDate || '',
-        end: career.endDate || '',
+        start: project.startDate || '',
+        end: project.endDate || '',
       };
       periodModalVisible.value = true;
     };
 
     const onPeriodSelect = ({ start, end }) => {
       if (selectedPeriodIndex.value < 0) return;
-      const newList = [...careers.value];
+      const newList = [...projects.value];
       newList[selectedPeriodIndex.value] = {
         ...newList[selectedPeriodIndex.value],
         startDate: start,
         endDate: end,
       };
-      careers.value = newList;
+      projects.value = newList;
       periodModalVisible.value = false;
     };
 
-    const addCareer = () => {
-      const newCareer = {
-        company: '',
-        position: '',
-        duties: '',
+    const addProject = () => {
+      const newProject = {
         startDate: '',
         endDate: '',
+        name: '',
+        description: '',
       };
-      careers.value = [...careers.value, newCareer];
+      projects.value = [...projects.value, newProject];
     };
 
     const moveUp = (index) => {
       if (index > 0) {
-        const newCareers = [...careers.value];
-        const temp = newCareers[index];
-        newCareers[index] = newCareers[index - 1];
-        newCareers[index - 1] = temp;
-        careers.value = newCareers;
+        const newProjects = [...projects.value];
+        const temp = newProjects[index];
+        newProjects[index] = newProjects[index - 1];
+        newProjects[index - 1] = temp;
+        projects.value = newProjects;
       }
     };
 
     const moveDown = (index) => {
-      if (index < careers.value.length - 1) {
-        const newCareers = [...careers.value];
-        const temp = newCareers[index];
-        newCareers[index] = newCareers[index + 1];
-        newCareers[index + 1] = temp;
-        careers.value = newCareers;
+      if (index < projects.value.length - 1) {
+        const newProjects = [...projects.value];
+        const temp = newProjects[index];
+        newProjects[index] = newProjects[index + 1];
+        newProjects[index + 1] = temp;
+        projects.value = newProjects;
       }
     };
 
-    const deleteCareer = (index) => {
+    const deleteProject = (index) => {
       if (confirm('정말 삭제하시겠습니까?')) {
-        careers.value = careers.value.filter((_, i) => i !== index);
+        projects.value = projects.value.filter((_, i) => i !== index);
       }
     };
 
@@ -181,11 +176,11 @@ export default {
     };
 
     return {
-      careers,
-      addCareer,
+      projects,
+      addProject,
       moveUp,
       moveDown,
-      deleteCareer,
+      deleteProject,
       openPeriodPicker,
       periodModalVisible,
       periodTemp,
@@ -198,6 +193,6 @@ export default {
 </script>
 
 <style scoped>
-@import '../../assets/css/common/plain-input.css';
-@import '../../assets/css/common/tables.css';
+@import '@/assets/css/common/plain-input.css';
+@import '@/assets/css/common/tables.css';
 </style>

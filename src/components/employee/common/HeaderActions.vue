@@ -5,7 +5,7 @@
       <span class="user-name">{{ currentUser?.username }}님</span>
       <Button @click="$emit('logout')" btn-class="btn btn-secondary">로그아웃</Button>
     </div>
-    <Button @click="$emit('refresh')" btn-class="btn btn-refresh" title="새로고침">
+    <Button @click="handleRefreshClick" btn-class="btn btn-refresh" title="새로고침">
       <i class="fas fa-sync-alt"></i> 새로고침
     </Button>
     <Button @click="$emit('add')" btn-class="btn btn-primary">
@@ -15,11 +15,17 @@
 </template>
 
 <script setup>
-import Button from '../common/Button.vue';
+import Button from '@/components/common/Button.vue';
+// import { onMounted } from 'vue';
 const props = defineProps({
   currentUser: { type: Object, default: null },
 });
 const emit = defineEmits(['logout', 'refresh', 'add']);
+
+
+function handleRefreshClick(e) {
+  emit('refresh');
+}
 </script>
 
 <style scoped>

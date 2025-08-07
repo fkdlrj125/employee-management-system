@@ -91,9 +91,9 @@
 
 <script>
 import { computed, ref } from 'vue';
-import DateRangePicker from '../common/DateRangePicker.vue';
-import Button from '../common/Button.vue';
-import CommonInput from '../common/CommonInput.vue';
+import DateRangePicker from '@/components/common/DateRangePicker.vue';
+import Button from '@/components/common/Button.vue';
+import CommonInput from '@/components/common/CommonInput.vue';
 
 export default {
   name: 'EducationTable',
@@ -216,6 +216,6 @@ export default {
 </script>
 
 <style scoped>
-@import '../../assets/css/common/plain-input.css';
-@import '../../assets/css/common/tables.css';
+@import '@/assets/css/common/plain-input.css';
+@import '@/assets/css/common/tables.css';
 </style>
