@@ -8,7 +8,6 @@
       v-bind="inputAttrs"
       :class="inputClass"
       @keyup.enter="$emit('enter', $event)"
-      style="width: 100%"
     />
   </label>
 </template>

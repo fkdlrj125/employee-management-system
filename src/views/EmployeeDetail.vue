@@ -126,6 +126,13 @@
       </div>
     </div>
   </div>
+  <!-- ToastConfirm: 삭제/로그아웃 등 확인용 -->
+  <ToastConfirm
+    :visible="showConfirm"
+    :message="confirmMessage"
+    @confirm="onConfirmToast"
+    @cancel="onCancelToast"
+  />
 </template>
 
 <script>
@@ -140,9 +147,23 @@ import CareerTable from '@/components/employee/detail/CareerTable.vue';
 import CertificateTable from '@/components/employee/detail/CertificateTable.vue';
 import ProjectTable from '@/components/employee/detail/ProjectTable.vue';
 
+import ToastConfirm from '@/components/common/ToastConfirm.vue';
+
 export default {
   name: 'EmployeeDetail',
   components: {
+    EmployeeBasicInfo,
+    EmployeeContactInfo,
+    EmployeeSkillChart,
+    EmployeePeriodSelector,
+    EducationTable,
+    CareerTable,
+    CertificateTable,
+    ProjectTable,
+    EmployeeDetailHeader,
+  },
+  components: {
+    ToastConfirm,
     EmployeeBasicInfo,
     EmployeeContactInfo,
     EmployeeSkillChart,
@@ -187,6 +208,10 @@ export default {
       searchError: '',
       currentUser: JSON.parse(localStorage.getItem('currentUser') || '{}'),
       originalEmployee: null,
+      // ToastConfirm 관련 상태
+      showConfirm: false,
+      confirmMessage: '',
+      confirmAction: null,
     };
   },
   computed: {
@@ -204,6 +229,21 @@ export default {
       this.initializeNewEmployee();
     } else {
       this.loadEmployee();
+    }
+  },
+  watch: {
+    '$route.params.id'(newId, oldId) {
+      if (newId !== oldId) {
+        if (newId === 'new') {
+          this.isAddMode = true;
+          this.editMode = true;
+          this.initializeNewEmployee();
+        } else {
+          this.isAddMode = false;
+          this.editMode = false;
+          this.loadEmployee();
+        }
+      }
     }
   },
   methods: {
@@ -339,9 +379,14 @@ export default {
     },
 
     // 직원 삭제
-    async deleteEmployee() {
-      if (!confirm('정말로 이 직원 정보를 삭제하시겠습니까?')) return;
 
+    async deleteEmployee() {
+      this.confirmMessage = '정말로 이 직원 정보를 삭제하시겠습니까?';
+      this.confirmAction = this.confirmDeleteEmployee;
+      this.showConfirm = true;
+    },
+
+    async confirmDeleteEmployee() {
       try {
         const result = await EmployeeApiService.deleteEmployee(this.employeeId);
         if (result.success) {
@@ -353,6 +398,8 @@ export default {
       } catch (error) {
         console.error('삭제 실패:', error);
         this.showMessage(error.message || '삭제에 실패했습니다.', 'error');
+      } finally {
+        this.showConfirm = false;
       }
     },
 
@@ -525,7 +572,23 @@ export default {
 
     // 로그아웃
     logout() {
+      this.confirmMessage = '로그아웃 하시겠습니까?';
+      this.confirmAction = this.confirmLogout;
+      this.showConfirm = true;
+    },
+
+    confirmLogout() {
       this.$store.dispatch('auth/logout');
+      this.showConfirm = false;
+    },
+    // ToastConfirm 핸들러
+    onConfirmToast() {
+      if (typeof this.confirmAction === 'function') {
+        this.confirmAction();
+      }
+    },
+    onCancelToast() {
+      this.showConfirm = false;
     },
 
     // 리포트 생성

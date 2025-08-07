@@ -8,7 +8,7 @@
           <th class="info-label">회사명</th>
           <th class="info-label">직위</th>
           <th class="info-label">담당업무</th>
-          <th v-if="editMode" class="manage-th" style="width: 70px; min-width: 60px">관리</th>
+          <th v-if="editMode" class="manage-th">관리</th>
         </tr>
       </thead>
       <tbody>
@@ -21,7 +21,7 @@
               :readonly="true"
               :disabled="!editMode"
               @click="editMode ? openPeriodPicker(index) : null"
-              style="cursor: pointer;"
+              class="cursor-pointer"
             />
             <DateRangePicker
               v-if="periodModalVisible && selectedPeriodIndex === index"

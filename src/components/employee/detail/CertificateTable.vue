@@ -7,7 +7,7 @@
           <th class="info-label">발급일</th>
           <th class="info-label">자격증명</th>
           <th class="info-label">발급처</th>
-          <th v-if="editMode" class="manage-th" style="width: 70px; min-width: 60px">관리</th>
+          <th v-if="editMode" class="manage-th">관리</th>
         </tr>
       </thead>
       <tbody>
@@ -16,10 +16,9 @@
             <template v-if="editMode">
               <span
                 v-if="activeMonthInput !== index"
-                class="info-input plain-input"
+                class="info-input plain-input inline-block minw-110 cursor-pointer"
                 :class="{ placeholder: !certificate.issueDate }"
                 @click="showMonthInput(index)"
-                style="display:inline-block; min-width:110px; cursor:pointer;"
               >
                 {{ certificate.issueDate ? formatIssueDate(certificate.issueDate) : '클릭하여 발급일 선택' }}
               </span>
@@ -31,7 +30,7 @@
                 :model-value="certificate.issueDate"
                 @update:modelValue="value => updateIssueDate(index, value)"
                 @blur="hideMonthInput"
-                style="min-width:110px;"
+                class="minw-110"
               />
             </template>
             <template v-else>
@@ -232,6 +231,4 @@ export default {
 </script>
 
 <style scoped>
-@import '@/assets/css/common/plain-input.css';
-@import '@/assets/css/common/tables.css';
 </style>

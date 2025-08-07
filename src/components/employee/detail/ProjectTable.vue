@@ -7,7 +7,7 @@
           <th class="info-label">참여기간</th>
           <th class="info-label">경력명</th>
           <th class="info-label">경력 내용</th>
-          <th v-if="editMode" class="manage-th" style="width: 70px; min-width: 60px">관리</th>
+          <th v-if="editMode" class="manage-th">관리</th>
         </tr>
       </thead>
       <tbody>
@@ -20,7 +20,7 @@
               :readonly="true"
               :disabled="!editMode"
               @click="editMode ? openPeriodPicker(index) : null"
-              style="cursor: pointer;"
+              class="cursor-pointer"
             />
             <DateRangePicker
               v-if="periodModalVisible && selectedPeriodIndex === index"
@@ -193,6 +193,4 @@ export default {
 </script>
 
 <style scoped>
-@import '@/assets/css/common/plain-input.css';
-@import '@/assets/css/common/tables.css';
 </style>

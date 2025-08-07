@@ -1,3 +1,4 @@
+// ...existing code...
 /**
  * Employee API Service
  * 백엔드 API와의 통신을 담당 (현재는 더미 데이터 사용)
@@ -169,6 +170,23 @@ const dummyEmployees = [
 ];
 
 class EmployeeApiService {
+  // 이름(부분일치)로 사원 리스트 검색 (자동완성용)
+  async searchEmployeesByName(name) {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 200)); // 로딩 시뮬레이션
+      const lower = name.trim().toLowerCase();
+      const results = dummyEmployees.filter(
+        (emp) => emp.name && emp.name.toLowerCase().includes(lower)
+      );
+      return {
+        success: true,
+        data: results.map((emp) => new Employee(emp)),
+        message: '검색 결과',
+      };
+    } catch (error) {
+      return this.handleError(error, '이름 검색에 실패했습니다.');
+    }
+  }
   constructor() {
     this.baseURL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:3000/api';
     this.api = axios.create({

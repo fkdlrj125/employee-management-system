@@ -154,6 +154,5 @@ export default {
 <style scoped>
 
 
-@import '@/assets/css/common/plain-input.css';
-@import '@/assets/css/common/tables.css';
+
 </style>

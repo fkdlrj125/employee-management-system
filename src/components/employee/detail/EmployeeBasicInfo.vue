@@ -16,10 +16,9 @@
           <input
             type="file"
             accept="image/*"
-            class="detail-photo-input"
+            class="detail-photo-input d-none"
             :disabled="!editMode"
             @change="onPhotoChange"
-            style="display: none"
           />
         </label>
       </div>
@@ -129,7 +128,7 @@
             </td>
             <th class="info-label">총 경력</th>
             <td>
-              <input type="text" :value="totalCareer" disabled placeholder="자동 계산됨" readonly class="info-input plain-input" style="cursor: default;" />
+              <input type="text" :value="totalCareer" disabled placeholder="자동 계산됨" readonly class="info-input plain-input cursor-default" />
             </td>
           </tr>
         </tbody>
@@ -274,8 +273,7 @@ export default {
 
 <style scoped>
 
-@import '@/assets/css/common/plain-input.css';
-@import '@/assets/css/common/tables.css';
+
 
 /* 사진 관련 스타일만 남김 */
 .photo-info-layout {
