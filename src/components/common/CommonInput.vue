@@ -7,6 +7,7 @@
       @input="$emit('update:modelValue', $event.target.value)"
       v-bind="inputAttrs"
       :class="inputClass"
+      :disabled="disabled"
       @keyup.enter="$emit('enter', $event)"
     />
   </label>
@@ -20,6 +21,7 @@ const props = defineProps({
   inputClass: { type: String, default: '' },
   labelClass: { type: String, default: '' },
   inputAttrs: { type: Object, default: () => ({}) },
+  disabled: { type: Boolean, default: false },
 });
 </script>
 
@@ -33,5 +35,16 @@ input[type="number"] {
   border-radius: 4px;
   min-width: 200px;
   font-size: 14px;
+}
+
+/* 테이블에서 텍스트처럼 보이게 (plain-input) */
+input.plain-input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0;
+  min-width: 0;
+  font-size: 15px;
+  color: #222;
 }
 </style>

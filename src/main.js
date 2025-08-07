@@ -4,6 +4,7 @@ import App from './App.vue';
 import router from './router';
 import store from './store';
 import './assets/css/main.css';
+import './assets/css/common/plain-input.css';
 import Toast from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 

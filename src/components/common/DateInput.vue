@@ -1,18 +1,22 @@
+
 <template>
   <label :class="labelClass">
     <span v-if="label">{{ label }}</span>
     <input
+      ref="input"
       :type="type"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
       v-bind="inputAttrs"
       :class="inputClass"
+      :disabled="disabled"
     />
   </label>
 </template>
 
+
 <script setup>
-import { computed } from 'vue';
+import { ref } from 'vue';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -21,6 +25,12 @@ const props = defineProps({
   inputClass: { type: String, default: '' },
   labelClass: { type: String, default: '' },
   inputAttrs: { type: Object, default: () => ({}) },
+  disabled: { type: Boolean, default: false },
+});
+
+const input = ref();
+defineExpose({
+  focus: () => input.value && input.value.focus()
 });
 </script>
 

@@ -1,17 +1,40 @@
-/* input placeholder 색상을 span.placeholder와 완전히 일치시킴 */
-.plain-input::placeholder {
+/* span 등에서 placeholder 역할을 할 때 input과 동일한 스타일 적용 */
+.plain-input.placeholder,
+.info-input.plain-input.placeholder {
   color: #adb5bd !important;
-  opacity: 1;
+  opacity: 1 !important;
+  font-style: normal !important;
 }
-/* 비활성화 select에서 드롭다운 화살표 숨기기 */
-select:disabled {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: none !important;
-  background-color: transparent !important;
+/* 모든 상태에서 테두리/그림자/아웃라인 완전 제거 */
+.plain-input,
+input.plain-input,
+select.plain-input,
+textarea.plain-input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  color: #212529;
 }
-/* 공통 input 스타일: 테두리 없이 텍스트처럼 보이게 */
+.plain-input:focus,
+input.plain-input:focus,
+select.plain-input:focus,
+textarea.plain-input:focus,
+.plain-input:active,
+input.plain-input:active,
+select.plain-input:active,
+textarea.plain-input:active,
+.plain-input:hover,
+input.plain-input:hover,
+select.plain-input:hover,
+textarea.plain-input:hover {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+/* 공통 input 스타일: 테두리 없이 텍스트처럼 보이게 + placeholder/disabled/select 등 통합 */
 .plain-input {
   border: none !important;
   background: transparent !important;
@@ -26,10 +49,32 @@ select:disabled {
   box-shadow: none !important;
   background: transparent !important;
 }
-
+.plain-input::placeholder {
+  color: #adb5bd !important;
+  opacity: 1;
+}
+/* 비활성화 select에서 드롭다운 화살표 숨기기 */
+select:disabled {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none !important;
+  background-color: transparent !important;
+}
 /* 비활성화 입력란 커서 기본화 */
 input:disabled,
 select:disabled,
 textarea:disabled {
   cursor: default !important;
+}
+
+/* info-input과 plain-input이 동시에 붙은 경우 info-input의 border/background/padding을 무력화 */
+.info-input.plain-input,
+select.info-input.plain-input,
+input.info-input.plain-input,
+textarea.info-input.plain-input {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
 }

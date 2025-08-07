@@ -24,9 +24,13 @@
   padding-bottom: 4px !important;
 }
 /* 공통 테이블 wrapper 스타일 */
+
 .table-container {
   padding: 32px 24px 24px 24px;
   margin-bottom: 28px;
+}
+
+.table-section.with-anim {
   animation: fadeInUp 0.6s ease-out;
 }
 
@@ -66,9 +70,7 @@
 .info-table tr {
   transition: background 0.2s;
 }
-.info-table tr:last-child td {
-  border-bottom: none;
-}
+
 .info-label {
   font-weight: bold;
   color: #495057;

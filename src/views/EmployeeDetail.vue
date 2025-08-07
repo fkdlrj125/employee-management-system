@@ -2,6 +2,7 @@
   <div class="resume-bg">
     <!-- 로딩 상태 -->
     <div v-if="isLoading" class="loading-container">
+
       <div class="loading-spinner"></div>
       <p>직원 정보를 불러오는 중...</p>
     </div>
@@ -47,73 +48,81 @@
         <!-- 좌측 영역 - 직원 정보 및 테이블들 -->
         <div class="resume-left">
           <!-- 프로필+기본정보+연락처를 하나의 카드로 묶음 -->
-          <div class="table-container">
-          <EmployeeBasicInfo
-            :employee="employee"
-            :edit-mode="editMode"
-            :errors="errors"
-            @update:employee="updateEmployee"
-            @photo-change="onPhotoChange"
-            @validate-field="validateField"
-            @career-change="onCareerChange"
-            :key="'basic-' + editMode"
-          />
-          <EmployeeContactInfo
-            :employee="employee"
-            :edit-mode="editMode"
-            :errors="errors"
-            @update:employee="updateEmployee"
-            @validate-field="validateField"
-            :key="'contact-' + editMode"
-          />
+          <div class="profile-card">
+            <EmployeeBasicInfo
+              :employee="employee"
+              :edit-mode="editMode"
+              :errors="errors"
+              @update:employee="updateEmployee"
+              @photo-change="onPhotoChange"
+              @validate-field="validateField"
+              @career-change="onCareerChange"
+              :key="'basic-' + editMode"
+            />
+            <div class="divider"></div>
+            <EmployeeContactInfo
+              :employee="employee"
+              :edit-mode="editMode"
+              :errors="errors"
+              @update:employee="updateEmployee"
+              @validate-field="validateField"
+              :key="'contact-' + editMode"
+            />
           </div>
 
           <!-- 학력 테이블 -->
-          <EducationTable
-            class="table-container"
-            :employee="employee"
-            :edit-mode="editMode"
-            @update:employee="updateEmployee"
-            :key="'edu-' + editMode"
-          />
+          <div class="section-block">
+            <EducationTable
+              class="table-container"
+              :employee="employee"
+              :edit-mode="editMode"
+              @update:employee="updateEmployee"
+              :key="'edu'"
+            />
+          </div>
 
           <!-- 자격증 테이블 -->
-          <CertificateTable
-            class="table-container"
-            :employee="employee"
-            :edit-mode="editMode"
-            @update:employee="updateEmployee"
-            :key="'cert-' + editMode"
-          />
+          <div class="section-block">
+            <CertificateTable
+              class="table-container"
+              :employee="employee"
+              :edit-mode="editMode"
+              @update:employee="updateEmployee"
+              :key="'cert'"
+            />
+          </div>
 
           <!-- 경력사항 테이블 -->
-          <CareerTable
-            class="table-container"
-            :employee="employee"
-            :edit-mode="editMode"
-            @update:employee="updateEmployee"
-            :key="'career-' + editMode"
-          />
+          <div class="section-block">
+            <CareerTable
+              class="table-container"
+              :employee="employee"
+              :edit-mode="editMode"
+              @update:employee="updateEmployee"
+              :key="'career'"
+            />
+          </div>
 
           <!-- 프로젝트 테이블 -->
-          <ProjectTable
-            class="table-container"
-            :employee="employee"
-            :edit-mode="editMode"
-            @update:employee="updateEmployee"
-            :key="'proj-' + editMode"
-          />
+          <div class="section-block">
+            <ProjectTable
+              class="table-container"
+              :employee="employee"
+              :edit-mode="editMode"
+              @update:employee="updateEmployee"
+              :key="'proj'"
+            />
+          </div>
         </div>
 
         <!-- 우측 영역 - 차트 및 기술 점수 -->
         <div class="resume-right">
           <!-- 기술 역량 차트 -->
           <EmployeeSkillChart
-            class="table-container"
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
-            :key="'skill-' + editMode"
+            :key="'skill'"
           />
 
           <!-- 기간별 성과 분석 -->
@@ -349,7 +358,6 @@ export default {
         this.showMessage('입력 정보를 확인해주세요.', 'error');
         return;
       }
-
       try {
         let result;
         if (this.isAddMode) {
@@ -369,7 +377,6 @@ export default {
             throw new Error(result.error);
           }
         }
-
         this.editMode = false;
         this.errors = {};
       } catch (error) {
@@ -377,105 +384,13 @@ export default {
         this.showMessage(error.message || '저장에 실패했습니다.', 'error');
       }
     },
-
-    // 직원 삭제
-
-    async deleteEmployee() {
-      this.confirmMessage = '정말로 이 직원 정보를 삭제하시겠습니까?';
-      this.confirmAction = this.confirmDeleteEmployee;
-      this.showConfirm = true;
-    },
-
-    async confirmDeleteEmployee() {
-      try {
-        const result = await EmployeeApiService.deleteEmployee(this.employeeId);
-        if (result.success) {
-          this.showMessage('직원 정보가 삭제되었습니다.', 'success');
-          this.$router.push('/employee-list');
-        } else {
-          throw new Error(result.error);
-        }
-      } catch (error) {
-        console.error('삭제 실패:', error);
-        this.showMessage(error.message || '삭제에 실패했습니다.', 'error');
-      } finally {
-        this.showConfirm = false;
-      }
-    },
-
-    // 폼 유효성 검증
-    validateForm() {
-      this.errors = {};
-
-      if (!this.employee.name || this.employee.name.trim() === '') {
-        this.errors.name = '성명은 필수입니다.';
-      }
-
-      if (!this.employee.birth_date) {
-        this.errors.birth_date = '생년월일은 필수입니다.';
-      }
-
-      if (!this.employee.department) {
-        this.errors.department = '부서는 필수입니다.';
-      }
-
-      if (!this.employee.position) {
-        this.errors.position = '직급은 필수입니다.';
-      }
-
-      if (!this.employee.hire_date) {
-        this.errors.hire_date = '입사일은 필수입니다.';
-      }
-
-      if (this.employee.email && !this.isValidEmail(this.employee.email)) {
-        this.errors.email = '유효한 이메일 형식이 아닙니다.';
-      }
-
-      return Object.keys(this.errors).length === 0;
-    },
-
-    // 필드별 유효성 검증
-    validateField(field) {
-      if (this.errors[field]) {
-        delete this.errors[field];
-      }
-
-      switch (field) {
-        case 'name':
-          if (!this.employee.name || this.employee.name.trim() === '') {
-            this.errors.name = '성명은 필수입니다.';
-          }
-          break;
-        case 'email':
-          if (this.employee.email && !this.isValidEmail(this.employee.email)) {
-            this.errors.email = '유효한 이메일 형식이 아닙니다.';
-          }
-          break;
-      }
-    },
-
-    // 이메일 유효성 검증
-    isValidEmail(email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(email);
-    },
-
-    // 직원 정보 업데이트
-    updateEmployee(updatedData) {
-      this.employee = { ...this.employee, ...updatedData };
-    },
-
-    // 사진 변경
+    // ...existing code...
     onPhotoChange(photoData) {
       this.employee.photo = photoData;
     },
-
-    // 경력 변경
     onCareerChange() {
       // 경력 변경 시 추가 로직이 필요하면 여기에 구현
     },
-
-    // 학력 추가
     addEducation() {
       if (!this.employee.educations) {
         this.employee.educations = [];
@@ -489,13 +404,9 @@ export default {
         gpa: '',
       });
     },
-
-    // 학력 삭제
     removeEducation(index) {
       this.employee.educations.splice(index, 1);
     },
-
-    // 경력 추가
     addCareer() {
       if (!this.employee.careers) {
         this.employee.careers = [];
@@ -509,13 +420,9 @@ export default {
         responsibilities: '',
       });
     },
-
-    // 경력 삭제
     removeCareer(index) {
       this.employee.careers.splice(index, 1);
     },
-
-    // 자격증 추가
     addCertificate() {
       if (!this.employee.certificates) {
         this.employee.certificates = [];
@@ -527,13 +434,9 @@ export default {
         grade: '',
       });
     },
-
-    // 자격증 삭제
     removeCertificate(index) {
       this.employee.certificates.splice(index, 1);
     },
-
-    // 프로젝트 추가
     addProject() {
       if (!this.employee.projects) {
         this.employee.projects = [];
@@ -546,42 +449,30 @@ export default {
         technologies: '',
       });
     },
-
-    // 프로젝트 삭제
     removeProject(index) {
       this.employee.projects.splice(index, 1);
     },
-
-    // 메시지 표시
     showMessage(text, type = 'info') {
       this.message = { text, type };
       setTimeout(() => {
         this.clearMessage();
       }, 5000);
     },
-
-    // 메시지 클리어
     clearMessage() {
       this.message = { text: '', type: '' };
     },
-
-    // 재시도
     retryLoad() {
       this.loadEmployee();
     },
-
-    // 로그아웃
     logout() {
       this.confirmMessage = '로그아웃 하시겠습니까?';
       this.confirmAction = this.confirmLogout;
       this.showConfirm = true;
     },
-
     confirmLogout() {
       this.$store.dispatch('auth/logout');
       this.showConfirm = false;
     },
-    // ToastConfirm 핸들러
     onConfirmToast() {
       if (typeof this.confirmAction === 'function') {
         this.confirmAction();
@@ -590,11 +481,8 @@ export default {
     onCancelToast() {
       this.showConfirm = false;
     },
-
-    // 리포트 생성
     onGenerateReport(reportData) {
       console.log('리포트 생성:', reportData);
-      // 실제로는 PDF 생성이나 리포트 API 호출
       this.showMessage(`${reportData.employee.name}의 성과 리포트가 생성되었습니다.`, 'success');
     },
   },
@@ -638,7 +526,7 @@ export default {
 
 .resume-content {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 2fr minmax(320px, 480px);
   gap: 30px;
   padding: 30px;
   min-height: 600px;
@@ -654,6 +542,8 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 30px;
+  min-width: 320px;
+  max-width: 480px;
 }
 
 /* ===== 로딩/에러/메시지 컨테이너 ===== */
@@ -730,8 +620,11 @@ export default {
   animation: fadeInUp 0.6s ease-out;
 }
 
-.resume-left > *,
-.resume-right > * {
+
+.resume-left > * {
+  animation: fadeInUp 0.6s ease-out;
+}
+.resume-right > *:not(.skill-chart-container) {
   animation: fadeInUp 0.6s ease-out;
 }
 
@@ -753,4 +646,129 @@ export default {
   .btn { display: none; }
   .add-row-container { display: none; }
 }
+/* ===== 상단 프로필+기본+연락처 카드 강조 ===== */
+.profile-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  padding: 32px 36px 24px 36px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border: 1.5px solid #e6e6e6;
+  position: relative;
+}
+.profile-card .divider {
+  height: 1px;
+  background: linear-gradient(90deg, #e6e6e6 0%, #f5f5f5 100%);
+  margin: 10px 0 0 0;
+  border: none;
+}
+@media (max-width: 900px) {
+  .profile-card {
+    padding: 18px 8vw 14px 8vw;
+  }
+}
+
+
+/* 반응형: 1024px 이하(태블릿 포함) */
+@media (max-width: 1024px) {
+  .resume-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    min-height: unset;
+  }
+  .resume-left, .resume-right {
+    gap: 16px;
+  }
+  .resume-container {
+    padding: 0 4px;
+  }
+}
+/* 반응형: 900px 이하(모바일/태블릿) */
+@media (max-width: 900px) {
+  .resume-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px;
+    min-height: unset;
+  }
+  .resume-left, .resume-right {
+    gap: 10px;
+  }
+  .profile-card {
+    padding: 10px 4vw 8px 4vw;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .section-title {
+    font-size: 15px;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+  }
+  .table-container, .skill-chart-container {
+    padding: 10px 4px 8px 4px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .btn, .btn-primary, .btn-secondary {
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+  .score-display {
+    font-size: 12px;
+    padding: 2px 6px;
+    min-width: 36px;
+  }
+}
+/* 반응형: 600px 이하(모바일) */
+@media (max-width: 600px) {
+  .resume-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 2px;
+    min-height: unset;
+  }
+  .resume-left, .resume-right {
+    gap: 6px;
+  }
+  .profile-card {
+    padding: 6px 2vw 4px 2vw;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .section-title {
+    font-size: 13px;
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+  }
+  .table-container, .skill-chart-container {
+    padding: 4px 2px 4px 2px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .btn, .btn-primary, .btn-secondary {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 3px;
+  }
+  .score-display {
+    font-size: 11px;
+    padding: 1px 4px;
+    min-width: 28px;
+  }
+}
+
 </style>

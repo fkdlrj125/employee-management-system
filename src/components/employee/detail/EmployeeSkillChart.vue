@@ -1,5 +1,5 @@
 <template>
-  <div class="skill-chart-container">
+  <div class="skill-chart-container" :class="{ 'with-anim': firstMount }">
     <div class="chart-header">
       <h4 class="section-title">기술 역량 평가</h4>
       <div v-if="editMode" class="chart-controls">
@@ -50,16 +50,16 @@ import {
   Legend,
 } from 'chart.js';
 
-// Chart.js 컴포넌트 등록
+// Chart.js 컴포넌트 등록 (Filler는 unregister)
 Chart.register(
   RadarController,
   RadialLinearScale,
   PointElement,
   LineElement,
-  Filler,
   Tooltip,
   Legend,
 );
+Chart.unregister(Filler);
 
 export default {
   name: 'EmployeeSkillChart',
@@ -74,6 +74,7 @@ export default {
     },
   },
   data() {
+    console.log('[EmployeeSkillChart] data() called');
     return {
       chart: null,
       showSkillModal: false,
@@ -85,6 +86,7 @@ export default {
         { label: '창의성', score: 0 },
         { label: '팀워크', score: 0 },
       ],
+      firstMount: true,
     };
   },
   watch: {
@@ -97,10 +99,16 @@ export default {
     },
   },
   mounted() {
+    console.log('[EmployeeSkillChart] mounted');
     this.loadSkillData();
     this.initChart();
+    setTimeout(() => {
+      this.firstMount = false;
+      console.log('[EmployeeSkillChart] firstMount set to false');
+    }, 700);
   },
   beforeUnmount() {
+    console.log('[EmployeeSkillChart] beforeUnmount');
     if (this.chart) {
       this.chart.destroy();
     }
@@ -117,80 +125,119 @@ export default {
     },
 
     initChart() {
-      const ctx = this.$refs.chartCanvas.getContext('2d');
-      // 순수 객체로 변환 (reactive 방지)
-      const skillCategoriesCopy = JSON.parse(JSON.stringify(this.skillCategories));
-      this.chart = new Chart(ctx, {
-        type: 'radar',
-        data: {
-          labels: skillCategoriesCopy.map((skill) => skill.label),
-          datasets: [
-            {
-              label: '현재 역량',
-              data: skillCategoriesCopy.map((skill) => skill.score),
-              backgroundColor: 'rgba(54, 162, 235, 0.2)',
-              borderColor: 'rgba(54, 162, 235, 1)',
-              borderWidth: 2,
-              pointBackgroundColor: 'rgba(54, 162, 235, 1)',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-              pointRadius: 5,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            r: {
-              beginAtZero: true,
-              max: 10,
-              min: 0,
-              ticks: {
-                stepSize: 2,
-                showLabelBackdrop: false,
-                color: '#666',
-              },
-              grid: {
-                color: '#e0e0e0',
-              },
-              pointLabels: {
-                font: {
-                  size: 12,
-                },
-                color: '#333',
+      try {
+        const ctx = this.$refs.chartCanvas.getContext('2d');
+        // 순수 객체로 변환 (reactive 방지)
+        let skillCategoriesCopy = JSON.parse(JSON.stringify(this.skillCategories));
+        // skillCategories가 비어있으면 최소 1개 dummy라도 넣기
+        if (!Array.isArray(skillCategoriesCopy) || skillCategoriesCopy.length === 0) {
+          skillCategoriesCopy = [{ label: 'N/A', score: 0 }];
+        }
+        // score가 숫자인지, NaN/undefined가 아닌지 보장
+        const safeScores = skillCategoriesCopy.map((skill) => {
+          const n = parseInt(skill.score, 10);
+          return isNaN(n) ? 0 : n;
+        });
+        // datasets/data가 항상 1개 이상
+        const datasets = [
+          {
+            label: '현재 역량',
+            data: safeScores,
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+          },
+        ].filter(ds => ds && Array.isArray(ds.data) && ds.data.length > 0);
+        const plugins = {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            callbacks: {
+              label: function (context) {
+                return `${context.label}: ${context.parsed.r}/10`;
               },
             },
           },
-          plugins: {
-            legend: {
-              display: false,
-            },
-            tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleColor: '#fff',
-              bodyColor: '#fff',
-              callbacks: {
-                label: function (context) {
-                  return `${context.label}: ${context.parsed.r}/10`;
+          filler: false, // Filler 플러그인 비활성화
+        };
+        // 콘솔로 데이터 구조 확인
+        console.log('initChart skillCategoriesCopy:', skillCategoriesCopy);
+        console.log('initChart safeScores:', safeScores);
+        console.log('initChart datasets:', datasets);
+        this.chart = new Chart(ctx, {
+          type: 'radar',
+          data: {
+            labels: skillCategoriesCopy.map((skill) => skill.label),
+            datasets,
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                beginAtZero: true,
+                max: 10,
+                min: 0,
+                ticks: {
+                  stepSize: 2,
+                  showLabelBackdrop: false,
+                  color: '#666',
+                },
+                grid: {
+                  color: '#e0e0e0',
+                },
+                pointLabels: {
+                  font: {
+                    size: 12,
+                  },
+                  color: '#333',
                 },
               },
             },
+            plugins: {
+              ...plugins,
+              filler: false
+            },
           },
-        },
-      });
+        });
+      } catch (e) {
+        console.error('initChart error:', e);
+      }
     },
 
     updateChart() {
-      if (this.chart) {
-        this.chart.destroy();
-        this.chart = null;
+      try {
+        if (this.chart) {
+          this.chart.destroy();
+          this.chart = null;
+        }
+        // 콘솔로 데이터 구조 확인
+        console.log('updateChart skillCategories:', this.skillCategories);
+        console.log('updateChart employee.skillScores:', this.employee.skillScores);
+        this.initChart();
+      } catch (e) {
+        console.error('Chart update error:', e);
+        if (this.chart && this.chart.data) {
+          console.log('chart.data:', this.chart.data);
+        }
       }
-      this.initChart();
     },
 
     saveSkillScores() {
-      const scores = this.skillCategories.map((skill) => parseInt(skill.score));
+      // skillCategories가 비어있으면 최소 1개 dummy라도 넣기
+      const safeCategories = this.skillCategories.length > 0
+        ? this.skillCategories
+        : [{ label: 'N/A', score: 0 }];
+      const scores = safeCategories.map((skill) => {
+        const n = parseInt(skill.score, 10);
+        return isNaN(n) ? 0 : n;
+      });
       this.$emit('update:employee', {
         ...this.employee,
         skillScores: scores,
@@ -207,8 +254,17 @@ export default {
 </script>
 
 <style scoped>
+
 .skill-chart-container {
-  margin-bottom: 30px;
+  /* .table-container의 레이아웃/배경 스타일 복사 */
+  padding: 32px 24px 24px 24px;
+  margin-bottom: 28px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.skill-chart-container.with-anim {
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .chart-header {
@@ -418,6 +474,28 @@ export default {
 
   .score-display {
     align-self: center;
+  }
+  .skill-chart-container {
+    padding: 10px 4px 8px 4px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+  }
+  .chart-header {
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 15px;
+    padding-bottom: 4px;
+  }
+  .btn, .btn-primary, .btn-secondary {
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+  .score-display {
+    font-size: 12px;
+    padding: 2px 6px;
+    min-width: 36px;
   }
 }
 </style>
