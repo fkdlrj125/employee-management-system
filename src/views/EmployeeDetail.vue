@@ -524,9 +524,11 @@ export default {
   height: 4px;
 }
 
+
+/* PC: 2:1 비율 고정 */
 .resume-content {
   display: grid;
-  grid-template-columns: 2fr minmax(320px, 480px);
+  grid-template-columns: 2fr 1.3fr;
   gap: 30px;
   padding: 30px;
   min-height: 600px;
@@ -538,12 +540,13 @@ export default {
   gap: 25px;
 }
 
+/* 오른쪽 영역 min/max-width 별도 부여 */
 .resume-right {
   display: flex;
   flex-direction: column;
   gap: 30px;
   min-width: 320px;
-  max-width: 480px;
+  max-width: 700px;
 }
 
 /* ===== 로딩/에러/메시지 컨테이너 ===== */
@@ -672,8 +675,8 @@ export default {
 }
 
 
-/* 반응형: 1024px 이하(태블릿 포함) */
-@media (max-width: 1024px) {
+/* 반응형: 1400px 이하(차트/테이블 세로 정렬) */
+@media (max-width: 1400px) {
   .resume-content {
     display: flex;
     flex-direction: column;
@@ -686,6 +689,10 @@ export default {
   }
   .resume-container {
     padding: 0 4px;
+  }
+  .resume-right {
+    min-width: 0;
+    max-width: 100%;
   }
 }
 /* 반응형: 900px 이하(모바일/태블릿) */
@@ -772,3 +779,4 @@ export default {
 }
 
 </style>
+

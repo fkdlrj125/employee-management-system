@@ -1,7 +1,7 @@
 <template>
   <div class="table-section" :class="{ 'with-anim': firstMount }">
-    <div class="section-header-flex">
-      <h3>경력 사항 (2개월)</h3>
+    <div class="section-title">
+      <h4>경력 사항 (2개월)</h4>
       <div v-if="editMode" class="add-btn-wrapper">
         <Button
           type="button"
@@ -225,11 +225,57 @@ export default {
 </script>
 
 <style scoped>
-.section-header-flex {
+.section-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  letter-spacing: -0.5px;
+  gap: 8px;
+}
+.section-title h4 {
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 8px;
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .section-title {
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+  .section-title h4 {
+    font-size: 15px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #007bff;
+  }
+}
+@media (max-width: 600px) {
+  .section-title {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+  .section-title h4 {
+    font-size: 13px;
+    padding-bottom: 2px;
+    border-bottom: 2px solid #007bff;
+  }
+}
+@media (max-width: 900px) {
+  .section-title {
+    font-size: 15px;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+  }
+}
+@media (max-width: 600px) {
+  .section-title {
+    font-size: 13px;
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+  }
 }
 .add-btn-wrapper {
   display: flex;
@@ -251,6 +297,8 @@ export default {
 }
 .table-section {
   margin-bottom: 32px;
+  min-height: unset;
+  height: auto;
 }
 .info-table {
   width: 100%;
