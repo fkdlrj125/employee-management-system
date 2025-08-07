@@ -59,13 +59,13 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
-import Button from '../components/common/Button.vue';
-import HeaderActions from '../components/employee/common/HeaderActions.vue';
-import CommonInput from '../components/common/CommonInput.vue';
-import SearchBar from '../components/employee/list/SearchBar.vue';
-import FilterControls from '../components/employee/list/FilterControls.vue';
-import EmployeeTable from '../components/employee/list/EmployeeTable.vue';
-import Pagination from '../components/employee/list/Pagination.vue';
+import Button from '@/components/common/Button.vue';
+import HeaderActions from '@/components/employee/common/HeaderActions.vue';
+import CommonInput from '@/components/common/CommonInput.vue';
+import SearchBar from '@/components/employee/list/SearchBar.vue';
+import FilterControls from '@/components/employee/list/FilterControls.vue';
+import EmployeeTable from '@/components/employee/list/EmployeeTable.vue';
+import Pagination from '@/components/employee/list/Pagination.vue';
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 

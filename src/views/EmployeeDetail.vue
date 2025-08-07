@@ -133,7 +133,6 @@ import EmployeeBasicInfo from '@/components/employee/detail/EmployeeBasicInfo.vu
 import EmployeeContactInfo from '@/components/employee/detail/EmployeeContactInfo.vue';
 import EmployeeSkillChart from '@/components/employee/detail/EmployeeSkillChart.vue';
 import EmployeePeriodSelector from '@/components/employee/detail/EmployeePeriodSelector.vue';
-// (중복 import 제거)
 import EmployeeApiService from '@/services/EmployeeApiService';
 import EmployeeDetailHeader from '@/components/employee/detail/EmployeeDetailHeader.vue';
 import EducationTable from '@/components/employee/detail/EducationTable.vue';
