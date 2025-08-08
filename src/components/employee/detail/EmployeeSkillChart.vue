@@ -1,7 +1,18 @@
 <template>
   <div class="skill-chart-container" :class="{ 'with-anim': firstMount }">
-    <div class="chart-header">
-      <h4 class="section-title">기술 역량 평가</h4>
+
+    <div class="chart-header chart-header-flex">
+      <div class="chart-title-group">
+        <h4 class="section-title">기술 역량 평가</h4>
+        <button
+          class="btn btn-secondary btn-sm role-toggle-single"
+          @click="toggleRole"
+          :title="selectedRole === 'member' ? '리더 평가로 전환' : '멤버 평가로 전환'"
+        >
+          <span v-if="selectedRole === 'member'">리더 평가로 전환</span>
+          <span v-else>멤버 평가로 전환</span>
+        </button>
+      </div>
       <div v-if="editMode" class="chart-controls">
         <button @click="showSkillModal = true" class="btn btn-secondary btn-sm">평가 입력</button>
       </div>
@@ -23,8 +34,8 @@
             <div v-for="(skill, index) in skillCategories" :key="index" class="skill-input-group">
               <label>{{ skill.label }}</label>
               <div class="score-input">
-                <input type="range" min="0" max="10" v-model="skill.score" class="skill-slider" />
-                <span class="score-display">{{ skill.score }}/10</span>
+                <input type="range" min="0" max="5" v-model="skill.score" class="skill-slider" />
+                <span class="score-display">{{ skill.score }}/5</span>
               </div>
             </div>
           </div>
@@ -78,16 +89,30 @@ export default {
     return {
       chart: null,
       showSkillModal: false,
-      skillCategories: [
-        { label: '기술 전문성', score: 0 },
-        { label: '문제 해결', score: 0 },
-        { label: '소통 능력', score: 0 },
-        { label: '리더십', score: 0 },
-        { label: '창의성', score: 0 },
-        { label: '팀워크', score: 0 },
+      selectedRole: 'member',
+      memberSkills: [
+        { label: ['기술 전문성'], score: 0 },
+        { label: ['문제 해결'], score: 0 },
+        { label: ['소통 능력'], score: 0 },
+        { label: ['리더십'], score: 0 },
+        { label: ['창의성'], score: 0 },
+        { label: ['팀워크'], score: 0 },
+      ],
+      leaderSkills: [
+        { label: ['직무역량과', '판단력'], score: 0 },
+        { label: ['팀 리더십 및', '관리 능력'], score: 0 },
+        { label: ['고객 소통 및', '서비스 마인드'], score: 0 },
+        { label: ['운영 계획 및', '실행 능력'], score: 0 },
+        { label: ['준수 사항 및', '문서 관리'], score: 0 },
+        { label: ['혁신 및', '지속적인 개선 노력'], score: 0 },
       ],
       firstMount: true,
     };
+  },
+  computed: {
+    skillCategories() {
+      return this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
+    }
   },
   watch: {
     employee: {
@@ -97,6 +122,9 @@ export default {
       },
       deep: true,
     },
+    selectedRole() {
+      this.updateChart();
+    }
   },
   mounted() {
     console.log('[EmployeeSkillChart] mounted');
@@ -114,9 +142,14 @@ export default {
     }
   },
   methods: {
+    toggleRole() {
+      this.selectedRole = this.selectedRole === 'member' ? 'leader' : 'member';
+    },
     loadSkillData() {
+      // 멤버/리더 각각의 skillScores를 분리 저장할 수도 있음. 여기선 단일 배열로 가정
       if (this.employee.skillScores) {
-        this.skillCategories.forEach((category, index) => {
+        const arr = this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
+        arr.forEach((category, index) => {
           if (this.employee.skillScores[index] !== undefined) {
             category.score = this.employee.skillScores[index];
           }
@@ -182,10 +215,11 @@ export default {
             scales: {
               r: {
                 beginAtZero: true,
-                max: 10,
+                max: 5,
                 min: 0,
                 ticks: {
-                  stepSize: 2,
+                  stepSize: 1,
+                  display: false,
                   showLabelBackdrop: false,
                   color: '#666',
                 },
@@ -231,12 +265,12 @@ export default {
 
     saveSkillScores() {
       // skillCategories가 비어있으면 최소 1개 dummy라도 넣기
-      const safeCategories = this.skillCategories.length > 0
-        ? this.skillCategories
-        : [{ label: 'N/A', score: 0 }];
+      const arr = this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
+      const safeCategories = arr.length > 0 ? arr : [{ label: 'N/A', score: 0 }];
       const scores = safeCategories.map((skill) => {
         const n = parseInt(skill.score, 10);
-        return isNaN(n) ? 0 : n;
+        if (isNaN(n)) return 0;
+        return n > 5 ? 5 : n;
       });
       this.$emit('update:employee', {
         ...this.employee,
@@ -272,6 +306,24 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.chart-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.chart-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-toggle-single {
+  margin-left: 8px;
+  min-width: 110px;
 }
 
 .section-title {

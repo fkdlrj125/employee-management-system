@@ -44,7 +44,7 @@
         <div class="message-content" :class="message.type">{{ message.text }}</div>
       </div>
 
-      <div class="resume-content">
+      <div class="resume-content" :class="{ 'fade-in': showFadeIn }" :style="!showFadeIn ? 'opacity:0' : ''">
         <!-- 좌측 영역 - 직원 정보 및 테이블들 -->
         <div class="resume-left">
           <!-- 프로필+기본정보+연락처를 하나의 카드로 묶음 -->
@@ -119,6 +119,7 @@
         <div class="resume-right">
           <!-- 기술 역량 차트 -->
           <EmployeeSkillChart
+            class="table-container"
             :employee="employee"
             :edit-mode="editMode"
             @update:employee="updateEmployee"
@@ -206,6 +207,7 @@ export default {
         certificates: [],
         projects: [],
       },
+      showFadeIn: false,
       editMode: false,
       isAddMode: false,
       isLoading: false,
@@ -485,9 +487,15 @@ export default {
       console.log('리포트 생성:', reportData);
       this.showMessage(`${reportData.employee.name}의 성과 리포트가 생성되었습니다.`, 'success');
     },
+    updateEmployee(newEmployee) {
+      this.employee = { ...newEmployee };
+    },
   },
   mounted() {
     // 마운트 후 추가 작업이 필요하면 여기에 구현
+    setTimeout(() => {
+      this.showFadeIn = true;
+    }, 10);
   },
 };
 </script>
@@ -614,28 +622,14 @@ export default {
 }
 
 /* ===== 애니메이션 ===== */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+.resume-content {
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .table-container {
-  animation: fadeInUp 0.6s ease-out;
-}
+  animation: none !important; /* employee-list animation.css의 .table-container 애니메이션을 상세페이지에서 완전히 차단 */
+} 
 
-
-.resume-left > * {
-  animation: fadeInUp 0.6s ease-out;
-}
-.resume-right > *:not(.skill-chart-container) {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.resume-left > *:nth-child(1) { animation-delay: 0.1s; }
-.resume-left > *:nth-child(2) { animation-delay: 0.2s; }
-.resume-right > *:nth-child(1) { animation-delay: 0.3s; }
-.resume-right > *:nth-child(2) { animation-delay: 0.4s; }
-.resume-right > *:nth-child(3) { animation-delay: 0.5s; }
 
 /* ===== 스크롤바/인쇄 등 기타 ===== */
 ::-webkit-scrollbar { width: 8px; }

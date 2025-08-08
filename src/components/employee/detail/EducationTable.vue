@@ -6,7 +6,7 @@
         <Button
           type="button"
           btn-class="btn btn-secondary add-edu-row add-row-btn"
-          @click="addEducation"
+          @click="addEducation()"
         >
           + 행 추가
         </Button>
@@ -18,7 +18,7 @@
           <th class="info-label">기간</th>
           <th class="info-label">학교명</th>
           <th class="info-label">전공</th>
-          <th v-if="editMode" class="manage-th">관리</th>
+          <!-- 관리 열 제거 -->
         </tr>
       </thead>
       <tbody>
@@ -49,14 +49,18 @@
               :disabled="!editMode"
             />
           </td>
-          <td>
+          <td style="position:relative;">
             <CommonInput v-model="education.major" input-class="info-input plain-input" :disabled="!editMode" />
-          </td>
-          <td v-if="editMode" class="manage-td move-btns-cell">
-            <div class="manage-btns">
-              <Button type="button" btn-class="move-up-btn" :disabled="index === 0" @click="moveUp(index)">▲</Button>
-              <Button type="button" btn-class="move-down-btn" :disabled="index === educations.length - 1" @click="moveDown(index)">▼</Button>
-              <Button type="button" btn-class="delete-btn" @click="showDeleteConfirm(index)">삭제</Button>
+            <div v-if="editMode" class="row-action-btns action-btn-group">
+              <Button type="button" btn-class="icon-btn" :disabled="index === 0" @click="moveUp(index)" :title="'위로 이동'">
+                <i class="fa fa-arrow-up"></i>
+              </Button>
+              <Button type="button" btn-class="icon-btn" :disabled="index === educations.length - 1" @click="moveDown(index)" :title="'아래로 이동'">
+                <i class="fa fa-arrow-down"></i>
+              </Button>
+              <Button type="button" btn-class="icon-btn delete" @click="showDeleteConfirm(index)" :title="'삭제'">
+                <i class="fa fa-trash"></i>
+              </Button>
             </div>
           </td>
         </tr>
@@ -70,17 +74,19 @@
           </td>
           <td>
             <CommonInput input-class="edu-school plain-input" :disabled="!editMode" />
-            <CommonInput input-class="info-input plain-input" :disabled="!editMode" />
           </td>
-          <td>
+          <td style="position:relative;">
             <CommonInput input-class="edu-major plain-input" :disabled="!editMode" />
-            <CommonInput input-class="info-input plain-input" :disabled="!editMode" />
-          </td>
-          <td v-if="editMode" class="manage-td move-btns-cell">
-            <div class="manage-btns">
-              <Button type="button" btn-class="move-up-btn" disabled>▲</Button>
-              <Button type="button" btn-class="move-down-btn" disabled>▼</Button>
-              <Button type="button" btn-class="delete-btn" disabled>삭제</Button>
+            <div v-if="editMode" class="row-action-btns action-btn-group">
+              <Button type="button" btn-class="icon-btn" disabled :title="'위로 이동'">
+                <i class="fa fa-arrow-up"></i>
+              </Button>
+              <Button type="button" btn-class="icon-btn" disabled :title="'아래로 이동'">
+                <i class="fa fa-arrow-down"></i>
+              </Button>
+              <Button type="button" btn-class="icon-btn delete" disabled :title="'삭제'">
+                <i class="fa fa-trash"></i>
+              </Button>
             </div>
           </td>
         </tr>
@@ -119,16 +125,8 @@ export default {
   emits: ['update:employee'],
   setup(props, { emit }) {
     const firstMount = ref(true);
-    const educations = computed({
-      get() {
-        return props.employee?.educations || [];
-      },
-      set(value) {
-        emit('update:employee', {
-          ...props.employee,
-          educations: value,
-        });
-      },
+    const educations = computed(() => {
+      return props.employee.educations || [];
     });
 
     // ToastConfirm 삭제 관련 상태
@@ -142,7 +140,10 @@ export default {
 
     const confirmDelete = () => {
       if (deleteIndex.value !== -1) {
-        educations.value = educations.value.filter((_, i) => i !== deleteIndex.value);
+        emit('update:employee', {
+          ...props.employee,
+          educations: educations.value.filter((_, i) => i !== deleteIndex.value),
+        });
       }
       toastConfirmVisible.value = false;
       deleteIndex.value = -1;
@@ -183,7 +184,10 @@ export default {
         startDate: '',
         endDate: '',
       };
-      educations.value = [...educations.value, newEducation];
+      emit('update:employee', {
+        ...props.employee,
+        educations: [...(props.employee.educations || []), newEducation],
+      });
     };
 
     const moveUp = (index) => {
@@ -192,7 +196,10 @@ export default {
         const temp = newEducations[index];
         newEducations[index] = newEducations[index - 1];
         newEducations[index - 1] = temp;
-        educations.value = newEducations;
+        emit('update:employee', {
+          ...props.employee,
+          educations: newEducations,
+        });
       }
     };
 
@@ -202,7 +209,10 @@ export default {
         const temp = newEducations[index];
         newEducations[index] = newEducations[index + 1];
         newEducations[index + 1] = temp;
-        educations.value = newEducations;
+        emit('update:employee', {
+          ...props.employee,
+          educations: newEducations,
+        });
       }
     };
 
@@ -333,5 +343,53 @@ export default {
 .manage-btns {
   display: flex;
   gap: 4px;
+}
+
+/* 아이콘 버튼 스타일 + 행 hover 시에만 노출, 마지막 셀 overlay */
+.action-btn-group {
+  display: flex;
+  gap: 4px;
+}
+.info-table td {
+  position: relative;
+}
+.row-action-btns {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.18s;
+  z-index: 2;
+}
+tr:hover .row-action-btns {
+  opacity: 1;
+}
+.icon-btn {
+  background: #f5f6fa;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  font-size: 18px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.icon-btn:hover:not(:disabled) {
+  background: #e1e7ef;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  color: #1976d2;
+  transform: translateY(-2px) scale(1.08);
+}
+.icon-btn.delete:hover:not(:disabled) {
+  background: #ffeaea;
+  color: #e53935;
 }
 </style>

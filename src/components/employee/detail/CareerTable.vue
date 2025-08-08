@@ -19,11 +19,11 @@
           <th class="info-label">회사명</th>
           <th class="info-label">직위</th>
           <th class="info-label">담당업무</th>
-          <th v-if="editMode" class="manage-th">관리</th>
+          
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(career, index) in careers" :key="index">
+        <tr v-for="(career, index) in careers" :key="index" class="career-row">
           <td>
             <CommonInput
               :model-value="formatPeriod(career.startDate, career.endDate)"
@@ -49,19 +49,23 @@
           <td>
             <CommonInput v-model="career.position" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '직위' }" />
           </td>
-          <td class="td-narrow">
+          <td class="td-narrow" style="position:relative;">
             <textarea
               class="info-textarea plain-input"
               :disabled="!editMode"
               v-model="career.duties"
               rows="2"
             ></textarea>
-          </td>
-          <td v-if="editMode" class="manage-td move-btns-cell">
-            <div class="manage-btns">
-              <Button type="button" btn-class="move-up-btn" :disabled="index === 0" @click="moveUp(index)">▲</Button>
-              <Button type="button" btn-class="move-down-btn" :disabled="index === careers.length - 1" @click="moveDown(index)">▼</Button>
-              <Button type="button" btn-class="delete-btn" @click="showDeleteConfirm(index)">삭제</Button>
+            <div v-if="editMode" class="row-action-btns action-btn-group">
+              <button type="button" class="icon-btn" :disabled="index === 0" @click="moveUp(index)" title="위로 이동">
+                <i class="fas fa-arrow-up"></i>
+              </button>
+              <button type="button" class="icon-btn" :disabled="index === careers.length - 1" @click="moveDown(index)" title="아래로 이동">
+                <i class="fas fa-arrow-down"></i>
+              </button>
+              <button type="button" class="icon-btn" @click="showDeleteConfirm(index)" title="삭제">
+                <i class="fas fa-trash"></i>
+              </button>
             </div>
           </td>
         </tr>
@@ -314,8 +318,42 @@ export default {
   background: #f8f9fa;
   font-weight: 600;
 }
-.manage-btns {
+
+/* 행 hover 시에만 아이콘 버튼 노출, overlay 스타일 */
+.row-action-btns {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
   display: flex;
   gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s;
+  z-index: 2;
+}
+.career-row:hover .row-action-btns {
+  opacity: 1;
+  pointer-events: auto;
+}
+.icon-btn {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 15px;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  margin-left: 2px;
+}
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.icon-btn:hover:not(:disabled) {
+  background: #f0f4fa;
+  color: #007bff;
 }
 </style>
