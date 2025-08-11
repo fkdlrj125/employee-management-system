@@ -41,9 +41,12 @@
               @select="onPeriodSelect"
               @close="periodModalVisible = false"
             />
+            <div v-if="errors && errors[`project_${index}_startDate`]" class="error-message">{{ errors[`project_${index}_startDate`] }}</div>
+            <div v-if="errors && errors[`project_${index}_endDate`]" class="error-message">{{ errors[`project_${index}_endDate`] }}</div>
           </td>
           <td>
             <CommonInput v-model="project.name" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '경력명' }" />
+            <div v-if="errors && errors[`project_${index}_name`]" class="error-message">{{ errors[`project_${index}_name`] }}</div>
           </td>
           <td class="td-narrow" style="position:relative;">
             <textarea
@@ -52,6 +55,7 @@
               v-model="project.description"
               rows="2"
             ></textarea>
+            <div v-if="errors && errors[`project_${index}_description`]" class="error-message">{{ errors[`project_${index}_description`] }}</div>
             <div v-if="editMode" class="row-action-btns action-btn-group">
               <button type="button" class="icon-btn" :disabled="index === 0" @click="moveUp(index)" title="위로 이동">
                 <i class="fas fa-arrow-up"></i>
@@ -94,6 +98,10 @@ export default {
     editMode: {
       type: Boolean,
       default: false,
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
     },
   },
   emits: ['update:employee'],
@@ -152,7 +160,10 @@ export default {
         startDate: start,
         endDate: end,
       };
-      projects.value = newList;
+      emit('update:employee', {
+        ...props.employee,
+        projects: newList,
+      });
       periodModalVisible.value = false;
     };
 
@@ -189,7 +200,21 @@ export default {
 
 
     const formatPeriod = (startDate, endDate) => {
-      if (!startDate || !endDate) return '';
+      if (!startDate && !endDate) return '';
+      if (startDate && !endDate) {
+        const start = new Date(startDate).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+        });
+        return `${start} ~`;
+      }
+      if (!startDate && endDate) {
+        const end = new Date(endDate).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+        });
+        return `~ ${end}`;
+      }
       const start = new Date(startDate).toLocaleDateString('ko-KR', {
         year: 'numeric',
         month: '2-digit',

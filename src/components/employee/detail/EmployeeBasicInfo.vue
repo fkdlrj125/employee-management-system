@@ -29,55 +29,56 @@
       <table class="info-table">
         <tbody>
           <tr>
-            <th class="info-label required-field">성명</th>
+            <th class="info-label required-field">성명 <span class="required-badge">필수</span></th>
             <td>
               <input
                 type="text"
                 v-model="localEmployee.name"
                 :disabled="!editMode"
                 :class="['info-input', 'plain-input', { error: errors.name } ]"
-                @blur="validateField('name')"
-                @input="updateEmployee"
+                @blur="validateField('name', localEmployee.name)"
+                @input="updateEmployee(); validateField('name', localEmployee.name)"
               />
               <div v-if="errors.name" class="error-message">{{ errors.name }}</div>
             </td>
-            <th class="info-label required-field">생년월일</th>
+            <th class="info-label required-field">생년월일 <span class="required-badge">필수</span></th>
             <td>
               <input
                 type="date"
                 v-model="localEmployee.birth_date"
                 :disabled="!editMode"
                 :class="['info-input', 'plain-input', { error: errors.birth_date } ]"
-                @change="validateField('birth_date')"
-                @input="updateEmployee"
+                @change="validateField('birth_date', localEmployee.birth_date)"
+                @input="updateEmployee(); validateField('birth_date', localEmployee.birth_date)"
               />
               <div v-if="errors.birth_date" class="error-message">{{ errors.birth_date }}</div>
             </td>
           </tr>
           <tr>
-            <th class="info-label required-field">부서</th>
+            <th class="info-label required-field">부서 <span class="required-badge">필수</span></th>
             <td>
               <select
                 v-model="localEmployee.department"
                 :disabled="!editMode"
                 :class="['info-input', 'plain-input', { error: errors.department } ]"
-                @change="validateField('department'); updateEmployee();"
+                @change="validateField('department', localEmployee.department); updateEmployee();"
               >
                 <option value="">부서 선택</option>
                 <option value="DSS1">DSS1</option>
                 <option value="DSS2">DSS2</option>
                 <option value="CSC">CSC</option>
                 <option value="HR">HR</option>
+                <option v-if="localEmployee.department && !['DSS1','DSS2','CSC','HR'].includes(localEmployee.department)" :value="localEmployee.department">{{ localEmployee.department }}</option>
               </select>
               <div v-if="errors.department" class="error-message">{{ errors.department }}</div>
             </td>
-            <th class="info-label required-field">직급</th>
+            <th class="info-label required-field">직급 <span class="required-badge">필수</span></th>
             <td>
               <select
                 v-model="localEmployee.position"
                 :disabled="!editMode"
                 :class="['info-input', 'plain-input', { error: errors.position } ]"
-                @change="validateField('position'); updateEmployee();"
+                @change="validateField('position', localEmployee.position); updateEmployee();"
               >
                 <option value="">직급 선택</option>
                 <option value="사원">사원</option>
@@ -90,19 +91,20 @@
                 <option value="이사">이사</option>
                 <option value="부사장">부사장</option>
                 <option value="사장">사장</option>
+                <option v-if="localEmployee.position && !['사원','대리','과장','차장','부장','실장','본부장','이사','부사장','사장'].includes(localEmployee.position)" :value="localEmployee.position">{{ localEmployee.position }}</option>
               </select>
               <div v-if="errors.position" class="error-message">{{ errors.position }}</div>
             </td>
           </tr>
           <tr>
-            <th class="info-label required-field">입사일</th>
+            <th class="info-label required-field">입사일 <span class="required-badge">필수</span></th>
             <td>
               <input
                 type="month"
                 v-model="localEmployee.hire_date"
                 :disabled="!editMode"
                 :class="['info-input', 'plain-input', { error: errors.hire_date } ]"
-                @change="handleHireDateChange"
+                @change="handleHireDateChange(); validateField('hire_date', localEmployee.hire_date)"
               />
               <div v-if="errors.hire_date" class="error-message">{{ errors.hire_date }}</div>
             </td>
@@ -165,11 +167,17 @@ export default {
   watch: {
     employee: {
       handler(newVal) {
-        this.localEmployee = { ...newVal };
+        // hire_date가 YYYY-MM-DD면 YYYY-MM으로 변환
+        const copy = { ...newVal };
+        if (copy.hire_date && /^\d{4}-\d{2}-\d{2}$/.test(copy.hire_date)) {
+          copy.hire_date = copy.hire_date.slice(0, 7);
+        }
+        this.localEmployee = copy;
         this.calculateMitmasCareer();
         this.calculateTotalCareer();
       },
       deep: true,
+      immediate: true,
     },
   },
   mounted() {
@@ -273,7 +281,18 @@ export default {
 
 <style scoped>
 
-
+.required-badge {
+  color: #e74c3c;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.error-message {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 2px;
+}
 
 /* 사진 관련 스타일만 남김 */
 .photo-info-layout {

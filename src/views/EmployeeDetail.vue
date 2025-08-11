@@ -76,6 +76,7 @@
               class="table-container"
               :employee="employee"
               :edit-mode="editMode"
+              :errors="errors"
               @update:employee="updateEmployee"
               :key="'edu'"
             />
@@ -87,6 +88,7 @@
               class="table-container"
               :employee="employee"
               :edit-mode="editMode"
+              :errors="errors"
               @update:employee="updateEmployee"
               :key="'cert'"
             />
@@ -98,6 +100,7 @@
               class="table-container"
               :employee="employee"
               :edit-mode="editMode"
+              :errors="errors"
               @update:employee="updateEmployee"
               :key="'career'"
             />
@@ -109,6 +112,7 @@
               class="table-container"
               :employee="employee"
               :edit-mode="editMode"
+              :errors="errors"
               @update:employee="updateEmployee"
               :key="'proj'"
             />
@@ -258,6 +262,71 @@ export default {
     }
   },
   methods: {
+    // 개별 필드 유효성 검사 (하위 컴포넌트에서 호출)
+    validateField(field, value) {
+      // errors 객체를 복사해서 사용
+      const errors = { ...this.errors };
+      switch (field) {
+        case 'name':
+          if (!value || !this.isValidName(value)) {
+            errors.name = '성명을 올바르게 입력하세요. (한글 2~4자 또는 영문 2~20자)';
+          } else {
+            delete errors.name;
+          }
+          break;
+        case 'birth_date':
+          if (!value) {
+            errors.birth_date = '생년월일을 선택해주세요.';
+          } else {
+            delete errors.birth_date;
+          }
+          break;
+        case 'department':
+          if (!value) {
+            errors.department = '부서를 선택해주세요.';
+          } else {
+            delete errors.department;
+          }
+          break;
+        case 'position':
+          if (!value) {
+            errors.position = '직급을 선택해주세요.';
+          } else {
+            delete errors.position;
+          }
+          break;
+        case 'hire_date':
+          if (!value) {
+            errors.hire_date = '입사일을 선택해주세요.';
+          } else {
+            delete errors.hire_date;
+          }
+          break;
+        case 'email':
+          if (value && !this.isValidEmail(value)) {
+            errors.email = '올바른 이메일 형식을 입력하세요.';
+          } else {
+            delete errors.email;
+          }
+          break;
+        case 'phone':
+          if (value && !this.isValidPhone(value)) {
+            errors.phone = '올바른 전화번호를 입력하세요. (10-11자리 숫자)';
+          } else {
+            delete errors.phone;
+          }
+          break;
+        case 'address':
+          if (value && value.length < 5) {
+            errors.address = '주소는 5글자 이상 입력하세요.';
+          } else {
+            delete errors.address;
+          }
+          break;
+        // 필요시 추가 필드별 유효성 검사
+      }
+      this.errors = errors;
+    },
     // 직원 데이터 로드
     async loadEmployee() {
       if (!this.employeeId || this.employeeId === 'new') return;
@@ -362,8 +431,10 @@ export default {
       }
       try {
         let result;
+        console.log('saveDetail: isAddMode?', this.isAddMode, 'employee:', this.employee);
         if (this.isAddMode) {
           result = await EmployeeApiService.createEmployee(this.employee);
+          console.log('createEmployee result:', result);
           if (result.success) {
             this.showMessage('직원 정보가 성공적으로 등록되었습니다.', 'success');
             this.$router.push(`/employee-detail/${result.data.id}`);
@@ -372,15 +443,19 @@ export default {
           }
         } else {
           result = await EmployeeApiService.updateEmployee(this.employeeId, this.employee);
+          console.log('updateEmployee result:', result);
           if (result.success) {
+            console.log('updateEmployee 성공, 메시지:', result.message);
             this.showMessage('직원 정보가 성공적으로 수정되었습니다.', 'success');
             this.originalEmployee = JSON.parse(JSON.stringify(this.employee));
+            this.editMode = false;
+            this.errors = {};
+            console.log('수정 후 상태:', this.employee, this.editMode, this.errors);
           } else {
+            console.log('updateEmployee 실패:', result.error);
             throw new Error(result.error);
           }
         }
-        this.editMode = false;
-        this.errors = {};
       } catch (error) {
         console.error('저장 실패:', error);
         this.showMessage(error.message || '저장에 실패했습니다.', 'error');
@@ -489,6 +564,90 @@ export default {
     },
     updateEmployee(newEmployee) {
       this.employee = { ...newEmployee };
+    },
+
+    // ===== 상세페이지 유효성 검사 =====
+    validateForm() {
+      this.errors = {};
+      let isValid = true;
+      // 1. 성명
+      if (!this.employee.name || !this.isValidName(this.employee.name)) {
+        this.errors.name = '성명을 올바르게 입력하세요. (한글 2~4자 또는 영문 2~20자)';
+        isValid = false;
+      }
+      // 2. 생년월일
+      if (!this.employee.birth_date) {
+        this.errors.birth_date = '생년월일을 선택해주세요.';
+        isValid = false;
+      }
+      // 3. 부서
+      if (!this.employee.department) {
+        this.errors.department = '부서를 선택해주세요.';
+        isValid = false;
+      }
+      // 4. 직급
+      if (!this.employee.position) {
+        this.errors.position = '직급을 선택해주세요.';
+        isValid = false;
+      }
+      // 5. 입사일
+      if (!this.employee.hire_date) {
+        this.errors.hire_date = '입사일을 선택해주세요.';
+        isValid = false;
+      }
+      // 6. 이메일(선택)
+      if (this.employee.email && !this.isValidEmail(this.employee.email)) {
+        this.errors.email = '올바른 이메일 형식을 입력하세요.';
+        isValid = false;
+      }
+      // 7. 전화번호(선택)
+      if (this.employee.phone && !this.isValidPhone(this.employee.phone)) {
+        this.errors.phone = '올바른 전화번호를 입력하세요. (10-11자리 숫자)';
+        isValid = false;
+      }
+      // 8. 주소(선택)
+      if (this.employee.address && this.employee.address.length < 5) {
+        this.errors.address = '주소는 5글자 이상 입력하세요.';
+        isValid = false;
+      }
+      // 9. 점수(1~5)
+      const scoreFields = ['score1','score2','score3','score4','score5','score6'];
+      if (this.employee.scores) {
+        scoreFields.forEach(field => {
+          const val = Number(this.employee.scores[field]);
+          if (val && (val < 1 || val > 5)) {
+            this.errors[field] = '점수는 1~5 사이여야 합니다.';
+            isValid = false;
+          }
+        });
+      }
+      // 10. 학력/경력/프로젝트/자격증: 기간 입력은 완전 선택사항(입력 안 해도 통과, 시작기간 없어도 통과)
+      // (아래 블록 전체 제거)
+      return isValid;
+    },
+
+    isValidName(name) {
+      if (!name || typeof name !== 'string') return false;
+      const trimmed = name.trim();
+      if (trimmed.length < 2) return false;
+      const mixedRegex = /^[가-힣a-zA-Z\s]{2,20}$/;
+      const consonantRegex = /^[ㄱ-ㅎ]+$/;
+      if (consonantRegex.test(trimmed)) return false;
+      return mixedRegex.test(trimmed);
+    },
+    isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    },
+    isValidPhone(phone) {
+      if (!phone || typeof phone !== 'string') return false;
+      const cleaned = phone.replace(/[^\d]/g, '');
+      if (cleaned.length < 10 || cleaned.length > 11) return false;
+      const validPrefixes = ['010','011','016','017','018','019'];
+      return validPrefixes.includes(cleaned.substring(0,3));
+    },
+    validateYearMonth(val) {
+      // YYYY-MM 또는 YYYY.MM 또는 YYYY/MM
+      return /^\d{4}[-./]\d{2}$/.test(val);
     },
   },
   mounted() {

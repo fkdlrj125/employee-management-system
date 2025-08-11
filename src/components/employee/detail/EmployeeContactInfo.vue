@@ -11,8 +11,8 @@
               v-model="localEmployee.email"
               :disabled="!editMode"
               :class="['info-input', 'plain-input', { error: errors.email } ]"
-              @blur="validateField('email')"
-              @input="updateEmployee"
+              @blur="validateField('email', localEmployee.email)"
+              @input="updateEmployee(); validateField('email', localEmployee.email)"
             />
             <div v-if="errors.email" class="error-message">{{ errors.email }}</div>
           </td>
@@ -25,8 +25,8 @@
               placeholder="하이픈 없이 숫자만 입력 (예: 01012345678)"
               :disabled="!editMode"
               :class="['info-input', 'plain-input', { error: errors.phone } ]"
-              @input="handlePhoneInput"
-              @blur="validateField('phone')"
+              @input="handlePhoneInput($event); validateField('phone', localEmployee.phone)"
+              @blur="validateField('phone', localEmployee.phone)"
             />
             <div v-if="errors.phone" class="error-message">{{ errors.phone }}</div>
           </td>
@@ -40,8 +40,8 @@
               v-model="localEmployee.address"
               :disabled="!editMode"
               :class="['info-input', 'plain-input', { error: errors.address } ]"
-              @blur="validateField('address')"
-              @input="updateEmployee"
+              @blur="validateField('address', localEmployee.address)"
+              @input="updateEmployee(); validateField('address', localEmployee.address)"
             />
             <div v-if="errors.address" class="error-message">{{ errors.address }}</div>
           </td>
@@ -153,6 +153,17 @@ export default {
 
 <style scoped>
 
-
+.required-badge {
+  color: #e74c3c;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.error-message {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 2px;
+}
 
 </style>

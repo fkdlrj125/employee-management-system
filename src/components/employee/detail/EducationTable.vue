@@ -41,6 +41,8 @@
               @select="onPeriodSelect"
               @close="periodModalVisible = false"
             />
+            <div v-if="errors && errors[`education_${index}_admission`]" class="error-message">{{ errors[`education_${index}_admission`] }}</div>
+            <div v-if="errors && errors[`education_${index}_graduation`]" class="error-message">{{ errors[`education_${index}_graduation`] }}</div>
           </td>
           <td>
             <CommonInput
@@ -121,6 +123,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
   },
   emits: ['update:employee'],
   setup(props, { emit }) {
@@ -173,7 +179,10 @@ export default {
         startDate: start,
         endDate: end,
       };
-      educations.value = newList;
+      emit('update:employee', {
+        ...props.employee,
+        educations: newList,
+      });
       periodModalVisible.value = false;
     };
 
@@ -217,7 +226,21 @@ export default {
     };
 
     const formatPeriod = (startDate, endDate) => {
-      if (!startDate || !endDate) return '';
+      if (!startDate && !endDate) return '';
+      if (startDate && !endDate) {
+        const start = new Date(startDate).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+        });
+        return `${start} ~`;
+      }
+      if (!startDate && endDate) {
+        const end = new Date(endDate).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+        });
+        return `~ ${end}`;
+      }
       const start = new Date(startDate).toLocaleDateString('ko-KR', {
         year: 'numeric',
         month: '2-digit',

@@ -42,12 +42,16 @@
               @select="onPeriodSelect"
               @close="periodModalVisible = false"
             />
+            <div v-if="errors && errors[`career_${index}_startDate`]" class="error-message">{{ errors[`career_${index}_startDate`] }}</div>
+            <div v-if="errors && errors[`career_${index}_endDate`]" class="error-message">{{ errors[`career_${index}_endDate`] }}</div>
           </td>
           <td>
             <CommonInput v-model="career.company" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '회사명' }" />
+            <div v-if="errors && errors[`career_${index}_company`]" class="error-message">{{ errors[`career_${index}_company`] }}</div>
           </td>
           <td>
             <CommonInput v-model="career.position" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '직위' }" />
+            <div v-if="errors && errors[`career_${index}_position`]" class="error-message">{{ errors[`career_${index}_position`] }}</div>
           </td>
           <td class="td-narrow" style="position:relative;">
             <textarea
@@ -56,6 +60,7 @@
               v-model="career.duties"
               rows="2"
             ></textarea>
+            <div v-if="errors && errors[`career_${index}_duties`]" class="error-message">{{ errors[`career_${index}_duties`] }}</div>
             <div v-if="editMode" class="row-action-btns action-btn-group">
               <button type="button" class="icon-btn" :disabled="index === 0" @click="moveUp(index)" title="위로 이동">
                 <i class="fas fa-arrow-up"></i>
@@ -98,6 +103,10 @@ export default {
     editMode: {
       type: Boolean,
       default: false,
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
     },
   },
   emits: ['update:employee'],
@@ -156,7 +165,10 @@ export default {
         startDate: start,
         endDate: end,
       };
-      careers.value = newList;
+      emit('update:employee', {
+        ...props.employee,
+        careers: newList,
+      });
       periodModalVisible.value = false;
     };
 
@@ -194,7 +206,21 @@ export default {
 
 
     const formatPeriod = (startDate, endDate) => {
-      if (!startDate || !endDate) return '';
+      if (!startDate && !endDate) return '';
+      if (startDate && !endDate) {
+        const start = new Date(startDate).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+        });
+        return `${start} ~`;
+      }
+      if (!startDate && endDate) {
+        const end = new Date(endDate).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+        });
+        return `~ ${end}`;
+      }
       const start = new Date(startDate).toLocaleDateString('ko-KR', {
         year: 'numeric',
         month: '2-digit',

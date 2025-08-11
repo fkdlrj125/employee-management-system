@@ -283,7 +283,12 @@ class EmployeeApiService {
       if (index === -1) {
         throw new Error('직원을 찾을 수 없습니다.');
       }
-      dummyEmployees[index] = { ...dummyEmployees[index], ...employeeData, id: parseInt(id) };
+      // hire_date가 YYYY-MM이면 YYYY-MM-01로 보정
+      let hire_date = employeeData.hire_date;
+      if (hire_date && /^\d{4}-\d{2}$/.test(hire_date)) {
+        hire_date = hire_date + '-01';
+      }
+      dummyEmployees[index] = { ...dummyEmployees[index], ...employeeData, hire_date, id: parseInt(id) };
       return {
         success: true,
         data: new Employee(dummyEmployees[index]),

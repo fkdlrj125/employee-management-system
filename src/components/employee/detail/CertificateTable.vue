@@ -51,12 +51,15 @@
                 {{ certificate.issueDate ? formatIssueDate(certificate.issueDate) : '클릭하여 발급일 선택' }}
               </span>
             </template>
+            <div v-if="errors && errors[`certificate_${index}_issueDate`]" class="error-message">{{ errors[`certificate_${index}_issueDate`] }}</div>
           </td>
           <td>
             <CommonInput v-model="certificate.name" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '자격증명' }" />
+            <div v-if="errors && errors[`certificate_${index}_name`]" class="error-message">{{ errors[`certificate_${index}_name`] }}</div>
           </td>
           <td style="position:relative;">
             <CommonInput v-model="certificate.issuer" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '발급처' }" />
+            <div v-if="errors && errors[`certificate_${index}_issuer`]" class="error-message">{{ errors[`certificate_${index}_issuer`] }}</div>
             <div v-if="editMode" class="row-action-btns action-btn-group">
               <Button type="button" btn-class="icon-btn" :disabled="index === 0" @click="moveUp(index)" :title="'위로 이동'">
                 <i class="fa fa-arrow-up"></i>
@@ -119,6 +122,10 @@ export default {
     editMode: {
       type: Boolean,
       default: false,
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
     },
   },
   emits: ['update:employee'],
