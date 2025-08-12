@@ -6,6 +6,62 @@ const EmployeeModel = require('../models/EmployeeModel')
 const { validationResult } = require('express-validator')
 
 class EmployeeController {
+  // 기술역량 점수만 별도 저장
+  async updateSkillScores(req, res) {
+    try {
+      const { id } = req.params;
+      if (!id || isNaN(id)) {
+        return res.status(400).json({ success: false, message: '유효하지 않은 직원 ID입니다.' });
+      }
+      const { skillScores, leaderSkillScores } = req.body;
+      if (!Array.isArray(skillScores) && !Array.isArray(leaderSkillScores)) {
+        return res.status(400).json({ success: false, message: '점수 배열이 필요합니다.' });
+      }
+      await this.employeeModel.updateSkillScores(parseInt(id), { skillScores, leaderSkillScores });
+      res.json({ success: true, message: '기술역량 점수가 성공적으로 저장되었습니다.' });
+    } catch (error) {
+      console.error('Update skill scores error:', error);
+      res.status(500).json({ success: false, message: '기술역량 점수 저장에 실패했습니다.', error: error.message });
+    }
+  }
+  // 직원 성장 추이(기간별 성과) 조회
+  async getPerformanceTrend(req, res) {
+    try {
+      const { id } = req.params;
+      const { role = 'member', from, to } = req.query;
+      if (!id || isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: '유효하지 않은 직원 ID입니다.'
+        });
+      }
+      if (!from || !to) {
+        return res.status(400).json({
+          success: false,
+          message: 'from, to 기간이 필요합니다.'
+        });
+      }
+      const trend = await this.employeeModel.getPerformanceTrend({
+        employeeId: parseInt(id),
+        role,
+        from,
+        to
+      });
+      res.json({
+        success: true,
+        employeeId: parseInt(id),
+        role,
+        trend
+      });
+    } catch (error) {
+      console.error('Get performance trend error:', error);
+      res.status(500).json({
+        success: false,
+        message: '직원 성장 추이 조회에 실패했습니다.',
+        error: error.message
+      });
+    }
+  }
   constructor() {
     this.employeeModel = new EmployeeModel()
   }
@@ -32,11 +88,13 @@ class EmployeeController {
       res.json({
         success: true,
         message: '직원 목록을 성공적으로 조회했습니다.',
-        employees: result.employees,
-        total: result.total,
-        page: result.page,
-        limit: result.limit,
-        totalPages: result.totalPages
+        data: {
+          employees: result.employees,
+          total: result.total,
+          page: result.page,
+          limit: result.limit,
+          totalPages: result.totalPages
+        }
       })
     } catch (error) {
       console.error('Get employees error:', error)

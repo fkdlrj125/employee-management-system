@@ -1,4 +1,4 @@
-import axios from 'axios';
+import EmployeeApiService from '@/services/EmployeeApiService.js';
 import router from '@/router';
 
 const state = {
@@ -10,86 +10,94 @@ const state = {
 
 const getters = {
   isAuthenticated: (state) => !!state.token,
-  currentUser: (state) => state.user,
+  authUser: (state) => state.user,
+  authToken: (state) => state.token,
+  isAuthLoading: (state) => state.loading,
   authError: (state) => state.error,
+  currentUser: (state) => state.user, // 호환성용
 };
 
 const mutations = {
-  AUTH_REQUEST(state) {
-    state.loading = true;
-    state.error = null;
+  SET_AUTH_LOADING(state, status) {
+    state.loading = status;
   },
-  AUTH_SUCCESS(state, { token, user }) {
-    state.token = token;
-    state.user = user;
-    state.loading = false;
-    state.error = null;
-  },
-  AUTH_ERROR(state, error) {
-    state.loading = false;
+  SET_AUTH_ERROR(state, error) {
     state.error = error;
   },
-  CLEAR_AUTH(state) {
+  SET_TOKEN(state, token) {
+    state.token = token;
+    if (token) {
+      sessionStorage.setItem('token', token);
+    } else {
+      sessionStorage.removeItem('token');
+    }
+  },
+  SET_USER(state, user) {
+    state.user = user;
+    if (user) {
+      sessionStorage.setItem('user', JSON.stringify(user));
+    } else {
+      sessionStorage.removeItem('user');
+    }
+  },
+  LOGOUT(state) {
     state.token = null;
     state.user = null;
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
   },
 };
 
 const actions = {
+  // 세션스토리지에서 토큰/유저를 store에 반영 (앱 시작시 등)
   initAuth({ commit }) {
     const token = sessionStorage.getItem('token');
     const user = sessionStorage.getItem('user');
-
-    if (token && user) {
+    if (token) {
+      commit('SET_TOKEN', token);
+    }
+    if (user) {
       try {
-        const parsedUser = JSON.parse(user);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        commit('AUTH_SUCCESS', { token, user: parsedUser });
-      } catch (error) {
-        // 저장된 사용자 정보가 유효하지 않은 경우 초기화
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('user');
-        commit('CLEAR_AUTH');
+        commit('SET_USER', JSON.parse(user));
+      } catch (e) {
+        commit('SET_USER', null);
       }
     }
   },
-
-  async login({ commit }, credentials) {
-    commit('AUTH_REQUEST');
+  async login({ commit, dispatch }, { username, password }) {
+    commit('SET_AUTH_LOADING', true);
+    commit('SET_AUTH_ERROR', null);
     try {
-      // 테스트용 admin/admin 계정
-      if (credentials.username === 'admin' && credentials.password === 'admin') {
-        const token = 'demo-jwt-token-' + Date.now();
-        const user = {
-          id: 1,
-          username: 'admin',
-          name: '관리자',
-          role: 'admin',
-        };
-
-        sessionStorage.setItem('token', token);
-        sessionStorage.setItem('user', JSON.stringify(user));
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-        commit('AUTH_SUCCESS', { token, user });
-
-        return { success: true };
+      const res = await EmployeeApiService.api.post('/auth/login', { username, password });
+      if (res.data && res.data.token) {
+        commit('SET_TOKEN', res.data.token);
+        commit('SET_USER', res.data.user || null);
+        // admin이면 전체, 아니면 본인 부서로 필터 고정
+        if (res.data.user) {
+          if (res.data.user.role === 'admin') {
+            await dispatch('employee/setFilters', { department: '' }, { root: true });
+          } else if (res.data.user.department) {
+            await dispatch('employee/setFilters', { department: res.data.user.department }, { root: true });
+          }
+        }
+        await dispatch('employee/fetchEmployees', null, { root: true });
+        // 토큰/유저 세팅 후 라우터 이동
+        router.push('/employee-list');
+        return { success: true, user: res.data.user };
       } else {
-        throw new Error('잘못된 사용자명 또는 비밀번호입니다.');
+        commit('SET_AUTH_ERROR', res.data?.message || '로그인에 실패했습니다.');
+        return { success: false, error: res.data?.message };
       }
     } catch (error) {
-      commit('AUTH_ERROR', error.message || '로그인에 실패했습니다.');
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('user');
-      return { success: false, message: error.message };
+      commit('SET_AUTH_ERROR', error.response?.data?.message || error.message || '로그인에 실패했습니다.');
+      return { success: false, error: error.message };
+    } finally {
+      commit('SET_AUTH_LOADING', false);
     }
   },
-
-  logout({ commit }) {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
-    delete axios.defaults.headers.common['Authorization'];
-    commit('CLEAR_AUTH');
+  async logout({ commit, dispatch }) {
+    commit('LOGOUT');
+    await dispatch('employee/resetState', null, { root: true });
     router.push('/login');
   },
 };

@@ -35,8 +35,8 @@ const dummyEmployees = [
     ],
     careers: [
       {
-        start_date: '2015-03-01',
-        end_date: '2019-12-31',
+        startDate: '2015-03-01',
+        endDate: '2019-12-31',
         company_name: '(주)테크놀로지',
         department: '개발부',
         position: '주임개발자',
@@ -53,8 +53,8 @@ const dummyEmployees = [
     ],
     projects: [
       {
-        start_date: '2021-01-01',
-        end_date: '2021-12-31',
+        startDate: '2021-01-01',
+        endDate: '2021-12-31',
         project_name: '직원관리시스템',
         role: '프론트엔드 개발',
         technologies: 'Vue.js, JavaScript, CSS',
@@ -88,8 +88,8 @@ const dummyEmployees = [
     ],
     careers: [
       {
-        start_date: '2018-07-01',
-        end_date: '2021-05-31',
+        startDate: '2018-07-01',
+        endDate: '2021-05-31',
         company_name: '크리에이티브에이전시',
         department: '디자인팀',
         position: '디자이너',
@@ -106,8 +106,8 @@ const dummyEmployees = [
     ],
     projects: [
       {
-        start_date: '2022-03-01',
-        end_date: '2022-11-30',
+        startDate: '2022-03-01',
+        endDate: '2022-11-30',
         project_name: '모바일 앱 리뉴얼',
         role: 'UI/UX 디자인',
         technologies: 'Figma, Sketch, Photoshop',
@@ -141,8 +141,8 @@ const dummyEmployees = [
     ],
     careers: [
       {
-        start_date: '2016-09-01',
-        end_date: '2019-02-28',
+        startDate: '2016-09-01',
+        endDate: '2019-02-28',
         company_name: '광고대행사',
         department: '마케팅부',
         position: '주임',
@@ -159,8 +159,8 @@ const dummyEmployees = [
     ],
     projects: [
       {
-        start_date: '2023-01-15',
-        end_date: '2023-06-30',
+        startDate: '2023-01-15',
+        endDate: '2023-06-30',
         project_name: '브랜드 리뉴얼 캠페인',
         role: '마케팅 기획',
         technologies: 'Google Analytics, Facebook Ads',
@@ -170,6 +170,59 @@ const dummyEmployees = [
 ];
 
 class EmployeeApiService {
+  // 기술역량 점수만 별도 저장 (skillScores/leaderSkillScores)
+  async updateEmployeeSkillScores(id, { skillScores, leaderSkillScores }) {
+    try {
+      const response = await this.api.put(`/employees/${id}/skill-scores`, { skillScores, leaderSkillScores });
+      return {
+        success: response.data.success,
+        data: response.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      return this.handleError(error, '기술역량 점수 저장에 실패했습니다.');
+    }
+  }
+
+  // 직원 성장 추이(기간별 성과) 조회
+  async getPerformanceTrend(employeeId, { role = 'member', from, to }) {
+    try {
+      const params = { role, from, to };
+      const response = await this.api.get(`/employees/${employeeId}/performance-trend`, { params });
+      return {
+        success: true,
+        data: response.data.trend,
+        employeeId: response.data.employeeId,
+        role: response.data.role,
+        message: '직원 성장 추이 데이터를 성공적으로 불러왔습니다.'
+      };
+    } catch (error) {
+      return this.handleError(error, '직원 성장 추이 데이터를 불러오는데 실패했습니다.');
+    }
+  }
+  // 연도별 평가점수 이력 저장 (실제 API)
+  async saveEvaluationHistory(evaluationData) {
+    try {
+      const response = await this.api.post('/evaluations', evaluationData);
+      return response.data;
+    } catch (error) {
+      return this.handleError(error, '평가 이력 저장에 실패했습니다.');
+    }
+  }
+
+  // 연도별 평가점수 이력 조회 (실제 API)
+  async getEvaluationHistory(employeeId, year = null) {
+    try {
+      let url = `/evaluations/${employeeId}`;
+      if (year) {
+        url += `?year=${year}`;
+      }
+      const response = await this.api.get(url);
+      return response.data;
+    } catch (error) {
+      return this.handleError(error, '평가 이력 조회에 실패했습니다.');
+    }
+  }
   // 이름(부분일치)로 사원 리스트 검색 (자동완성용)
   async searchEmployeesByName(name) {
     try {
@@ -201,6 +254,7 @@ class EmployeeApiService {
     this.api.interceptors.request.use(
       (config) => {
         const token = sessionStorage.getItem('token');
+        console.log('[EmployeeApiService] request interceptor token:', token);
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -224,15 +278,17 @@ class EmployeeApiService {
     );
   }
 
-  // 직원 목록 조회 (더미 데이터)
+  // 직원 목록 조회 (실제 API)
   async getEmployees(params = {}) {
     try {
-      // 더미 데이터 반환
-      await new Promise((resolve) => setTimeout(resolve, 500)); // 로딩 시뮬레이션
+      const response = await this.api.get('/employees', { params });
+      // 백엔드 응답 구조: { success, data: { employees, total, ... } }
+      const employees = response.data?.data?.employees || [];
+      const total = response.data?.data?.total || 0;
       return {
         success: true,
-        data: dummyEmployees.map((emp) => new Employee(emp)),
-        total: dummyEmployees.length,
+        data: employees,
+        total,
         message: '직원 목록을 성공적으로 불러왔습니다.',
       };
     } catch (error) {
@@ -240,17 +296,23 @@ class EmployeeApiService {
     }
   }
 
-  // 직원 상세 조회 (더미 데이터)
+  // 직원 상세 조회 (실제 API)
   async getEmployeeById(id) {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 시뮬레이션
-      const employee = dummyEmployees.find((emp) => emp.id == id);
-      if (!employee) {
-        throw new Error('직원을 찾을 수 없습니다.');
+      const response = await this.api.get(`/employees/${id}`);
+      // response.data가 { success, employee, ... } 구조일 수 있음
+      let employeeData = response.data.employee || response.data;
+      // 백엔드에서 certifications, external_projects로 오면 프론트 key로 매핑
+      if (employeeData) {
+        employeeData = {
+          ...employeeData,
+          certificates: employeeData.certifications || [],
+          projects: employeeData.external_projects || [],
+        };
       }
       return {
         success: true,
-        data: new Employee(employee),
+        data: employeeData,
         message: '직원 정보를 성공적으로 불러왔습니다.',
       };
     } catch (error) {
@@ -258,16 +320,13 @@ class EmployeeApiService {
     }
   }
 
-  // 직원 생성 (더미 데이터)
+  // 직원 생성 (실제 API)
   async createEmployee(employeeData) {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500)); // 저장 시뮬레이션
-      const newId = Math.max(...dummyEmployees.map((emp) => emp.id)) + 1;
-      const newEmployee = { ...employeeData, id: newId };
-      dummyEmployees.push(newEmployee);
+      const response = await this.api.post('/employees', { data: JSON.stringify(employeeData) });
       return {
         success: true,
-        data: new Employee(newEmployee),
+        data: response.data,
         message: '직원이 성공적으로 등록되었습니다.',
       };
     } catch (error) {
@@ -275,23 +334,13 @@ class EmployeeApiService {
     }
   }
 
-  // 직원 수정 (더미 데이터)
+  // 직원 수정 (실제 API)
   async updateEmployee(id, employeeData) {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500)); // 저장 시뮬레이션
-      const index = dummyEmployees.findIndex((emp) => emp.id == id);
-      if (index === -1) {
-        throw new Error('직원을 찾을 수 없습니다.');
-      }
-      // hire_date가 YYYY-MM이면 YYYY-MM-01로 보정
-      let hire_date = employeeData.hire_date;
-      if (hire_date && /^\d{4}-\d{2}$/.test(hire_date)) {
-        hire_date = hire_date + '-01';
-      }
-      dummyEmployees[index] = { ...dummyEmployees[index], ...employeeData, hire_date, id: parseInt(id) };
+      const response = await this.api.put(`/employees/${id}`, { data: JSON.stringify(employeeData) });
       return {
         success: true,
-        data: new Employee(dummyEmployees[index]),
+        data: response.data,
         message: '직원 정보가 성공적으로 수정되었습니다.',
       };
     } catch (error) {
@@ -299,15 +348,10 @@ class EmployeeApiService {
     }
   }
 
-  // 직원 삭제 (더미 데이터)
+  // 직원 삭제 (실제 API)
   async deleteEmployee(id) {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300)); // 삭제 시뮬레이션
-      const index = dummyEmployees.findIndex((emp) => emp.id == id);
-      if (index === -1) {
-        throw new Error('직원을 찾을 수 없습니다.');
-      }
-      dummyEmployees.splice(index, 1);
+      const response = await this.api.delete(`/employees/${id}`);
       return {
         success: true,
         message: '직원이 성공적으로 삭제되었습니다.',

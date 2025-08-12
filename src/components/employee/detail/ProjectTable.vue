@@ -45,7 +45,7 @@
             <div v-if="errors && errors[`project_${index}_endDate`]" class="error-message">{{ errors[`project_${index}_endDate`] }}</div>
           </td>
           <td>
-            <CommonInput v-model="project.name" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '경력명' }" />
+            <CommonInput v-model="project.project_name" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '경력명' }" />
             <div v-if="errors && errors[`project_${index}_name`]" class="error-message">{{ errors[`project_${index}_name`] }}</div>
           </td>
           <td class="td-narrow" style="position:relative;">
@@ -69,6 +69,33 @@
             </div>
           </td>
         </tr>
+        <tr v-if="projects.length === 0">
+          <td>
+            <span
+              class="info-input plain-input inline-block minw-110 cursor-pointer placeholder"
+              @click="editMode ? handleEmptyPeriodClick() : null"
+            >
+              클릭하여 기간 선택
+            </span>
+          </td>
+          <td>
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '경력명' }" />
+          </td>
+          <td class="td-narrow" style="position:relative;">
+            <textarea class="info-textarea plain-input" :disabled="!editMode" rows="2"></textarea>
+            <div v-if="editMode" class="row-action-btns action-btn-group">
+              <button type="button" class="icon-btn" disabled title="위로 이동">
+                <i class="fas fa-arrow-up"></i>
+              </button>
+              <button type="button" class="icon-btn" disabled title="아래로 이동">
+                <i class="fas fa-arrow-down"></i>
+              </button>
+              <button type="button" class="icon-btn" disabled title="삭제">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
       </tbody>
     </table>
     <ToastConfirm
@@ -82,6 +109,7 @@
 
 <script>
 import { computed, ref } from 'vue';
+import { handleEmptyRowClick } from '@/utils/emptyRowAction';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -226,6 +254,11 @@ export default {
       return `${start} ~ ${end}`;
     };
 
+    // 빈 행에서 기간 클릭 시: 공통 유틸 사용
+    const handleEmptyPeriodClick = () => {
+      handleEmptyRowClick(addProject, openPeriodPicker);
+    };
+
     // 최초 마운트 후 1회만 애니메이션 적용
     setTimeout(() => { firstMount.value = false; }, 700);
 
@@ -245,6 +278,7 @@ export default {
       onPeriodSelect,
       formatPeriod,
       firstMount,
+      handleEmptyPeriodClick,
     };
   },
 };

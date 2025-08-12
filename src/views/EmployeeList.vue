@@ -93,7 +93,7 @@ export default {
     ...mapGetters('employee', ['allEmployees', 'totalItems']),
 
     filteredEmployees() {
-      let employees = [...this.allEmployees];
+      let employees = Array.isArray(this.allEmployees) ? [...this.allEmployees] : [];
 
       // 검색 필터 적용
       if (this.filters.search) {

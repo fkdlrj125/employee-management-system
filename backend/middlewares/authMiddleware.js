@@ -1,0 +1,18 @@
+// JWT 인증 미들웨어
+const jwt = require('jsonwebtoken');
+const SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+module.exports = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: '인증 토큰이 필요합니다.' });
+  }
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: '유효하지 않은 토큰입니다.' });
+  }
+};

@@ -22,6 +22,11 @@
       <canvas ref="chartCanvas" width="400" height="400"></canvas>
     </div>
 
+    <!-- 연도별 점수 변화 차트 -->
+    <div class="chart-wrapper" v-if="evaluationHistory && evaluationHistory.length">
+      <canvas ref="historyChartCanvas" width="400" height="300"></canvas>
+    </div>
+
     <!-- 기술 평가 입력 모달 -->
     <div v-if="showSkillModal" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
@@ -32,7 +37,7 @@
         <div class="modal-body">
           <div class="skill-inputs">
             <div v-for="(skill, index) in skillCategories" :key="index" class="skill-input-group">
-              <label>{{ skill.label }}</label>
+              <label>{{ skill.label[0] + skill.label[1] }}</label>
               <div class="score-input">
                 <input type="range" min="0" max="5" v-model="skill.score" class="skill-slider" />
                 <span class="score-display">{{ skill.score }}/5</span>
@@ -60,6 +65,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import employeeApiService from '@/services/EmployeeApiService';
 
 // Chart.js 컴포넌트 등록 (Filler는 unregister)
 Chart.register(
@@ -83,11 +89,16 @@ export default {
       type: Boolean,
       default: false,
     },
+    evaluationHistory: {
+      type: Array,
+      default: () => [],
+    },
   },
   data() {
     console.log('[EmployeeSkillChart] data() called');
     return {
       chart: null,
+      historyChart: null,
       showSkillModal: false,
       selectedRole: 'member',
       memberSkills: [
@@ -99,12 +110,12 @@ export default {
         { label: ['팀워크'], score: 0 },
       ],
       leaderSkills: [
-        { label: ['직무역량과', '판단력'], score: 0 },
-        { label: ['팀 리더십 및', '관리 능력'], score: 0 },
-        { label: ['고객 소통 및', '서비스 마인드'], score: 0 },
-        { label: ['운영 계획 및', '실행 능력'], score: 0 },
-        { label: ['준수 사항 및', '문서 관리'], score: 0 },
-        { label: ['혁신 및', '지속적인 개선 노력'], score: 0 },
+        { label: ['직무역량과 ', '판단력'], score: 0 },
+        { label: ['팀 리더십 및 ', '관리 능력'], score: 0 },
+        { label: ['고객 소통 및 ', '서비스 마인드'], score: 0 },
+        { label: ['운영 계획 및 ', '실행 능력'], score: 0 },
+        { label: ['준수 사항 및 ', '문서 관리'], score: 0 },
+        { label: ['혁신 및 ', '지속적인 개선 노력'], score: 0 },
       ],
       firstMount: true,
     };
@@ -123,6 +134,7 @@ export default {
       deep: true,
     },
     selectedRole() {
+      this.loadSkillData();
       this.updateChart();
     }
   },
@@ -130,6 +142,7 @@ export default {
     console.log('[EmployeeSkillChart] mounted');
     this.loadSkillData();
     this.initChart();
+    this.initHistoryChart();
     setTimeout(() => {
       this.firstMount = false;
       console.log('[EmployeeSkillChart] firstMount set to false');
@@ -140,21 +153,25 @@ export default {
     if (this.chart) {
       this.chart.destroy();
     }
+    if (this.historyChart) {
+      this.historyChart.destroy();
+    }
   },
   methods: {
     toggleRole() {
       this.selectedRole = this.selectedRole === 'member' ? 'leader' : 'member';
     },
     loadSkillData() {
-      // 멤버/리더 각각의 skillScores를 분리 저장할 수도 있음. 여기선 단일 배열로 가정
-      if (this.employee.skillScores) {
-        const arr = this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
-        arr.forEach((category, index) => {
-          if (this.employee.skillScores[index] !== undefined) {
-            category.score = this.employee.skillScores[index];
-          }
-        });
-      }
+      // selectedRole에 따라 본인/리더 평가 점수 분기 적용
+      const scores = this.selectedRole === 'leader'
+        ? (this.employee.leaderSkillScores || [])
+        : (this.employee.skillScores || []);
+      const arr = this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
+      arr.forEach((category, index) => {
+        if (scores[index] !== undefined) {
+          category.score = scores[index];
+        }
+      });
     },
 
     initChart() {
@@ -245,6 +262,52 @@ export default {
       }
     },
 
+    // 연도별 점수 변화 라인차트(또는 레이더차트) 추가
+    initHistoryChart() {
+      if (!this.$refs.historyChartCanvas) return;
+      if (this.historyChart) {
+        this.historyChart.destroy();
+        this.historyChart = null;
+      }
+      // 연도별 점수 변화 데이터 준비
+      const history = Array.isArray(this.evaluationHistory) ? this.evaluationHistory : [];
+      if (!history.length) return;
+      // 연도 오름차순 정렬
+      const sorted = [...history].sort((a, b) => new Date(a.evaluation_date) - new Date(b.evaluation_date));
+      const labels = sorted.map(item => {
+        const d = new Date(item.evaluation_date);
+        return d.getFullYear();
+      });
+      // 각 점수별 변화 추이
+      const scoreFields = ['score1','score2','score3','score4','score5','score6'];
+      const datasets = scoreFields.map((field, idx) => ({
+        label: `점수${idx+1}`,
+        data: sorted.map(item => Number(item[field]) || 0),
+        fill: false,
+        borderColor: `hsl(${idx*60},70%,50%)`,
+        backgroundColor: `hsl(${idx*60},70%,80%)`,
+        tension: 0.2,
+      }));
+      const ctx = this.$refs.historyChartCanvas.getContext('2d');
+      this.historyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets,
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true },
+            title: { display: true, text: '연도별 점수 변화(성장 추이)' },
+          },
+          scales: {
+            y: { beginAtZero: true, max: 5, min: 0, stepSize: 1 },
+          },
+        },
+      });
+    },
+
     updateChart() {
       try {
         if (this.chart) {
@@ -263,7 +326,7 @@ export default {
       }
     },
 
-    saveSkillScores() {
+    async saveSkillScores() {
       // skillCategories가 비어있으면 최소 1개 dummy라도 넣기
       const arr = this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
       const safeCategories = arr.length > 0 ? arr : [{ label: 'N/A', score: 0 }];
@@ -272,12 +335,29 @@ export default {
         if (isNaN(n)) return 0;
         return n > 5 ? 5 : n;
       });
-      this.$emit('update:employee', {
-        ...this.employee,
-        skillScores: scores,
-      });
-      this.updateChart();
-      this.closeModal();
+      let payload = {};
+      if (this.selectedRole === 'leader') {
+        payload.leaderSkillScores = scores;
+      } else {
+        payload.skillScores = scores;
+      }
+      try {
+        const res = await employeeApiService.updateEmployeeSkillScores(this.employee.id, payload);
+        if (res.success) {
+          // 프론트 상태도 즉시 반영
+          if (this.selectedRole === 'leader') {
+            this.$emit('update:employee', { ...this.employee, leaderSkillScores: scores });
+          } else {
+            this.$emit('update:employee', { ...this.employee, skillScores: scores });
+          }
+          this.updateChart();
+          this.closeModal();
+        } else {
+          alert(res.error || '저장에 실패했습니다.');
+        }
+      } catch (e) {
+        alert('저장 중 오류가 발생했습니다.');
+      }
     },
 
     closeModal() {

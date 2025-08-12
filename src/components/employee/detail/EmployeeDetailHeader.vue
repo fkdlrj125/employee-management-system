@@ -2,6 +2,7 @@
 <template>
   <div class="header-section">
     <div class="employee-bar-left">
+      <slot name="left-extra"></slot>
       <router-link to="/employee-list" class="home-btn" title="메인으로">
         <i class="fas fa-home"></i>
       </router-link>

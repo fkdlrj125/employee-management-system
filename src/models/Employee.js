@@ -21,8 +21,16 @@ export class Employee {
     this.career_years = data.career_years || 0;
     this.educations = data.educations || [];
     this.certificates = data.certificates || [];
-    this.careers = data.careers || [];
-    this.projects = data.projects || [];
+    // 하위 배열 key 변환 (company_name, responsibilities, project_name 등)
+    this.careers = (data.careers || []).map(c => ({
+      ...c,
+      company_name: c.company_name || c.company || '',
+      responsibilities: c.responsibilities || c.duties || '',
+    }));
+    this.projects = (data.projects || []).map(p => ({
+      ...p,
+      project_name: p.project_name || p.name || '',
+    }));
   }
 
   // 유효성 검사

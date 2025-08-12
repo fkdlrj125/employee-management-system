@@ -46,7 +46,7 @@
             <div v-if="errors && errors[`career_${index}_endDate`]" class="error-message">{{ errors[`career_${index}_endDate`] }}</div>
           </td>
           <td>
-            <CommonInput v-model="career.company" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '회사명' }" />
+            <CommonInput v-model="career.company_name" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '회사명' }" />
             <div v-if="errors && errors[`career_${index}_company`]" class="error-message">{{ errors[`career_${index}_company`] }}</div>
           </td>
           <td>
@@ -57,7 +57,7 @@
             <textarea
               class="info-textarea plain-input"
               :disabled="!editMode"
-              v-model="career.duties"
+              v-model="career.responsibilities"
               rows="2"
             ></textarea>
             <div v-if="errors && errors[`career_${index}_duties`]" class="error-message">{{ errors[`career_${index}_duties`] }}</div>
@@ -69,6 +69,36 @@
                 <i class="fas fa-arrow-down"></i>
               </button>
               <button type="button" class="icon-btn" @click="showDeleteConfirm(index)" title="삭제">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr v-if="careers.length === 0">
+          <td>
+            <span
+              class="info-input plain-input inline-block minw-110 cursor-pointer placeholder"
+              @click="editMode ? handleEmptyPeriodClick() : null"
+            >
+              클릭하여 기간 선택
+            </span>
+          </td>
+          <td>
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '회사명' }" />
+          </td>
+          <td>
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '직위' }" />
+          </td>
+          <td class="td-narrow" style="position:relative;">
+            <textarea class="info-textarea plain-input" :disabled="!editMode" rows="2"></textarea>
+            <div v-if="editMode" class="row-action-btns action-btn-group">
+              <button type="button" class="icon-btn" disabled title="위로 이동">
+                <i class="fas fa-arrow-up"></i>
+              </button>
+              <button type="button" class="icon-btn" disabled title="아래로 이동">
+                <i class="fas fa-arrow-down"></i>
+              </button>
+              <button type="button" class="icon-btn" disabled title="삭제">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -87,6 +117,7 @@
 
 <script>
 import { computed, ref } from 'vue';
+import { handleEmptyRowClick } from '@/utils/emptyRowAction';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -203,8 +234,6 @@ export default {
       }
     };
 
-
-
     const formatPeriod = (startDate, endDate) => {
       if (!startDate && !endDate) return '';
       if (startDate && !endDate) {
@@ -232,6 +261,11 @@ export default {
       return `${start} ~ ${end}`;
     };
 
+    // 빈 행에서 기간 클릭 시: 공통 유틸 사용
+    const handleEmptyPeriodClick = () => {
+      handleEmptyRowClick(addCareer, openPeriodPicker);
+    };
+
     setTimeout(() => { firstMount.value = false; }, 700);
     return {
       careers,
@@ -249,6 +283,7 @@ export default {
       onPeriodSelect,
       formatPeriod,
       firstMount,
+      handleEmptyPeriodClick, 
     };
   },
 };

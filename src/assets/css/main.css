@@ -1,6 +1,3 @@
-/* Base Styles */
-@import './base/reset.css';
-@import './base/typography.css';
 
 /* Common Components */
 @import './common/buttons.css';

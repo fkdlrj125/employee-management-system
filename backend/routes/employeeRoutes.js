@@ -58,11 +58,18 @@ router.put('/:id',
   (req, res) => employeeController.updateEmployee(req, res)
 )
 
+// PUT /api/employees/:id/skill-scores - 기술역량 점수만 저장
+router.put('/:id/skill-scores', (req, res) => employeeController.updateSkillScores(req, res))
+
 // DELETE /api/employees/:id - 직원 삭제
 router.delete('/:id', (req, res) => employeeController.deleteEmployee(req, res))
 
 // GET /api/employees/meta/departments - 부서 목록 조회
 router.get('/meta/departments', (req, res) => employeeController.getDepartments(req, res))
+
+
+// GET /api/employees/:id/performance-trend - 직원 성장 추이(기간별 성과) 조회
+router.get('/:id/performance-trend', (req, res) => employeeController.getPerformanceTrend(req, res))
 
 // GET /api/employees/meta/positions - 직급 목록 조회
 router.get('/meta/positions', (req, res) => employeeController.getPositions(req, res))

@@ -1,10 +1,4 @@
-/**
- * Employee Vuex Store
- * 임시 더미 데이터 사용 (백엔드 서버 연결 전까지)
- */
-import axios from 'axios';
-
-const state = {
+const getDefaultState = () => ({
   employees: [],
   currentEmployee: null,
   loading: false,
@@ -17,7 +11,15 @@ const state = {
   },
   currentPage: 1,
   perPage: 10,
-};
+});
+
+/**
+ * Employee Vuex Store
+ * 임시 더미 데이터 사용 (백엔드 서버 연결 전까지)
+ */
+import EmployeeApiService from '@/services/EmployeeApiService.js';
+
+const state = getDefaultState();
 
 const getters = {
   allEmployees: (state) => state.employees,
@@ -30,6 +32,9 @@ const getters = {
 };
 
 const mutations = {
+  RESET_STATE(state) {
+    Object.assign(state, getDefaultState());
+  },
   SET_LOADING(state, status) {
     state.loading = status;
   },
@@ -52,365 +57,45 @@ const mutations = {
 };
 
 const actions = {
-  // 직원 목록 조회 (더미 데이터 사용)
+  resetState({ commit }) {
+    commit('RESET_STATE');
+  },
+  // 직원 목록 조회 (실제 API 연동)
   async fetchEmployees({ commit, state }) {
+    console.log('[employee] fetchEmployees called, filters:', state.filters);
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
-
     try {
-      // 더미 데이터
-      const dummyEmployees = [
-        {
-          id: 1,
-          name: '김철수',
-          department: 'DSS1',
-          position: '과장',
-          email: 'kim@company.com',
-          phone: '010-1234-5678',
-          address: '서울시 강남구',
-          birth: '1985-05-15',
-          hire_date: '2008-03-01',
-          workplace: '서울 본사',
-          total_score: 85.5,
-          mitmas_total_career: 186, // 15년 6개월 = 186개월
-          photoUrl: null,
-        },
-        {
-          id: 2,
-          name: '이영희',
-          department: 'DSS2',
-          position: '대리',
-          email: 'lee@company.com',
-          phone: '010-9876-5432',
-          address: '서울시 서초구',
-          birth: '1990-08-22',
-          hire_date: '2015-06-15',
-          workplace: '서울 본사',
-          total_score: 92.3,
-          mitmas_total_career: 100, // 8년 4개월 = 100개월
-          photoUrl: null,
-        },
-        {
-          id: 3,
-          name: '박민수',
-          department: 'CSC',
-          position: '차장',
-          email: 'park@company.com',
-          phone: '010-5555-1234',
-          address: '서울시 송파구',
-          birth: '1982-12-10',
-          hire_date: '2005-01-10',
-          workplace: '서울 본사',
-          total_score: 78.9,
-          mitmas_total_career: 224, // 18년 8개월 = 224개월
-          photoUrl: null,
-        },
-        {
-          id: 4,
-          name: '최수진',
-          department: 'HR',
-          position: '부장',
-          email: 'choi@company.com',
-          phone: '010-7777-8888',
-          address: '서울시 마포구',
-          birth: '1978-03-05',
-          hire_date: '2001-09-01',
-          workplace: '서울 본사',
-          total_score: 88.7,
-          mitmas_total_career: 265, // 22년 1개월 = 265개월
-          photoUrl: null,
-        },
-        {
-          id: 5,
-          name: '윤성호',
-          department: 'DSS1',
-          position: '이사',
-          email: 'yoon@company.com',
-          phone: '010-9999-0000',
-          address: '서울시 강동구',
-          birth: '1975-04-12',
-          hire_date: '1998-02-15',
-          workplace: '서울 본사',
-          total_score: 95.8,
-          mitmas_total_career: 312, // 26년 = 312개월
-          photoUrl: null,
-        },
-        {
-          id: 6,
-          name: '한지영',
-          department: 'CSC',
-          position: '본부장',
-          email: 'han@company.com',
-          phone: '010-1111-2222',
-          address: '서울시 서대문구',
-          birth: '1973-09-25',
-          hire_date: '1995-07-01',
-          workplace: '서울 본사',
-          total_score: 91.2,
-          mitmas_total_career: 341, // 28년 5개월 = 341개월
-          photoUrl: null,
-        },
-      ];
-
-      // 필터링 적용
-      let filteredEmployees = dummyEmployees;
-      const { department, position, search } = state.filters;
-
-      if (department) {
-        filteredEmployees = filteredEmployees.filter((emp) => emp.department === department);
+      const params = { ...state.filters };
+      console.log('[employee] API request params:', params);
+      const res = await EmployeeApiService.getEmployees(params);
+      console.log('[employee] API response:', res);
+      if (res.success) {
+        commit('SET_EMPLOYEES', {
+          employees: res.data,
+          total: res.total,
+        });
+      } else {
+        commit('SET_ERROR', res.error || '직원 목록을 불러오는데 실패했습니다.');
+        console.error('[employee] API error:', res.error);
       }
-      if (position) {
-        filteredEmployees = filteredEmployees.filter((emp) => emp.position === position);
-      }
-      if (search) {
-        filteredEmployees = filteredEmployees.filter(
-          (emp) => emp.name.includes(search) || emp.email.includes(search),
-        );
-      }
-
-      commit('SET_EMPLOYEES', {
-        employees: filteredEmployees,
-        total: filteredEmployees.length,
-      });
     } catch (error) {
       commit('SET_ERROR', error.message || '직원 목록을 불러오는데 실패했습니다.');
+      console.error('[employee] fetchEmployees exception:', error);
     } finally {
       commit('SET_LOADING', false);
     }
   },
-
-  // 직원 상세 조회 (더미 데이터 사용)
+  // 직원 상세 조회 (실제 API 연동)
   async fetchEmployeeById({ commit }, id) {
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
-
     try {
-      // 더미 데이터 (기존과 동일)
-      const dummyEmployees = [
-        {
-          id: 1,
-          name: '김철수',
-          department: 'DSS1',
-          position: '과장',
-          email: 'kim@company.com',
-          phone: '010-1234-5678',
-          address: '서울시 강남구 테헤란로 123',
-          birth: '1985-05-15',
-          photoUrl: null,
-          career_years: 15.5,
-          eus_career: '15년 6개월',
-          workplace: '서울 본사',
-          skills: 'Java, Spring, Vue.js',
-          educations: [
-            {
-              school: '서울대학교',
-              major: '컴퓨터공학',
-              degree: '학사',
-              startDate: '2004-03-01',
-              endDate: '2008-02-28',
-              grade: '3.8/4.5',
-            },
-          ],
-          certificates: [
-            {
-              name: '정보처리기사',
-              issuer: '한국산업인력공단',
-              issueDate: '2007-06-15',
-              expiryDate: '',
-              score: '합격',
-            },
-          ],
-          careers: [
-            {
-              company: 'ABC 시스템',
-              department: '개발팀',
-              position: '사원',
-              startDate: '2008-03-01',
-              endDate: '2012-02-28',
-              duties: '웹 애플리케이션 개발',
-            },
-          ],
-          projects: [
-            {
-              name: '직원관리시스템',
-              client: '내부',
-              role: '개발팀장',
-              startDate: '2023-01-01',
-              endDate: '2023-12-31',
-              technologies: 'Vue.js, Node.js, MySQL',
-              description: '사내 직원관리시스템 개발',
-            },
-          ],
-        },
-        {
-          id: 2,
-          name: '이영희',
-          department: 'DSS2',
-          position: '대리',
-          email: 'lee@company.com',
-          phone: '010-9876-5432',
-          address: '서울시 서초구 강남대로 456',
-          birth: '1990-08-22',
-          photoUrl: null,
-          career_years: 8.3,
-          eus_career: '8년 4개월',
-          workplace: '서울 본사',
-          skills: 'Python, Django, React',
-          educations: [],
-          certificates: [],
-          careers: [],
-          projects: [],
-        },
-        {
-          id: 3,
-          name: '박민수',
-          department: 'CSC',
-          position: '차장',
-          email: 'park@company.com',
-          phone: '010-5555-1234',
-          address: '서울시 송파구 올림픽로 789',
-          birth: '1982-12-10',
-          photoUrl: null,
-          career_years: 18.7,
-          eus_career: '18년 8개월',
-          workplace: '서울 본사',
-          skills: '프로젝트 관리, 시스템 분석',
-          educations: [
-            {
-              school: '연세대학교',
-              major: '경영학',
-              degree: '학사',
-              startDate: '2001-03-01',
-              endDate: '2005-02-28',
-              grade: '3.5/4.5',
-            },
-          ],
-          certificates: [
-            {
-              name: '컴활1급',
-              issuer: '대한상공회의소',
-              issueDate: '2005-05-20',
-              expiryDate: '',
-              score: '합격',
-            },
-          ],
-          careers: [
-            {
-              company: 'XYZ 코퍼레이션',
-              department: '기획팀',
-              position: '주임',
-              startDate: '2005-03-01',
-              endDate: '2010-12-31',
-              duties: '사업기획 및 분석',
-            },
-          ],
-          projects: [
-            {
-              name: '시스템 통합 프로젝트',
-              client: '외부 고객사',
-              role: '프로젝트 매니저',
-              startDate: '2022-01-01',
-              endDate: '2022-12-31',
-              technologies: 'Java, Oracle, Spring',
-              description: '레거시 시스템 통합 프로젝트',
-            },
-          ],
-        },
-        {
-          id: 4,
-          name: '최수진',
-          department: 'HR',
-          position: '부장',
-          email: 'choi@company.com',
-          phone: '010-7777-8888',
-          address: '서울시 마포구 홍대로 321',
-          birth: '1978-03-05',
-          photoUrl: null,
-          career_years: 22.1,
-          eus_career: '22년 1개월',
-          workplace: '서울 본사',
-          skills: '인사관리, 조직개발, 교육기획',
-          educations: [
-            {
-              school: '고려대학교',
-              major: '심리학',
-              degree: '학사',
-              startDate: '1997-03-01',
-              endDate: '2001-02-28',
-              grade: '3.9/4.5',
-            },
-            {
-              school: '서울대학교',
-              major: '인사조직학',
-              degree: '석사',
-              startDate: '2001-09-01',
-              endDate: '2003-08-31',
-              grade: '4.2/4.5',
-            },
-          ],
-          certificates: [
-            {
-              name: '인사관리사',
-              issuer: '한국산업인력공단',
-              issueDate: '2003-11-15',
-              expiryDate: '',
-              score: '합격',
-            },
-            {
-              name: 'TOEIC',
-              issuer: 'ETS',
-              issueDate: '2023-01-15',
-              expiryDate: '2025-01-15',
-              score: '950',
-            },
-          ],
-          careers: [
-            {
-              company: 'DEF 인터내셔널',
-              department: '인사팀',
-              position: '대리',
-              startDate: '2003-09-01',
-              endDate: '2008-02-28',
-              duties: '채용 및 교육 업무',
-            },
-            {
-              company: 'GHI 그룹',
-              department: '인사팀',
-              position: '과장',
-              startDate: '2008-03-01',
-              endDate: '2015-12-31',
-              duties: '인사기획 및 조직관리',
-            },
-          ],
-          projects: [
-            {
-              name: 'HR 시스템 구축',
-              client: '내부',
-              role: '프로젝트 오너',
-              startDate: '2023-03-01',
-              endDate: '2023-11-30',
-              technologies: 'SAP, Oracle',
-              description: '통합 인사관리시스템 구축',
-            },
-            {
-              name: '조직문화 개선 프로젝트',
-              client: '내부',
-              role: '팀리더',
-              startDate: '2022-06-01',
-              endDate: '2022-12-31',
-              technologies: 'Survey Tools, Analytics',
-              description: '직원 만족도 조사 및 조직문화 개선',
-            },
-          ],
-        },
-      ];
-
-      const employee = dummyEmployees.find((emp) => emp.id === parseInt(id));
-
-      if (employee) {
-        commit('SET_CURRENT_EMPLOYEE', employee);
+      const res = await EmployeeApiService.getEmployeeById(id);
+      if (res.success) {
+        commit('SET_CURRENT_EMPLOYEE', res.data);
       } else {
-        throw new Error('직원 정보를 찾을 수 없습니다.');
+        commit('SET_ERROR', res.error || '직원 정보를 불러오는데 실패했습니다.');
       }
     } catch (error) {
       commit('SET_ERROR', error.message || '직원 정보를 불러오는데 실패했습니다.');
@@ -420,23 +105,77 @@ const actions = {
   },
 
   // 기타 액션들 (임시 구현)
+  // 직원 등록 (실제 API 연동)
   async createEmployee({ commit, dispatch }, employeeData) {
-    // 임시 구현
-    return { success: true, data: employeeData };
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
+    try {
+      const res = await EmployeeApiService.createEmployee(employeeData);
+      if (res.success) {
+        // 등록 후 목록 갱신 등 필요시 dispatch 사용
+        return res;
+      } else {
+        commit('SET_ERROR', res.error || '직원 등록에 실패했습니다.');
+        return res;
+      }
+    } catch (error) {
+      commit('SET_ERROR', error.message || '직원 등록에 실패했습니다.');
+      return { success: false, error: error.message };
+    } finally {
+      commit('SET_LOADING', false);
+    }
   },
 
+  // 직원 수정 (실제 API 연동)
   async updateEmployee({ commit, dispatch }, { id, data }) {
-    // 임시 구현
-    return { success: true, data };
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
+    try {
+      const res = await EmployeeApiService.updateEmployee(id, data);
+      if (res.success) {
+        // 수정 후 목록/상세 갱신 등 필요시 dispatch 사용
+        return res;
+      } else {
+        commit('SET_ERROR', res.error || '직원 정보 수정에 실패했습니다.');
+        return res;
+      }
+    } catch (error) {
+      commit('SET_ERROR', error.message || '직원 정보 수정에 실패했습니다.');
+      return { success: false, error: error.message };
+    } finally {
+      commit('SET_LOADING', false);
+    }
   },
 
+  // 직원 삭제 (실제 API 연동)
   async deleteEmployee({ commit, dispatch }, id) {
-    // 임시 구현
-    return { success: true };
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
+    try {
+      const res = await EmployeeApiService.deleteEmployee(id);
+      if (res.success) {
+        // 삭제 후 목록 갱신 등 필요시 dispatch 사용
+        return res;
+      } else {
+        commit('SET_ERROR', res.error || '직원 삭제에 실패했습니다.');
+        return res;
+      }
+    } catch (error) {
+      commit('SET_ERROR', error.message || '직원 삭제에 실패했습니다.');
+      return { success: false, error: error.message };
+    } finally {
+      commit('SET_LOADING', false);
+    }
   },
 
-  setFilters({ commit }, filters) {
-    commit('SET_FILTERS', filters);
+  setFilters({ commit, rootState }, filters) {
+    // admin이 아니면 department를 본인 부서로 강제 고정
+    const user = rootState.auth && rootState.auth.user;
+    if (user && user.role !== 'admin') {
+      commit('SET_FILTERS', { ...filters, department: user.department });
+    } else {
+      commit('SET_FILTERS', filters);
+    }
   },
 
   setCurrentPage({ commit }, page) {

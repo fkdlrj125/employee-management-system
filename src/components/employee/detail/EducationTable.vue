@@ -72,6 +72,8 @@
               :input-attrs="{ placeholder: '클릭하여 기간 선택', readonly: true }"
               input-class="info-input plain-input"
               :disabled="!editMode"
+              @click="editMode ? handleEmptyPeriodClick() : null"
+              class="cursor-pointer"
             />
           </td>
           <td>
@@ -106,6 +108,7 @@
 
 <script>
 import { computed, ref } from 'vue';
+import { handleEmptyRowClick } from '@/utils/emptyRowAction';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -251,6 +254,11 @@ export default {
       });
       return `${start} ~ ${end}`;
     };
+    
+    // 빈 행에서 기간 클릭 시: 공통 유틸 사용
+    const handleEmptyPeriodClick = () => {
+      handleEmptyRowClick(addEducation, openPeriodPicker);
+    };
 
     setTimeout(() => { firstMount.value = false; }, 700);
     return {
@@ -268,6 +276,7 @@ export default {
       periodTemp,
       onPeriodSelect,
       firstMount,
+      handleEmptyPeriodClick,
     };
   },
 };

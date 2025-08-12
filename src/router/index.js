@@ -22,6 +22,12 @@ const routes = [
     component: () => import('@/views/EmployeeDetail.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/performance-analysis/:id',
+    name: 'PerformanceAnalysis',
+    component: () => import('@/views/PerformanceAnalysis.vue'),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({

@@ -121,16 +121,28 @@
 
         <!-- 우측 영역 - 차트 및 기술 점수 -->
         <div class="resume-right">
+
+
           <!-- 기술 역량 차트 -->
           <EmployeeSkillChart
             class="table-container"
             :employee="employee"
             :edit-mode="editMode"
+            :leader-skill-scores="employee.leaderSkillScores"
             @update:employee="updateEmployee"
             :key="'skill'"
           />
 
-          <!-- 기간별 성과 분석 -->
+          <!-- 성과 분석 페이지 이동 버튼 -->
+          <button
+            class="btn btn-primary table-container"
+            style="margin-top: 18px; width: 100%; font-size: 1.1rem;"
+            @click="goToPerformanceAnalysis"
+          >
+            기간별 성과 분석 페이지로 이동
+          </button>
+
+          <!-- 기간별 성과 분석(기존) -->
           <EmployeePeriodSelector
             class="table-container"
             :employee="employee"
@@ -165,17 +177,6 @@ import ToastConfirm from '@/components/common/ToastConfirm.vue';
 
 export default {
   name: 'EmployeeDetail',
-  components: {
-    EmployeeBasicInfo,
-    EmployeeContactInfo,
-    EmployeeSkillChart,
-    EmployeePeriodSelector,
-    EducationTable,
-    CareerTable,
-    CertificateTable,
-    ProjectTable,
-    EmployeeDetailHeader,
-  },
   components: {
     ToastConfirm,
     EmployeeBasicInfo,
@@ -262,6 +263,19 @@ export default {
     }
   },
   methods: {
+    // 기간 기본값(최근 1년)
+    getDefaultFrom() {
+      const now = new Date();
+      const from = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+        .toISOString()
+        .slice(0, 7);
+      return from;
+    },
+    getDefaultTo() {
+      const now = new Date();
+      return now.toISOString().slice(0, 7);
+    },
+
     // 개별 필드 유효성 검사 (하위 컴포넌트에서 호출)
     validateField(field, value) {
       // errors 객체를 복사해서 사용
@@ -337,7 +351,25 @@ export default {
       try {
         const response = await EmployeeApiService.getEmployeeById(this.employeeId);
         if (response.success) {
-          this.employee = { ...this.employee, ...response.data };
+          // 백엔드에서 certifications, external_projects로 오면 프론트 key(certificate, projects)로 매핑
+          const raw = response.data;
+          // 하위 배열 key 변환 (careers, projects)
+          const mapCareers = (arr) => (arr || []).map(c => ({
+            ...c,
+            company_name: c.company_name || c.company || '',
+            responsibilities: c.responsibilities || c.duties || '',
+          }));
+          const mapProjects = (arr) => (arr || []).map(p => ({
+            ...p,
+            project_name: p.project_name || p.name || '',
+          }));
+          const mapped = {
+            ...raw,
+            certificates: raw.certifications || [],
+            projects: mapProjects(raw.external_projects || raw.projects || []),
+            careers: mapCareers(raw.careers || []),
+          };
+          this.employee = { ...this.employee, ...mapped };
           this.originalEmployee = JSON.parse(JSON.stringify(this.employee));
         } else {
           throw new Error(response.error);
@@ -429,11 +461,42 @@ export default {
         this.showMessage('입력 정보를 확인해주세요.', 'error');
         return;
       }
+      // skillScores/leaderSkillScores를 score1~score6, leader_score1~6으로 변환
+      const toScoreFields = (arr, prefix = 'score') => {
+        const obj = {};
+        if (Array.isArray(arr) && arr.length === 6) {
+          arr.forEach((v, i) => {
+            obj[`${prefix}${i+1}`] = Number(v);
+          });
+        }
+        return obj;
+      };
+      // payload에서 불필요한 배열/객체 필드 제거 (skillScores, leaderSkillScores, certificates, projects 등)
+      // 모든 배열/객체 필드 제거 (certifications, external_projects, certificates, projects, educations, careers 등)
+      const {
+        skillScores, leaderSkillScores, certificates, projects, educations, careers,
+        certifications, external_projects,
+        ...baseFields
+      } = this.employee;
+      // id, undefined, null, photo, photoUrl, eus_career 등 불필요한 필드 제거
+      const forbidden = ['id', 'photo', 'photoUrl', 'eus_career'];
+      const payload = {};
+      Object.entries(baseFields).forEach(([k, v]) => {
+        if (!forbidden.includes(k) && v !== undefined && v !== null) payload[k] = v;
+      });
+      // score1~6, leader_score1~6 변환 추가
+      if (skillScores && Array.isArray(skillScores) && skillScores.length === 6) {
+        Object.assign(payload, toScoreFields(skillScores, 'score'));
+      }
+      if (leaderSkillScores && Array.isArray(leaderSkillScores) && leaderSkillScores.length === 6) {
+        Object.assign(payload, toScoreFields(leaderSkillScores, 'leader_score'));
+      }
       try {
         let result;
-        console.log('saveDetail: isAddMode?', this.isAddMode, 'employee:', this.employee);
+        // 디버깅: 실제 전송되는 payload를 보기 좋게 출력
+        console.log('[saveDetail] 최종 전송 payload:', JSON.stringify(payload, null, 2));
         if (this.isAddMode) {
-          result = await EmployeeApiService.createEmployee(this.employee);
+          result = await EmployeeApiService.createEmployee(payload);
           console.log('createEmployee result:', result);
           if (result.success) {
             this.showMessage('직원 정보가 성공적으로 등록되었습니다.', 'success');
@@ -442,7 +505,7 @@ export default {
             throw new Error(result.error);
           }
         } else {
-          result = await EmployeeApiService.updateEmployee(this.employeeId, this.employee);
+          result = await EmployeeApiService.updateEmployee(this.employeeId, payload);
           console.log('updateEmployee result:', result);
           if (result.success) {
             console.log('updateEmployee 성공, 메시지:', result.message);
@@ -648,6 +711,14 @@ export default {
     validateYearMonth(val) {
       // YYYY-MM 또는 YYYY.MM 또는 YYYY/MM
       return /^\d{4}[-./]\d{2}$/.test(val);
+    },
+
+    goToPerformanceAnalysis() {
+      if (this.employee && this.employee.id) {
+        this.$router.push(`/performance-analysis/${this.employee.id}`);
+      } else {
+        this.showMessage('직원 정보가 없습니다.', 'error');
+      }
     },
   },
   mounted() {

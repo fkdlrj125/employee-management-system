@@ -75,7 +75,13 @@
         </tr>
         <tr v-if="certificates.length === 0">
           <td>
-            <DateInput type="month" input-class="info-input plain-input" :disabled="!editMode" />
+            <span
+              class="info-input plain-input inline-block minw-110 cursor-pointer"
+              :class="{ placeholder: true }"
+              @click="editMode ? handleEmptyIssueDateClick() : null"
+            >
+              클릭하여 발급일 선택
+            </span>
           </td>
           <td style="position:relative;">
             <CommonInput input-class="info-input plain-input" :disabled="!editMode" />
@@ -105,6 +111,7 @@
 
 <script>
 import { computed, ref, nextTick } from 'vue';
+import { handleEmptyRowClick } from '@/utils/emptyRowAction';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -248,6 +255,11 @@ export default {
       activeMonthInput.value = -1;
     };
 
+    // 빈 행에서 발급일 클릭 시: 공통 유틸 사용
+    const handleEmptyIssueDateClick = () => {
+      handleEmptyRowClick(addCertificate, showMonthInput);
+    };
+
     setTimeout(() => { firstMount.value = false; }, 700);
     return {
       certificates,
@@ -265,6 +277,7 @@ export default {
       hideMonthInput,
       monthInputs,
       firstMount,
+      handleEmptyIssueDateClick,
     };
   },
 };
