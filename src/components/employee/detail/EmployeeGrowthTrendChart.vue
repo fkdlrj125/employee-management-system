@@ -18,7 +18,7 @@
 
 <script>
 import Chart from 'chart.js/auto';
-import employeeApiService from '@/services/EmployeeApiService';
+ import employeeApiService from '@/services/employee-api-service';
 
 export default {
   name: 'EmployeeGrowthTrendChart',

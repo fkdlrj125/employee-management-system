@@ -2,7 +2,7 @@
  * Employee Controller (MVC Pattern)
  * 요청 처리 및 응답 로직을 담당
  */
-const EmployeeModel = require('../models/EmployeeModel')
+const EmployeeService = require('../services/EmployeeService');
 const { validationResult } = require('express-validator')
 
 class EmployeeController {
@@ -17,7 +17,8 @@ class EmployeeController {
       if (!Array.isArray(skillScores) && !Array.isArray(leaderSkillScores)) {
         return res.status(400).json({ success: false, message: '점수 배열이 필요합니다.' });
       }
-      await this.employeeModel.updateSkillScores(parseInt(id), { skillScores, leaderSkillScores });
+      // TODO: EmployeeService에 updateSkillScores 메서드 추가 필요
+      await EmployeeService.updateSkillScores(parseInt(id), { skillScores, leaderSkillScores });
       res.json({ success: true, message: '기술역량 점수가 성공적으로 저장되었습니다.' });
     } catch (error) {
       console.error('Update skill scores error:', error);
@@ -41,7 +42,8 @@ class EmployeeController {
           message: 'from, to 기간이 필요합니다.'
         });
       }
-      const trend = await this.employeeModel.getPerformanceTrend({
+      // TODO: EmployeeService에 getPerformanceTrend 메서드 추가 필요
+      const trend = await EmployeeService.getPerformanceTrend({
         employeeId: parseInt(id),
         role,
         from,
@@ -62,9 +64,6 @@ class EmployeeController {
       });
     }
   }
-  constructor() {
-    this.employeeModel = new EmployeeModel()
-  }
 
   // 직원 목록 조회
   async getEmployees(req, res) {
@@ -77,7 +76,7 @@ class EmployeeController {
         search = ''
       } = req.query
 
-      const result = await this.employeeModel.findAll({
+      const result = await EmployeeService.getEmployees({
         page: parseInt(page),
         limit: parseInt(limit),
         department,
@@ -118,7 +117,7 @@ class EmployeeController {
         })
       }
 
-      const employee = await this.employeeModel.findById(parseInt(id))
+      const employee = await EmployeeService.getEmployeeById(parseInt(id))
 
       if (!employee) {
         return res.status(404).json({
@@ -161,11 +160,11 @@ class EmployeeController {
         photoUrl = `/uploads/${req.file.filename}`
       }
 
-      // JSON 데이터 파싱
-      const employeeData = JSON.parse(req.body.data)
+      // JSON 데이터 파싱 불필요, 객체 그대로 사용
+      const employeeData = req.body
       employeeData.photoUrl = photoUrl
 
-      const employee = await this.employeeModel.create(employeeData)
+      const employee = await EmployeeService.createEmployee(employeeData)
 
       res.status(201).json({
         success: true,
@@ -187,6 +186,8 @@ class EmployeeController {
     try {
       const { id } = req.params
 
+      console.log('[CONTROLLER][UPDATE] id:', id);
+
       if (!id || isNaN(id)) {
         return res.status(400).json({
           success: false,
@@ -205,7 +206,7 @@ class EmployeeController {
       }
 
       // 기존 직원 확인
-      const existingEmployee = await this.employeeModel.findById(parseInt(id))
+      const existingEmployee = await EmployeeService.getEmployeeById(parseInt(id))
       if (!existingEmployee) {
         return res.status(404).json({
           success: false,
@@ -214,16 +215,18 @@ class EmployeeController {
       }
 
       // 파일 업로드 처리
-      let photoUrl = existingEmployee.photo_url
+      let photoUrl = existingEmployee.photoUrl
       if (req.file) {
         photoUrl = `/uploads/${req.file.filename}`
       }
 
-      // JSON 데이터 파싱
-      const employeeData = JSON.parse(req.body.data)
+      // JSON 데이터 파싱 불필요, 객체 그대로 사용
+      const employeeData = req.body
       employeeData.photoUrl = photoUrl
 
-      const employee = await this.employeeModel.update(parseInt(id), employeeData)
+      console.log('[CONTROLLER][UPDATE] employeeData:', JSON.stringify(employeeData));
+
+      const employee = await EmployeeService.updateEmployee(parseInt(id), employeeData)
 
       res.json({
         success: true,
@@ -253,7 +256,7 @@ class EmployeeController {
       }
 
       // 기존 직원 확인
-      const existingEmployee = await this.employeeModel.findById(parseInt(id))
+      const existingEmployee = await EmployeeService.getEmployeeById(parseInt(id))
       if (!existingEmployee) {
         return res.status(404).json({
           success: false,
@@ -261,7 +264,7 @@ class EmployeeController {
         })
       }
 
-      const success = await this.employeeModel.delete(parseInt(id))
+      const success = await EmployeeService.deleteEmployee(parseInt(id))
 
       if (success) {
         res.json({

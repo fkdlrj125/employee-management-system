@@ -74,17 +74,19 @@
           </td>
         </tr>
         <tr v-if="certificates.length === 0">
-          <td>
+          <td class="td-narrow">
             <span
-              class="info-input plain-input inline-block minw-110 cursor-pointer"
-              :class="{ placeholder: true }"
-              @click="editMode ? handleEmptyIssueDateClick() : null"
+              class="info-input plain-input inline-block minw-110 cursor-pointer placeholder"
+              @focus="editMode ? autoAddCertificate() : null"
             >
               클릭하여 발급일 선택
             </span>
           </td>
+          <td>
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '자격증명' }" @focus="editMode ? autoAddCertificate() : null" />
+          </td>
           <td style="position:relative;">
-            <CommonInput input-class="info-input plain-input" :disabled="!editMode" />
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '발급처' }" @focus="editMode ? autoAddCertificate() : null" />
             <div v-if="editMode" class="row-action-btns action-btn-group">
               <Button type="button" btn-class="icon-btn" disabled :title="'위로 이동'">
                 <i class="fa fa-arrow-up"></i>
@@ -111,7 +113,7 @@
 
 <script>
 import { computed, ref, nextTick } from 'vue';
-import { handleEmptyRowClick } from '@/utils/emptyRowAction';
+ import { handleEmptyRowClick } from '@/utils/empty-row-action';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -138,6 +140,12 @@ export default {
   emits: ['update:employee'],
 
   setup(props, { emit }) {
+    // 빈 행에서 입력 시 자동 행 추가
+    const autoAddCertificate = () => {
+      if (props.editMode && (!props.employee.certificates || props.employee.certificates.length === 0)) {
+        addCertificate();
+      }
+    };
     const firstMount = ref(true);
     // ToastConfirm 삭제 관련 상태
     const toastConfirmVisible = ref(false);
@@ -173,35 +181,14 @@ export default {
     const issueDateTemp = ref('');
     const selectedIssueIndex = ref(-1);
 
-    const openIssueDatePicker = (index) => {
-      if (!props.editMode) return;
-      selectedIssueIndex.value = index;
-      const cert = certificates.value[index];
-      issueDateTemp.value = cert.issueDate || '';
-      issueDateModalVisible.value = true;
-    };
-
-    const onIssueDateSelect = ({ start }) => {
-      if (selectedIssueIndex.value < 0) return;
-      const newList = [...certificates.value];
-      newList[selectedIssueIndex.value] = {
-        ...newList[selectedIssueIndex.value],
-        issueDate: start,
-      };
-      certificates.value = newList;
-      issueDateModalVisible.value = false;
-    };
-
     const addCertificate = () => {
       const newCertificate = {
-        name: '',
-        issuer: '',
-        issueDate: '',
+        cert_name: '',
+        cert_organization: '',
+        acquisition_date: '',
       };
       certificates.value = [...certificates.value, newCertificate];
     };
-
-
 
     const moveUp = (index) => {
       if (index > 0) {
@@ -234,7 +221,7 @@ export default {
       const newList = [...certificates.value];
       newList[index] = {
         ...newList[index],
-        issueDate: value,
+        acquisition_date: value,
       };
       certificates.value = newList;
       hideMonthInput();

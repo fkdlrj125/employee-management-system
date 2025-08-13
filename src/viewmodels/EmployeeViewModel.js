@@ -5,7 +5,7 @@
  */
 import { reactive, computed, ref } from 'vue';
 import { Employee } from '@/models/Employee';
-import { employeeApiService } from '@/services/EmployeeApiService';
+ import { employeeApiService } from '@/services/employee-api-service';
 
 export class EmployeeViewModel {
   constructor() {

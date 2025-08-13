@@ -180,7 +180,6 @@ export default {
         } catch (error) {
           this.loading = false;
           this.handleLoginFailure();
-          console.error('로그인 오류:', error);
         }
       }
     },

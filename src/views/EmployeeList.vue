@@ -258,7 +258,6 @@ export default {
       try {
         await this.fetchEmployees();
       } catch (error) {
-        console.error('직원 목록 로드 실패:', error);
         toast.error('직원 목록을 불러오는데 실패했습니다.');
       } finally {
         this.loading = false;

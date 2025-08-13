@@ -123,24 +123,16 @@
         <div class="resume-right">
 
 
-          <!-- 기술 역량 차트 -->
+          <!-- 기술 역량 차트 + 기간별 기술 역량 분석 이동 버튼 -->
           <EmployeeSkillChart
             class="table-container"
             :employee="employee"
             :edit-mode="editMode"
             :leader-skill-scores="employee.leaderSkillScores"
             @update:employee="updateEmployee"
+            @go-to-period-analysis="goToPerformanceAnalysis"
             :key="'skill'"
           />
-
-          <!-- 성과 분석 페이지 이동 버튼 -->
-          <button
-            class="btn btn-primary table-container"
-            style="margin-top: 18px; width: 100%; font-size: 1.1rem;"
-            @click="goToPerformanceAnalysis"
-          >
-            기간별 성과 분석 페이지로 이동
-          </button>
 
           <!-- 기간별 성과 분석(기존) -->
           <EmployeePeriodSelector
@@ -166,7 +158,7 @@ import EmployeeBasicInfo from '@/components/employee/detail/EmployeeBasicInfo.vu
 import EmployeeContactInfo from '@/components/employee/detail/EmployeeContactInfo.vue';
 import EmployeeSkillChart from '@/components/employee/detail/EmployeeSkillChart.vue';
 import EmployeePeriodSelector from '@/components/employee/detail/EmployeePeriodSelector.vue';
-import EmployeeApiService from '@/services/EmployeeApiService';
+ import EmployeeApiService from '@/services/employee-api-service';
 import EmployeeDetailHeader from '@/components/employee/detail/EmployeeDetailHeader.vue';
 import EducationTable from '@/components/employee/detail/EducationTable.vue';
 import CareerTable from '@/components/employee/detail/CareerTable.vue';
@@ -248,6 +240,7 @@ export default {
     }
   },
   watch: {
+    // ...existing code...
     '$route.params.id'(newId, oldId) {
       if (newId !== oldId) {
         if (newId === 'new') {
@@ -351,31 +344,13 @@ export default {
       try {
         const response = await EmployeeApiService.getEmployeeById(this.employeeId);
         if (response.success) {
-          // 백엔드에서 certifications, external_projects로 오면 프론트 key(certificate, projects)로 매핑
-          const raw = response.data;
-          // 하위 배열 key 변환 (careers, projects)
-          const mapCareers = (arr) => (arr || []).map(c => ({
-            ...c,
-            company_name: c.company_name || c.company || '',
-            responsibilities: c.responsibilities || c.duties || '',
-          }));
-          const mapProjects = (arr) => (arr || []).map(p => ({
-            ...p,
-            project_name: p.project_name || p.name || '',
-          }));
-          const mapped = {
-            ...raw,
-            certificates: raw.certifications || [],
-            projects: mapProjects(raw.external_projects || raw.projects || []),
-            careers: mapCareers(raw.careers || []),
-          };
-          this.employee = { ...this.employee, ...mapped };
+          // 백엔드에서 certifications, external_projects 등도 DB 필드명으로 내려준다고 가정
+          this.employee = { ...this.employee, ...response.data };
           this.originalEmployee = JSON.parse(JSON.stringify(this.employee));
         } else {
           throw new Error(response.error);
         }
       } catch (error) {
-        console.error('직원 정보 로드 실패:', error);
         this.hasError = true;
         this.errorMessage = error.message || '직원 정보를 불러오는데 실패했습니다.';
         this.debugInfo = `ID: ${this.employeeId}, Error: ${error.toString()}`;
@@ -471,19 +446,52 @@ export default {
         }
         return obj;
       };
-      // payload에서 불필요한 배열/객체 필드 제거 (skillScores, leaderSkillScores, certificates, projects 등)
-      // 모든 배열/객체 필드 제거 (certifications, external_projects, certificates, projects, educations, careers 등)
+      // payload에서 skillScores, leaderSkillScores, certificates, projects만 분리, 나머지 서브테이블은 포함
       const {
-        skillScores, leaderSkillScores, certificates, projects, educations, careers,
-        certifications, external_projects,
+        skillScores, leaderSkillScores, certificates, projects,
         ...baseFields
       } = this.employee;
-      // id, undefined, null, photo, photoUrl, eus_career 등 불필요한 필드 제거
       const forbidden = ['id', 'photo', 'photoUrl', 'eus_career'];
       const payload = {};
       Object.entries(baseFields).forEach(([k, v]) => {
         if (!forbidden.includes(k) && v !== undefined && v !== null) payload[k] = v;
       });
+      // 서브테이블 배열 DB/백엔드 필드명에 맞게 변환
+      if (this.employee.educations) {
+        payload.educations = this.employee.educations.map(e => ({
+          school_name: e.school || e.school_name || '',
+          major: e.major || '',
+          period_start: e.startDate || e.period_start || '',
+          period_end: e.endDate || e.period_end || ''
+        }));
+      }
+      if (this.employee.careers) {
+        payload.careers = this.employee.careers.map(c => ({
+          company_name: c.company_name || c.company || '',
+          position: c.position || '',
+          period_start: c.startDate || c.period_start || '',
+          period_end: c.endDate || c.period_end || '',
+          department: c.department || '',
+          responsibilities: c.responsibilities || c.duties || ''
+        }));
+      }
+      if (this.employee.certifications) {
+        payload.certifications = this.employee.certifications.map(cert => ({
+          cert_name: cert.certificate_name || cert.cert_name || '',
+          cert_organization: cert.issuing_authority || cert.cert_organization || '',
+          cert_number: cert.cert_number || '',
+          acquisition_date: cert.acquisition_date || ''
+        }));
+      }
+      if (this.employee.external_projects) {
+        payload.external_projects = this.employee.external_projects.map(p => ({
+          project_name: p.project_name || p.name || '',
+          period_start: p.startDate || p.period_start || '',
+          period_end: p.endDate || p.period_end || '',
+          project_description: p.technologies || p.project_description || '',
+          role: p.role || ''
+        }));
+      }
       // score1~6, leader_score1~6 변환 추가
       if (skillScores && Array.isArray(skillScores) && skillScores.length === 6) {
         Object.assign(payload, toScoreFields(skillScores, 'score'));
@@ -493,36 +501,44 @@ export default {
       }
       try {
         let result;
-        // 디버깅: 실제 전송되는 payload를 보기 좋게 출력
-        console.log('[saveDetail] 최종 전송 payload:', JSON.stringify(payload, null, 2));
         if (this.isAddMode) {
           result = await EmployeeApiService.createEmployee(payload);
-          console.log('createEmployee result:', result);
           if (result.success) {
             this.showMessage('직원 정보가 성공적으로 등록되었습니다.', 'success');
             this.$router.push(`/employee-detail/${result.data.id}`);
+            // 등록 후 최신 데이터 fetch
+            this.loadEmployee();
           } else {
             throw new Error(result.error);
           }
         } else {
           result = await EmployeeApiService.updateEmployee(this.employeeId, payload);
-          console.log('updateEmployee result:', result);
           if (result.success) {
-            console.log('updateEmployee 성공, 메시지:', result.message);
             this.showMessage('직원 정보가 성공적으로 수정되었습니다.', 'success');
             this.originalEmployee = JSON.parse(JSON.stringify(this.employee));
             this.editMode = false;
             this.errors = {};
-            console.log('수정 후 상태:', this.employee, this.editMode, this.errors);
+            // 수정 후 최신 데이터 fetch
+            this.loadEmployee();
           } else {
-            console.log('updateEmployee 실패:', result.error);
             throw new Error(result.error);
           }
         }
       } catch (error) {
-        console.error('저장 실패:', error);
         this.showMessage(error.message || '저장에 실패했습니다.', 'error');
       }
+    },
+    // 자식 컴포넌트에서 update:employee 이벤트를 받을 때 employee 객체 전체 로그
+    updateEmployee(newEmployee) {
+      // 배열 필드는 항상 새 배열로 할당하여 반응성 보장
+      this.employee = {
+        ...this.employee,
+        ...newEmployee,
+        educations: Array.isArray(newEmployee.educations) ? [...newEmployee.educations] : (this.employee.educations || []),
+        careers: Array.isArray(newEmployee.careers) ? [...newEmployee.careers] : (this.employee.careers || []),
+        certificates: Array.isArray(newEmployee.certificates) ? [...newEmployee.certificates] : (this.employee.certificates || []),
+        projects: Array.isArray(newEmployee.projects) ? [...newEmployee.projects] : (this.employee.projects || []),
+      };
     },
     // ...existing code...
     onPhotoChange(photoData) {
@@ -536,12 +552,10 @@ export default {
         this.employee.educations = [];
       }
       this.employee.educations.push({
-        admission_year: '',
-        graduation_year: '',
         school_name: '',
         major: '',
-        degree: '',
-        gpa: '',
+        period_start: '',
+        period_end: '',
       });
     },
     removeEducation(index) {
@@ -552,11 +566,11 @@ export default {
         this.employee.careers = [];
       }
       this.employee.careers.push({
-        start_date: '',
-        end_date: '',
         company_name: '',
-        department: '',
         position: '',
+        period_start: '',
+        period_end: '',
+        department: '',
         responsibilities: '',
       });
     },
@@ -568,10 +582,10 @@ export default {
         this.employee.certificates = [];
       }
       this.employee.certificates.push({
+        cert_name: '',
+        cert_organization: '',
+        cert_number: '',
         acquisition_date: '',
-        certificate_name: '',
-        issuing_authority: '',
-        grade: '',
       });
     },
     removeCertificate(index) {
@@ -582,11 +596,11 @@ export default {
         this.employee.projects = [];
       }
       this.employee.projects.push({
-        start_date: '',
-        end_date: '',
         project_name: '',
+        period_start: '',
+        period_end: '',
         role: '',
-        technologies: '',
+        project_description: '',
       });
     },
     removeProject(index) {
@@ -622,11 +636,7 @@ export default {
       this.showConfirm = false;
     },
     onGenerateReport(reportData) {
-      console.log('리포트 생성:', reportData);
       this.showMessage(`${reportData.employee.name}의 성과 리포트가 생성되었습니다.`, 'success');
-    },
-    updateEmployee(newEmployee) {
-      this.employee = { ...newEmployee };
     },
 
     // ===== 상세페이지 유효성 검사 =====

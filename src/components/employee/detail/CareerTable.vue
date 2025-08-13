@@ -78,19 +78,19 @@
           <td>
             <span
               class="info-input plain-input inline-block minw-110 cursor-pointer placeholder"
-              @click="editMode ? handleEmptyPeriodClick() : null"
+              @focus="editMode ? autoAddCareer() : null"
             >
               클릭하여 기간 선택
             </span>
           </td>
           <td>
-            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '회사명' }" />
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '회사명' }" @focus="editMode ? autoAddCareer() : null" />
           </td>
           <td>
-            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '직위' }" />
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '직위' }" @focus="editMode ? autoAddCareer() : null" />
           </td>
           <td class="td-narrow" style="position:relative;">
-            <textarea class="info-textarea plain-input" :disabled="!editMode" rows="2"></textarea>
+            <textarea class="info-textarea plain-input" :disabled="!editMode" rows="2" @focus="editMode ? autoAddCareer() : null"></textarea>
             <div v-if="editMode" class="row-action-btns action-btn-group">
               <button type="button" class="icon-btn" disabled title="위로 이동">
                 <i class="fas fa-arrow-up"></i>
@@ -98,7 +98,7 @@
               <button type="button" class="icon-btn" disabled title="아래로 이동">
                 <i class="fas fa-arrow-down"></i>
               </button>
-              <button type="button" class="icon-btn" disabled title="삭제">
+              <button type="button" class="icon-btn delete" disabled title="삭제">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -117,7 +117,7 @@
 
 <script>
 import { computed, ref } from 'vue';
-import { handleEmptyRowClick } from '@/utils/emptyRowAction';
+ import { handleEmptyRowClick } from '@/utils/empty-row-action';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -142,6 +142,12 @@ export default {
   },
   emits: ['update:employee'],
   setup(props, { emit }) {
+    // 빈 행에서 입력 시 자동 행 추가
+    const autoAddCareer = () => {
+      if (props.editMode && (!props.employee.careers || props.employee.careers.length === 0)) {
+        addCareer();
+      }
+    };
     const firstMount = ref(true);
     // ToastConfirm 삭제 관련 상태
     const toastConfirmVisible = ref(false);
@@ -188,30 +194,30 @@ export default {
       periodModalVisible.value = true;
     };
 
+    const addCareer = () => {
+      const newCareer = {
+        company_name: '',
+        position: '',
+        responsibilities: '',
+        period_start: '',
+        period_end: '',
+      };
+      careers.value = [...careers.value, newCareer];
+    };
+
     const onPeriodSelect = ({ start, end }) => {
       if (selectedPeriodIndex.value < 0) return;
       const newList = [...careers.value];
       newList[selectedPeriodIndex.value] = {
         ...newList[selectedPeriodIndex.value],
-        startDate: start,
-        endDate: end,
+        period_start: start,
+        period_end: end,
       };
       emit('update:employee', {
         ...props.employee,
         careers: newList,
       });
       periodModalVisible.value = false;
-    };
-
-    const addCareer = () => {
-      const newCareer = {
-        company: '',
-        position: '',
-        duties: '',
-        startDate: '',
-        endDate: '',
-      };
-      careers.value = [...careers.value, newCareer];
     };
 
     const moveUp = (index) => {

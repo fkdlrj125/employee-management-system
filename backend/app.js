@@ -12,6 +12,7 @@ require('dotenv').config()
 
 // Routes
 const employeeRoutes = require('./routes/employeeRoutes')
+const evaluationRoutes = require('./routes/evaluationRoutes')
 const authRoutes = require('./routes/authRoutes')
 
 // Middlewares
@@ -57,6 +58,7 @@ app.use(logger)
 // API Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/employees', employeeRoutes)
+app.use('/api/evaluations', evaluationRoutes)
 
 // Health Check
 app.get('/health', (req, res) => {

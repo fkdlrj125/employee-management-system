@@ -18,9 +18,17 @@
       </div>
     </div>
 
+
     <div class="chart-wrapper">
       <canvas ref="chartCanvas" width="400" height="400"></canvas>
     </div>
+    <button
+      class="btn btn-secondary btn-sm"
+      style="margin-top: 10px;"
+      @click="$emit('go-to-period-analysis')"
+    >
+      기간별 기술 역량 분석 페이지로 이동
+    </button>
 
     <!-- 연도별 점수 변화 차트 -->
     <div class="chart-wrapper" v-if="evaluationHistory && evaluationHistory.length">
@@ -65,7 +73,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import employeeApiService from '@/services/EmployeeApiService';
+ import employeeApiService from '@/services/employee-api-service';
 
 // Chart.js 컴포넌트 등록 (Filler는 unregister)
 Chart.register(
@@ -95,7 +103,6 @@ export default {
     },
   },
   data() {
-    console.log('[EmployeeSkillChart] data() called');
     return {
       chart: null,
       historyChart: null,
@@ -126,17 +133,43 @@ export default {
     }
   },
   watch: {
-    employee: {
-      handler() {
-        this.loadSkillData();
-        this.updateChart();
+    'employee.skillScores': {
+      handler(newVal, oldVal) {
+        if (this.selectedRole === 'member' && JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
+          this.loadSkillData();
+          this.updateChart();
+        }
       },
-      deep: true,
+      deep: false,
+      immediate: false,
+    },
+    'employee.leaderSkillScores': {
+      handler(newVal, oldVal) {
+        if (this.selectedRole === 'leader' && JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
+          this.loadSkillData();
+          this.updateChart();
+        }
+      },
+      deep: false,
+      immediate: false,
     },
     selectedRole() {
       this.loadSkillData();
       this.updateChart();
-    }
+    },
+    // score 값만 감지해서 차트 갱신
+    'memberSkills.map(skill => skill.score)': {
+      handler() {
+        if (this.selectedRole === 'member') this.updateChart();
+      },
+      deep: true,
+    },
+    'leaderSkills.map(skill => skill.score)': {
+      handler() {
+        if (this.selectedRole === 'leader') this.updateChart();
+      },
+      deep: true,
+    },
   },
   mounted() {
     console.log('[EmployeeSkillChart] mounted');
@@ -145,7 +178,6 @@ export default {
     this.initHistoryChart();
     setTimeout(() => {
       this.firstMount = false;
-      console.log('[EmployeeSkillChart] firstMount set to false');
     }, 700);
   },
   beforeUnmount() {
@@ -178,7 +210,7 @@ export default {
       try {
         const ctx = this.$refs.chartCanvas.getContext('2d');
         // 순수 객체로 변환 (reactive 방지)
-        let skillCategoriesCopy = JSON.parse(JSON.stringify(this.skillCategories));
+        let skillCategoriesCopy = JSON.parse(JSON.stringify(this.skillCategories || []));
         // skillCategories가 비어있으면 최소 1개 dummy라도 넣기
         if (!Array.isArray(skillCategoriesCopy) || skillCategoriesCopy.length === 0) {
           skillCategoriesCopy = [{ label: 'N/A', score: 0 }];
@@ -217,9 +249,6 @@ export default {
           filler: false, // Filler 플러그인 비활성화
         };
         // 콘솔로 데이터 구조 확인
-        console.log('initChart skillCategoriesCopy:', skillCategoriesCopy);
-        console.log('initChart safeScores:', safeScores);
-        console.log('initChart datasets:', datasets);
         this.chart = new Chart(ctx, {
           type: 'radar',
           data: {
@@ -315,13 +344,10 @@ export default {
           this.chart = null;
         }
         // 콘솔로 데이터 구조 확인
-        console.log('updateChart skillCategories:', this.skillCategories);
-        console.log('updateChart employee.skillScores:', this.employee.skillScores);
         this.initChart();
       } catch (e) {
         console.error('Chart update error:', e);
         if (this.chart && this.chart.data) {
-          console.log('chart.data:', this.chart.data);
         }
       }
     },

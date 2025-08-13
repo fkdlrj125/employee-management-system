@@ -22,10 +22,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(education, index) in educations" :key="index">
+        <tr v-for="(education, index) in educations" :key="education.id">
           <td>
             <CommonInput
-              :model-value="formatPeriod(education.startDate, education.endDate)"
+              :model-value="formatPeriod(education.period_start, education.period_end)"
               :input-attrs="{ placeholder: '클릭하여 기간 선택', readonly: true }"
               input-class="info-input plain-input"
               :disabled="!editMode"
@@ -46,7 +46,7 @@
           </td>
           <td>
             <CommonInput
-              v-model="education.school"
+              v-model="education.school_name"
               input-class="info-input plain-input"
               :disabled="!editMode"
             />
@@ -72,15 +72,15 @@
               :input-attrs="{ placeholder: '클릭하여 기간 선택', readonly: true }"
               input-class="info-input plain-input"
               :disabled="!editMode"
-              @click="editMode ? handleEmptyPeriodClick() : null"
+              @focus="editMode ? autoAddEducation() : null"
               class="cursor-pointer"
             />
           </td>
           <td>
-            <CommonInput input-class="edu-school plain-input" :disabled="!editMode" />
+            <CommonInput input-class="edu-school plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '학교명' }" @focus="editMode ? autoAddEducation() : null" />
           </td>
           <td style="position:relative;">
-            <CommonInput input-class="edu-major plain-input" :disabled="!editMode" />
+            <CommonInput input-class="edu-major plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '전공' }" @focus="editMode ? autoAddEducation() : null" />
             <div v-if="editMode" class="row-action-btns action-btn-group">
               <Button type="button" btn-class="icon-btn" disabled :title="'위로 이동'">
                 <i class="fa fa-arrow-up"></i>
@@ -107,8 +107,8 @@
 </template>
 
 <script>
-import { computed, ref } from 'vue';
-import { handleEmptyRowClick } from '@/utils/emptyRowAction';
+import { computed, ref, watch } from 'vue';
+ import { handleEmptyRowClick } from '@/utils/empty-row-action';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -133,15 +133,50 @@ export default {
   },
   emits: ['update:employee'],
   setup(props, { emit }) {
+    // 입력값 변경 시마다 부모에 데이터 반영
+    watch(educations, (newVal) => {
+      emitUpdateEmployee({
+        ...props.employee,
+        educations: newVal,
+      });
+    }, { deep: true });
+    // 빈 행에서 입력 시 자동 행 추가
+    const autoAddEducation = () => {
+      if (props.editMode && (!props.employee.educations || props.employee.educations.length === 0)) {
+        addEducation();
+        // addEducation에서 emitUpdateEmployee가 호출되지만, 렌더링 후 한 번 더 emit하여 부모에 확실히 반영
+        setTimeout(() => {
+          emitUpdateEmployee({
+            ...props.employee,
+            educations: [...(props.employee.educations ? props.employee.educations : []), {
+              school_name: '',
+              major: '',
+              period_start: '',
+              period_end: '',
+            }],
+          });
+          const input = document.querySelector('.edu-school.plain-input');
+          if (input) input.focus();
+        }, 0);
+      }
+    };
     const firstMount = ref(true);
     const educations = computed(() => {
       return props.employee.educations || [];
     });
+    // school_name 등 값 변경 시 콘솔로 확인 (디버깅용)
+    watch(() => props.employee.educations, (newVal) => {
+      console.log('[EducationTable.vue] employee.educations changed:', JSON.parse(JSON.stringify(newVal)));
+    }, { deep: true });
+
+    // emit 직전 employee 전체 로그
+    const emitUpdateEmployee = (newEmployee) => {
+      emit('update:employee', newEmployee);
+    };
 
     // ToastConfirm 삭제 관련 상태
     const toastConfirmVisible = ref(false);
     const deleteIndex = ref(-1);
-
     const showDeleteConfirm = (index) => {
       deleteIndex.value = index;
       toastConfirmVisible.value = true;
@@ -149,7 +184,7 @@ export default {
 
     const confirmDelete = () => {
       if (deleteIndex.value !== -1) {
-        emit('update:employee', {
+        emitUpdateEmployee({
           ...props.employee,
           educations: educations.value.filter((_, i) => i !== deleteIndex.value),
         });
@@ -160,55 +195,100 @@ export default {
 
     // 기간 선택 모달 상태
     const periodModalVisible = ref(false);
-    const periodTemp = ref({ start: '', end: '' });
-    const selectedPeriodIndex = ref(-1);
 
-    const openPeriodPicker = (index) => {
-      if (!props.editMode) return;
-      selectedPeriodIndex.value = index;
-      const edu = educations.value[index];
-      periodTemp.value = {
-        start: edu.startDate || '',
-        end: edu.endDate || '',
-      };
-      periodModalVisible.value = true;
-    };
 
-    const onPeriodSelect = ({ start, end }) => {
-      if (selectedPeriodIndex.value < 0) return;
-      const newList = [...educations.value];
-      newList[selectedPeriodIndex.value] = {
-        ...newList[selectedPeriodIndex.value],
-        startDate: start,
-        endDate: end,
-      };
-      emit('update:employee', {
-        ...props.employee,
-        educations: newList,
-      });
-      periodModalVisible.value = false;
-    };
 
     const addEducation = () => {
       const newEducation = {
-        school: '',
+        id: Date.now() + Math.random(),
+        school_name: '',
         major: '',
-        startDate: '',
-        endDate: '',
+        period_start: '',
+        period_end: '',
       };
-      emit('update:employee', {
+      // 불변성 방식으로 배열 전체를 새로 할당
+      emitUpdateEmployee({
         ...props.employee,
-        educations: [...(props.employee.educations || []), newEducation],
+        educations: [...(props.employee.educations ? props.employee.educations : []), newEducation],
       });
     };
 
+    // 빈 입력 행 객체
+    const emptyEducation = ref({ school_name: '', major: '', period_start: '', period_end: '' });
+
+    // 렌더링용 배열: educations가 비어 있으면 빈 입력 행 포함
+    const displayEducations = computed(() => {
+      return educations.value.length > 0 ? educations.value : [{ ...emptyEducation.value }];
+    });
+
+    // 빈 행 여부 판별
+    function isEmptyRow(education) {
+      return !education.id;
+    }
+
+    // 기간 선택 모달 상태 (빈 행/기존 행 통합)
+    // (중복 선언 제거)
+    const periodTemp = ref({ start: '', end: '' });
+    const selectedPeriodIndex = ref(-1);
+
+    function openPeriodPicker(index) {
+      if (!props.editMode) return;
+      const edu = displayEducations.value[index];
+      periodTemp.value = {
+        start: edu.period_start || '',
+        end: edu.period_end || '',
+      };
+      selectedPeriodIndex.value = index;
+      periodModalVisible.value = true;
+    }
+
+    function onPeriodSelect({ start, end }) {
+      if (selectedPeriodIndex.value < 0) return;
+      const edu = displayEducations.value[selectedPeriodIndex.value];
+      if (isEmptyRow(edu)) {
+        emptyEducation.value.period_start = start;
+        emptyEducation.value.period_end = end;
+      } else {
+        const newList = [...educations.value];
+        newList[selectedPeriodIndex.value] = {
+          ...newList[selectedPeriodIndex.value],
+          period_start: start,
+          period_end: end,
+        };
+        emitUpdateEmployee({
+          ...props.employee,
+          educations: newList,
+        });
+      }
+      periodModalVisible.value = false;
+    }
+
+    function addEducationFromEmpty() {
+      if (!emptyEducation.value.school_name && !emptyEducation.value.major && !emptyEducation.value.period_start && !emptyEducation.value.period_end) return;
+      const newEdu = {
+        id: Date.now() + Math.random(),
+        school_name: emptyEducation.value.school_name,
+        major: emptyEducation.value.major,
+        period_start: emptyEducation.value.period_start,
+        period_end: emptyEducation.value.period_end
+      };
+      emitUpdateEmployee({
+        ...props.employee,
+        educations: [newEdu],
+      });
+      emptyEducation.value = { school_name: '', major: '', period_start: '', period_end: '' };
+    }
+
+    function clearEmptyEducation() {
+      emptyEducation.value = { school_name: '', major: '', period_start: '', period_end: '' };
+    }
     const moveUp = (index) => {
       if (index > 0) {
         const newEducations = [...educations.value];
         const temp = newEducations[index];
         newEducations[index] = newEducations[index - 1];
         newEducations[index - 1] = temp;
-        emit('update:employee', {
+        emitUpdateEmployee({
           ...props.employee,
           educations: newEducations,
         });
@@ -221,7 +301,7 @@ export default {
         const temp = newEducations[index];
         newEducations[index] = newEducations[index + 1];
         newEducations[index + 1] = temp;
-        emit('update:employee', {
+        emitUpdateEmployee({
           ...props.employee,
           educations: newEducations,
         });
@@ -264,6 +344,7 @@ export default {
     return {
       educations,
       addEducation,
+      autoAddEducation,
       showDeleteConfirm,
       confirmDelete,
       toastConfirmVisible,

@@ -73,16 +73,16 @@
           <td>
             <span
               class="info-input plain-input inline-block minw-110 cursor-pointer placeholder"
-              @click="editMode ? handleEmptyPeriodClick() : null"
+              @focus="editMode ? autoAddProject() : null"
             >
               클릭하여 기간 선택
             </span>
           </td>
           <td>
-            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '경력명' }" />
+            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '경력명' }" @focus="editMode ? autoAddProject() : null" />
           </td>
           <td class="td-narrow" style="position:relative;">
-            <textarea class="info-textarea plain-input" :disabled="!editMode" rows="2"></textarea>
+            <textarea class="info-textarea plain-input" :disabled="!editMode" rows="2" @focus="editMode ? autoAddProject() : null"></textarea>
             <div v-if="editMode" class="row-action-btns action-btn-group">
               <button type="button" class="icon-btn" disabled title="위로 이동">
                 <i class="fas fa-arrow-up"></i>
@@ -90,7 +90,7 @@
               <button type="button" class="icon-btn" disabled title="아래로 이동">
                 <i class="fas fa-arrow-down"></i>
               </button>
-              <button type="button" class="icon-btn" disabled title="삭제">
+              <button type="button" class="icon-btn delete" disabled title="삭제">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -109,7 +109,7 @@
 
 <script>
 import { computed, ref } from 'vue';
-import { handleEmptyRowClick } from '@/utils/emptyRowAction';
+ import { handleEmptyRowClick } from '@/utils/empty-row-action';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -134,6 +134,12 @@ export default {
   },
   emits: ['update:employee'],
   setup(props, { emit }) {
+    // 빈 행에서 입력 시 자동 행 추가
+    const autoAddProject = () => {
+      if (props.editMode && (!props.employee.projects || props.employee.projects.length === 0)) {
+        addProject();
+      }
+    };
     const firstMount = ref(true);
     // ToastConfirm 삭제 관련 상태
     const toastConfirmVisible = ref(false);
@@ -180,29 +186,29 @@ export default {
       periodModalVisible.value = true;
     };
 
+    const addProject = () => {
+      const newProject = {
+        project_name: '',
+        period_start: '',
+        period_end: '',
+        project_description: '',
+      };
+      projects.value = [...projects.value, newProject];
+    };
+
     const onPeriodSelect = ({ start, end }) => {
       if (selectedPeriodIndex.value < 0) return;
       const newList = [...projects.value];
       newList[selectedPeriodIndex.value] = {
         ...newList[selectedPeriodIndex.value],
-        startDate: start,
-        endDate: end,
+        period_start: start,
+        period_end: end,
       };
       emit('update:employee', {
         ...props.employee,
         projects: newList,
       });
       periodModalVisible.value = false;
-    };
-
-    const addProject = () => {
-      const newProject = {
-        startDate: '',
-        endDate: '',
-        name: '',
-        description: '',
-      };
-      projects.value = [...projects.value, newProject];
     };
 
     const moveUp = (index) => {

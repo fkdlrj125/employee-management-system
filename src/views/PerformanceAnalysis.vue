@@ -25,22 +25,28 @@
         <span class="pa-emp-name">{{ employee.name }}</span>
         <span class="pa-emp-meta">{{ employee.department }} / {{ employee.position }}</span>
       </div>
-      <div class="year-select-row">
-        <label for="year-select" class="year-select-label">연도 선택:</label>
-        <select id="year-select" v-model="selectedYear" class="year-select">
-          <option value="">전체</option>
-          <option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</option>
-        </select>
+      <div v-if="evaluationError" class="pa-error-row">
+        <span class="pa-error-msg">{{ evaluationError }}</span>
       </div>
-      <div v-if="analysisInfo">
-        <div class="analysis-info-row">
-          <strong>평균 점수:</strong> {{ analysisInfo.avgScore.toFixed(2) }}
-          <span v-if="analysisInfo.growthRate !== null">&nbsp;|&nbsp;<strong>성장률:</strong> {{ (analysisInfo.growthRate*100).toFixed(1) }}%</span>
+      <div v-if="!evaluationError">
+        <div class="year-select-row">
+          <label for="year-select" class="year-select-label">연도 선택:</label>
+          <select id="year-select" v-model="selectedYear" class="year-select">
+            <option value="">전체</option>
+            <option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</option>
+          </select>
+        </div>
+        <div v-if="analysisInfo">
+          <div class="analysis-info-row">
+            <strong>평균 점수:</strong> {{ analysisInfo.avgScore.toFixed(2) }}
+            <span v-if="analysisInfo.growthRate !== null">&nbsp;|&nbsp;<strong>성장률:</strong> {{ (analysisInfo.growthRate*100).toFixed(1) }}%</span>
+          </div>
         </div>
       </div>
+      <!-- 평가 이력이 없을 때 최신 차트만 -->
       <EmployeeSkillChart
         :employee="employee"
-        :evaluationHistory="filteredHistory"
+        :evaluationHistory="evaluationError ? [] : filteredHistory"
         :editMode="false"
       />
     </div>
@@ -53,7 +59,7 @@
 <script>
 import EmployeeSkillChart from '@/components/employee/detail/EmployeeSkillChart.vue';
 import EmployeeDetailHeader from '@/components/employee/detail/EmployeeDetailHeader.vue';
-import EmployeeApiService from '@/services/EmployeeApiService.js';
+ import EmployeeApiService from '@/services/employee-api-service.js';
 
 export default {
   name: 'PerformanceAnalysis',
@@ -64,6 +70,7 @@ export default {
       evaluationHistory: [],
       selectedYear: '',
       currentUser: JSON.parse(localStorage.getItem('currentUser') || '{}'),
+      evaluationError: '',
     };
   },
   methods: {
@@ -86,9 +93,14 @@ export default {
   },
   computed: {
     yearOptions() {
-      // 평가 이력에서 연도 목록 추출(내림차순)
-      const years = (this.evaluationHistory || []).map(e => new Date(e.evaluation_date).getFullYear());
-      return [...new Set(years)].sort((a,b) => b-a);
+      // 평가 이력에서 실제 존재하는 연도만 추출(내림차순, 중복 제거)
+      const years = (this.evaluationHistory || [])
+        .map(e => {
+          const d = new Date(e.evaluation_date);
+          return isNaN(d) ? null : d.getFullYear();
+        })
+        .filter(y => y !== null);
+      return [...new Set(years)].sort((a, b) => b - a);
     },
     filteredHistory() {
       if (!this.selectedYear) return this.evaluationHistory;
@@ -132,12 +144,18 @@ export default {
       try {
         const emp = await EmployeeApiService.getEmployeeById(id);
         this.employee = emp && emp.data ? emp.data : emp;
-        // 실제 API 연동 시 emp.data가 직원 정보 객체이므로, emp.data로만 할당
         if (emp && emp.data) this.employee = emp.data;
-        const history = await EmployeeApiService.getEvaluationHistory(id);
-        // 연도 오름차순 정렬
-        this.evaluationHistory = (history || []).sort((a,b) => new Date(a.evaluation_date) - new Date(b.evaluation_date));
+        const historyRes = await EmployeeApiService.getEvaluationHistory(id);
+        if (historyRes && historyRes.success === false) {
+          this.evaluationHistory = [];
+          this.evaluationError = historyRes.error || '평가 이력이 존재하지 않습니다.';
+        } else {
+          // 연도 오름차순 정렬
+          this.evaluationHistory = (historyRes || []).sort((a,b) => new Date(a.evaluation_date) - new Date(b.evaluation_date));
+          this.evaluationError = '';
+        }
       } catch (e) {
+        this.evaluationError = '직원 정보/이력 조회 실패';
         console.error('직원 정보/이력 조회 실패:', e);
       }
     }
