@@ -66,6 +66,7 @@
             </div>
           </td>
         </tr>
+        <!-- 이 부분이 나눠져서 기본행이 인식이 안 됨 이거 처리해야 됨 -->
         <tr v-if="educations.length === 0">
           <td>
             <CommonInput
