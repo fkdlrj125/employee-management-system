@@ -5,8 +5,13 @@
 </template>
 
 <script>
+import { blockCopyAndContextMenu } from './utils/blockCopyAndContextMenu';
+
 export default {
   name: 'App',
+  mounted() {
+    blockCopyAndContextMenu();
+  },
 };
 </script>
 

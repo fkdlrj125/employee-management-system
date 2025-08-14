@@ -84,7 +84,7 @@
 
           <!-- 자격증 테이블 -->
           <div class="section-block">
-            <CertificateTable
+            <CertificationTable
               class="table-container"
               :employee="employee"
               :edit-mode="editMode"
@@ -108,7 +108,7 @@
 
           <!-- 프로젝트 테이블 -->
           <div class="section-block">
-            <ProjectTable
+            <ExternalProjectTable
               class="table-container"
               :employee="employee"
               :edit-mode="editMode"
@@ -162,9 +162,8 @@ import EmployeePeriodSelector from '@/components/employee/detail/EmployeePeriodS
 import EmployeeDetailHeader from '@/components/employee/detail/EmployeeDetailHeader.vue';
 import EducationTable from '@/components/employee/detail/EducationTable.vue';
 import CareerTable from '@/components/employee/detail/CareerTable.vue';
-import CertificateTable from '@/components/employee/detail/CertificateTable.vue';
-import ProjectTable from '@/components/employee/detail/ProjectTable.vue';
-
+import CertificationTable from '@/components/employee/detail/CertificationTable.vue';
+import ExternalProjectTable from '@/components/employee/detail/ExternalProjectTable.vue';
 import ToastConfirm from '@/components/common/ToastConfirm.vue';
 
 export default {
@@ -177,8 +176,8 @@ export default {
     EmployeePeriodSelector,
     EducationTable,
     CareerTable,
-    CertificateTable,
-    ProjectTable,
+    CertificationTable,
+    ExternalProjectTable,
     EmployeeDetailHeader,
   },
   data() {
@@ -201,8 +200,8 @@ export default {
         photo: null,
         educations: [],
         careers: [],
-        certificates: [],
-        projects: [],
+        certifications: [],
+        external_projects: [],
       },
       showFadeIn: false,
       editMode: false,
@@ -228,6 +227,50 @@ export default {
     },
     isValidEmployee() {
       return this.employee && this.employee.name && this.employee.name.trim() !== '';
+    },
+    // 총 경력: mitmas 총 경력(개월) + 경력사항 개월수
+    totalCareerMonths() {
+      // mitmas_career: 년.월 또는 개월(숫자)로 입력될 수 있음
+      let mitmasMonths = 0;
+      const mitmas = this.employee.mitmas_career;
+      if (mitmas) {
+        if (typeof mitmas === 'number') {
+          mitmasMonths = mitmas;
+        } else if (typeof mitmas === 'string') {
+          // "2년 3개월", "27개월", "2.3" 등 다양한 형태 지원
+          const yearMonthMatch = mitmas.match(/(\d+)년\s*(\d+)?개월?/);
+          if (yearMonthMatch) {
+            mitmasMonths = Number(yearMonthMatch[1]) * 12 + Number(yearMonthMatch[2] || 0);
+          } else if (/개월/.test(mitmas)) {
+            const m = mitmas.match(/(\d+)/);
+            if (m) mitmasMonths = Number(m[1]);
+          } else if (/\d+\.\d+/.test(mitmas)) {
+            // "2.3" → 2년 3개월
+            const [y, m] = mitmas.split('.').map(Number);
+            mitmasMonths = y * 12 + (m || 0);
+          } else if (/\d+/.test(mitmas)) {
+            mitmasMonths = Number(mitmas);
+          }
+        }
+      }
+      // 경력사항 개월수 합산
+      let careerMonths = 0;
+      if (Array.isArray(this.employee.careers)) {
+        careerMonths = this.employee.careers.reduce((sum, c) => {
+          const start = c.period_start || c.startDate;
+          const end = c.period_end || c.endDate;
+          if (!start) return sum;
+          const startDate = new Date(start);
+          const endDate = end ? new Date(end) : new Date();
+          if (isNaN(startDate.getTime())) return sum;
+          if (isNaN(endDate.getTime())) return sum;
+          let months = (endDate.getFullYear() - startDate.getFullYear()) * 12;
+          months += endDate.getMonth() - startDate.getMonth();
+          if (endDate.getDate() < startDate.getDate()) months--;
+          return sum + (months >= 0 ? months + 1 : 0);
+        }, 0);
+      }
+      return mitmasMonths + careerMonths;
     },
   },
   created() {
@@ -256,6 +299,32 @@ export default {
     }
   },
   methods: {
+    // 날짜 필드 전처리: 빈 문자열, 'Invalid date'를 null로 변환
+    sanitizeDate(val) {
+      if (!val || val === 'Invalid date' || val === undefined) return null;
+      return val;
+    },
+    // 서브테이블이 완전히 비어있는지 확인하는 함수 (명시적 키 배열 사용)
+    isSubTableEmpty(arr, keys) {
+      if (!Array.isArray(arr) || arr.length === 0) return true;
+      return arr.every(row => keys.every(key => !row[key] || row[key] === ''));
+    },
+    // 배열의 기간 필드 일괄 전처리 (필드명 배열로 지정)
+    sanitizePeriodFields(arr, periodKeys = ['period_start', 'period_end']) {
+      if (!Array.isArray(arr)) return arr;
+      return arr.map(item => {
+        const sanitized = { ...item };
+        periodKeys.forEach(key => {
+          if (key in sanitized) {
+            sanitized[key] = this.sanitizeDate(sanitized[key]);
+            if (sanitized[key] === null) {
+              delete sanitized[key]; // null이면 필드 삭제
+            }
+          }
+        });
+        return sanitized;
+      });
+    },
     // 기간 기본값(최근 1년)
     getDefaultFrom() {
       const now = new Date();
@@ -344,8 +413,12 @@ export default {
       try {
         const response = await EmployeeApiService.getEmployeeById(this.employeeId);
         if (response.success) {
-          // 백엔드에서 certifications, external_projects 등도 DB 필드명으로 내려준다고 가정
-          this.employee = { ...this.employee, ...response.data };
+          this.employee = {
+            ...this.employee,
+            ...response.data,
+            certifications: response.data.certifications || [],
+            external_projects: response.data.external_projects || [],
+          };
           this.originalEmployee = JSON.parse(JSON.stringify(this.employee));
         } else {
           throw new Error(response.error);
@@ -378,8 +451,8 @@ export default {
         photo: null,
         educations: [],
         careers: [],
-        certificates: [],
-        projects: [],
+        certifications: [],
+        external_projects: [],
       };
     },
 
@@ -446,9 +519,9 @@ export default {
         }
         return obj;
       };
-      // payload에서 skillScores, leaderSkillScores, certificates, projects만 분리, 나머지 서브테이블은 포함
+      // payload에서 skillScores, leaderSkillScores, certifications, externalProjects만 분리, 나머지 서브테이블은 포함
       const {
-        skillScores, leaderSkillScores, certificates, projects,
+        skillScores, leaderSkillScores, certifications, external_projects,
         ...baseFields
       } = this.employee;
       const forbidden = ['id', 'photo', 'photoUrl', 'eus_career'];
@@ -457,16 +530,27 @@ export default {
         if (!forbidden.includes(k) && v !== undefined && v !== null) payload[k] = v;
       });
       // 서브테이블 배열 DB/백엔드 필드명에 맞게 변환
+      // 서브테이블별 키 배열 정의
+      const educationKeys = ['school_name', 'major', 'period_start', 'period_end'];
+      const careerKeys = ['company_name', 'position', 'period_start', 'period_end', 'department', 'responsibilities'];
+      const certificationKeys = ['cert_name', 'cert_organization', 'cert_number', 'acquisition_date'];
+      const externalProjectKeys = ['project_name', 'period_start', 'period_end', 'role', 'project_description'];
+
       if (this.employee.educations) {
-        payload.educations = this.employee.educations.map(e => ({
+        const mapped = this.employee.educations.map(e => ({
           school_name: e.school || e.school_name || '',
           major: e.major || '',
           period_start: e.startDate || e.period_start || '',
           period_end: e.endDate || e.period_end || ''
         }));
+        // 모든 필드가 비어있지 않은 행만 필터링
+        const filtered = mapped.filter(row => !this.isSubTableEmpty([row], educationKeys));
+        if (filtered.length > 0) {
+          payload.educations = this.sanitizePeriodFields(filtered, ['period_start', 'period_end']);
+        }
       }
       if (this.employee.careers) {
-        payload.careers = this.employee.careers.map(c => ({
+        const mapped = this.employee.careers.map(c => ({
           company_name: c.company_name || c.company || '',
           position: c.position || '',
           period_start: c.startDate || c.period_start || '',
@@ -474,23 +558,35 @@ export default {
           department: c.department || '',
           responsibilities: c.responsibilities || c.duties || ''
         }));
+        const filtered = mapped.filter(row => !this.isSubTableEmpty([row], careerKeys));
+        if (filtered.length > 0) {
+          payload.careers = this.sanitizePeriodFields(filtered, ['period_start', 'period_end']);
+        }
       }
       if (this.employee.certifications) {
-        payload.certifications = this.employee.certifications.map(cert => ({
-          cert_name: cert.certificate_name || cert.cert_name || '',
+        const mapped = this.employee.certifications.map(cert => ({
+          cert_name: cert.certification_name || cert.cert_name || '',
           cert_organization: cert.issuing_authority || cert.cert_organization || '',
           cert_number: cert.cert_number || '',
           acquisition_date: cert.acquisition_date || ''
         }));
+        const filtered = mapped.filter(row => !this.isSubTableEmpty([row], certificationKeys));
+        if (filtered.length > 0) {
+          payload.certifications = this.sanitizePeriodFields(filtered, ['acquisition_date']);
+        }
       }
       if (this.employee.external_projects) {
-        payload.external_projects = this.employee.external_projects.map(p => ({
+        const mapped = this.employee.external_projects.map(p => ({
           project_name: p.project_name || p.name || '',
           period_start: p.startDate || p.period_start || '',
           period_end: p.endDate || p.period_end || '',
           project_description: p.technologies || p.project_description || '',
           role: p.role || ''
         }));
+        const filtered = mapped.filter(row => !this.isSubTableEmpty([row], externalProjectKeys));
+        if (filtered.length > 0) {
+          payload.external_projects = this.sanitizePeriodFields(filtered, ['period_start', 'period_end']);
+        }
       }
       // score1~6, leader_score1~6 변환 추가
       if (skillScores && Array.isArray(skillScores) && skillScores.length === 6) {
@@ -534,10 +630,18 @@ export default {
       this.employee = {
         ...this.employee,
         ...newEmployee,
-        educations: Array.isArray(newEmployee.educations) ? [...newEmployee.educations] : (this.employee.educations || []),
-        careers: Array.isArray(newEmployee.careers) ? [...newEmployee.careers] : (this.employee.careers || []),
-        certificates: Array.isArray(newEmployee.certificates) ? [...newEmployee.certificates] : (this.employee.certificates || []),
-        projects: Array.isArray(newEmployee.projects) ? [...newEmployee.projects] : (this.employee.projects || []),
+        educations: Array.isArray(newEmployee.educations)
+          ? JSON.parse(JSON.stringify(newEmployee.educations))
+          : (this.employee.educations || []),
+        careers: Array.isArray(newEmployee.careers)
+          ? JSON.parse(JSON.stringify(newEmployee.careers))
+          : (this.employee.careers || []),
+        certifications: Array.isArray(newEmployee.certifications)
+          ? JSON.parse(JSON.stringify(newEmployee.certifications))
+          : (this.employee.certifications || []),
+        external_projects: Array.isArray(newEmployee.external_projects)
+          ? JSON.parse(JSON.stringify(newEmployee.external_projects))
+          : (this.employee.external_projects || []),
       };
     },
     // ...existing code...
@@ -577,25 +681,25 @@ export default {
     removeCareer(index) {
       this.employee.careers.splice(index, 1);
     },
-    addCertificate() {
-      if (!this.employee.certificates) {
-        this.employee.certificates = [];
+    addCertifications() {
+      if (!this.employee.certifications) {
+        this.employee.certifications = [];
       }
-      this.employee.certificates.push({
+      this.employee.certifications.push({
         cert_name: '',
         cert_organization: '',
         cert_number: '',
         acquisition_date: '',
       });
     },
-    removeCertificate(index) {
-      this.employee.certificates.splice(index, 1);
+    removeCertifications(index) {
+      this.employee.certifications.splice(index, 1);
     },
-    addProject() {
-      if (!this.employee.projects) {
-        this.employee.projects = [];
+    addexternalProject() {
+      if (!this.employee.external_projects) {
+        this.employee.external_projects = [];
       }
-      this.employee.projects.push({
+      this.employee.external_projects.push({
         project_name: '',
         period_start: '',
         period_end: '',
@@ -603,8 +707,8 @@ export default {
         project_description: '',
       });
     },
-    removeProject(index) {
-      this.employee.projects.splice(index, 1);
+    removeexternalProject(index) {
+      this.employee.external_projects.splice(index, 1);
     },
     showMessage(text, type = 'info') {
       this.message = { text, type };

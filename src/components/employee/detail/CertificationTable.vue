@@ -27,17 +27,17 @@
               <span
                 v-if="activeMonthInput !== index"
                 class="info-input plain-input inline-block minw-110 cursor-pointer"
-                :class="{ placeholder: !certification.issueDate }"
+                :class="{ placeholder: !certification.acquisition_date }"
                 @click="showMonthInput(index)"
               >
-                {{ certification.issueDate ? formatIssueDate(certification.issueDate) : '클릭하여 발급일 선택' }}
+                {{ certification.acquisition_date ? formatIssueDate(certification.acquisition_date) : '클릭하여 발급일 선택' }}
               </span>
               <DateInput
                 v-else
                 ref="monthInputs"
                 type="month"
                 input-class="info-input plain-input real-month-input"
-                :model-value="certification.issueDate"
+                :model-value="certification.acquisition_date"
                 @update:modelValue="value => updateIssueDate(index, value)"
                 @blur="hideMonthInput"
                 class="minw-110"
@@ -46,20 +46,20 @@
             <template v-else>
               <span
                 class="info-input plain-input"
-                :class="{ placeholder: !certification.issueDate }"
+                :class="{ placeholder: !certification.acquisition_date }"
               >
-                {{ certification.issueDate ? formatIssueDate(certification.issueDate) : '클릭하여 발급일 선택' }}
+                {{ certification.acquisition_date ? formatIssueDate(certification.acquisition_date) : '클릭하여 발급일 선택' }}
               </span>
             </template>
-            <div v-if="errors && errors[`certification_${index}_issueDate`]" class="error-message">{{ errors[`certification_${index}_issueDate`] }}</div>
+            <div v-if="errors && errors[`certification_${index}_acquisition_date`]" class="error-message">{{ errors[`certification_${index}_acquisition_date`] }}</div>
           </td>
           <td>
-            <CommonInput v-model="certification.name" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '자격증명' }" />
-            <div v-if="errors && errors[`certification_${index}_name`]" class="error-message">{{ errors[`certification_${index}_name`] }}</div>
+            <CommonInput v-model="certification.cert_name" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '자격증명' }" />
+            <div v-if="errors && errors[`certification_${index}_cert_name`]" class="error-message">{{ errors[`certification_${index}_cert_name`] }}</div>
           </td>
           <td style="position:relative;">
-            <CommonInput v-model="certification.issuer" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '발급처' }" />
-            <div v-if="errors && errors[`certification_${index}_issuer`]" class="error-message">{{ errors[`certification_${index}_issuer`] }}</div>
+            <CommonInput v-model="certification.cert_organization" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '발급처' }" />
+            <div v-if="errors && errors[`certification_${index}_cert_organization`]" class="error-message">{{ errors[`certification_${index}_cert_organization`] }}</div>
             <div v-if="editMode" class="row-action-btns action-btn-group">
               <Button type="button" btn-class="icon-btn" :disabled="index === 0" @click="moveUp(index)" :title="'위로 이동'">
                 <i class="fa fa-arrow-up"></i>

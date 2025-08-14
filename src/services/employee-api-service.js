@@ -354,8 +354,9 @@ class EmployeeApiService {
     try {
       const response = await this.api.put(`/employees/${id}`, employeeData);
       return {
+        success: true,
         data: response.data,
-        message: '직원 정보가 성공적으로 수정되었습니다.',
+        message: response.data.message || '직원 정보가 성공적으로 수정되었습니다.',
       };
     } catch (error) {
       return this.handleError(error, '직원 수정에 실패했습니다.');

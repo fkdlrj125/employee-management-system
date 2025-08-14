@@ -8,8 +8,8 @@ module.exports = (sequelize) => {
     school_name: { type: DataTypes.STRING },
     major: { type: DataTypes.STRING },
     // degree: { type: DataTypes.STRING }, // Commented out for removal
-    period_start: { type: DataTypes.DATEONLY },
-    period_end: { type: DataTypes.DATEONLY },
+    period_start: { type: DataTypes.DATEONLY, allowNull: true },
+    period_end: { type: DataTypes.DATEONLY, allowNull: true },
     // grade: { type: DataTypes.STRING }, // DB에 없음
     created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },

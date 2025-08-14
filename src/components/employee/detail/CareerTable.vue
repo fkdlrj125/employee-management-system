@@ -1,7 +1,10 @@
 <template>
   <div class="table-section" :class="{ 'with-anim': firstMount }">
     <div class="section-title">
-      <h4>경력 사항 (2개월)</h4>
+      <h4>
+        경력 사항
+        <span v-if="totalMonths > 0" style="font-size:15px; font-weight:400; color:#007bff; margin-left:8px;">({{ totalMonths }}개월)</span>
+      </h4>
       <div v-if="editMode" class="add-btn-wrapper">
         <Button
           type="button"
@@ -23,7 +26,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(career, index) in careers" :key="index" class="career-row">
+        <tr v-for="(career, index) in careers" :key="career.id || index" class="career-row">
           <td>
             <CommonInput
               :model-value="formatPeriod(career.startDate, career.endDate)"
@@ -42,8 +45,8 @@
               @select="onPeriodSelect"
               @close="periodModalVisible = false"
             />
-            <div v-if="errors && errors[`career_${index}_startDate`]" class="error-message">{{ errors[`career_${index}_startDate`] }}</div>
-            <div v-if="errors && errors[`career_${index}_endDate`]" class="error-message">{{ errors[`career_${index}_endDate`] }}</div>
+            <div v-if="errors && errors[`career_${index}_period_start`]" class="error-message">{{ errors[`career_${index}_period_start`] }}</div>
+            <div v-if="errors && errors[`career_${index}_period_end`]" class="error-message">{{ errors[`career_${index}_period_end`] }}</div>
           </td>
           <td>
             <CommonInput v-model="career.company_name" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '회사명' }" />
@@ -74,36 +77,6 @@
             </div>
           </td>
         </tr>
-        <tr v-if="careers.length === 0">
-          <td>
-            <span
-              class="info-input plain-input inline-block minw-110 cursor-pointer placeholder"
-              @focus="editMode ? autoAddCareer() : null"
-            >
-              클릭하여 기간 선택
-            </span>
-          </td>
-          <td>
-            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '회사명' }" @focus="editMode ? autoAddCareer() : null" />
-          </td>
-          <td>
-            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '직위' }" @focus="editMode ? autoAddCareer() : null" />
-          </td>
-          <td class="td-narrow" style="position:relative;">
-            <textarea class="info-textarea plain-input" :disabled="!editMode" rows="2" @focus="editMode ? autoAddCareer() : null"></textarea>
-            <div v-if="editMode" class="row-action-btns action-btn-group">
-              <button type="button" class="icon-btn" disabled title="위로 이동">
-                <i class="fas fa-arrow-up"></i>
-              </button>
-              <button type="button" class="icon-btn" disabled title="아래로 이동">
-                <i class="fas fa-arrow-down"></i>
-              </button>
-              <button type="button" class="icon-btn delete" disabled title="삭제">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
       </tbody>
     </table>
     <ToastConfirm
@@ -116,7 +89,7 @@
 </template>
 
 <script>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
  import { handleEmptyRowClick } from '@/utils/empty-row-action';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
@@ -143,11 +116,6 @@ export default {
   emits: ['update:employee'],
   setup(props, { emit }) {
     // 빈 행에서 입력 시 자동 행 추가
-    const autoAddCareer = () => {
-      if (props.editMode && (!props.employee.careers || props.employee.careers.length === 0)) {
-        addCareer();
-      }
-    };
     const firstMount = ref(true);
     // ToastConfirm 삭제 관련 상태
     const toastConfirmVisible = ref(false);
@@ -168,7 +136,7 @@ export default {
 
     const careers = computed({
       get() {
-        return props.employee?.careers || [];
+        return Array.isArray(props.employee?.careers) ? props.employee.careers : [];
       },
       set(value) {
         emit('update:employee', {
@@ -272,6 +240,35 @@ export default {
       handleEmptyRowClick(addCareer, openPeriodPicker);
     };
 
+        // 총 근무 개월수 계산
+    function getMonthDiff(start, end) {
+      if (!start) return 0;
+      const startDate = new Date(start);
+      const endDate = end ? new Date(end) : new Date();
+      if (isNaN(startDate.getTime())) return 0;
+      if (isNaN(endDate.getTime())) return 0;
+      let months = (endDate.getFullYear() - startDate.getFullYear()) * 12;
+      months += endDate.getMonth() - startDate.getMonth();
+      // 일 기준으로 보정
+      if (endDate.getDate() < startDate.getDate()) months--;
+      return months >= 0 ? months + 1 : 0;
+    }
+    const totalMonths = computed(() => {
+      if (!Array.isArray(props.employee?.careers)) return 0;
+      return props.employee.careers.reduce((sum, c) => {
+        const start = c.period_start || c.startDate;
+        const end = c.period_end || c.endDate;
+        return sum + getMonthDiff(start, end);
+      }, 0);
+    });
+
+    // 배열이 0개일 때 자동 행 추가
+    watch(() => props.employee.careers, (newVal) => {
+      if (Array.isArray(newVal) && newVal.length === 0) {
+        addCareer();
+      }
+    }, { deep: true, immediate: true });
+
     setTimeout(() => { firstMount.value = false; }, 700);
     return {
       careers,
@@ -290,6 +287,7 @@ export default {
       formatPeriod,
       firstMount,
       handleEmptyPeriodClick, 
+      totalMonths,
     };
   },
 };

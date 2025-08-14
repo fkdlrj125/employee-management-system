@@ -1,18 +1,18 @@
 <template>
   <div class="table-section" :class="{ 'with-anim': firstMount }">
     <div class="section-title">
-      <h4>프로젝트</h4>
+      <h4>대외경력</h4>
       <div v-if="editMode" class="add-btn-wrapper">
         <Button
           type="button"
           btn-class="btn btn-secondary add-project-row add-row-btn"
-          @click="addProject"
+          @click="addExternalProject"
         >
           + 행 추가
         </Button>
       </div>
     </div>
-    <table class="info-table" id="projectTable">
+    <table class="info-table" id="externalProjectTable">
       <thead>
         <tr>
           <th class="info-label">참여기간</th>
@@ -22,10 +22,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(project, index) in projects" :key="index" class="project-row">
+        <tr v-for="(externalProject, index) in externalProjects" :key="externalProject.id || index" class="external-project-row">
           <td>
             <CommonInput
-              :model-value="formatPeriod(project.startDate, project.endDate)"
+              :model-value="formatPeriod(externalProject.period_start, externalProject.period_end)"
               :input-attrs="{ placeholder: '클릭하여 기간 선택', readonly: true }"
               input-class="info-input plain-input"
               :disabled="!editMode"
@@ -41,56 +41,29 @@
               @select="onPeriodSelect"
               @close="periodModalVisible = false"
             />
-            <div v-if="errors && errors[`project_${index}_startDate`]" class="error-message">{{ errors[`project_${index}_startDate`] }}</div>
-            <div v-if="errors && errors[`project_${index}_endDate`]" class="error-message">{{ errors[`project_${index}_endDate`] }}</div>
+            <div v-if="errors && errors[`externalProject_${index}_period_start`]" class="error-message">{{ errors[`externalProject_${index}_period_start`] }}</div>
+            <div v-if="errors && errors[`externalProject_${index}_period_end`]" class="error-message">{{ errors[`externalProject_${index}_period_end`] }}</div>
           </td>
           <td>
-            <CommonInput v-model="project.project_name" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '경력명' }" />
-            <div v-if="errors && errors[`project_${index}_name`]" class="error-message">{{ errors[`project_${index}_name`] }}</div>
+            <CommonInput v-model="externalProject.project_name" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '경력명' }" />
+            <div v-if="errors && errors[`externalProject_${index}_name`]" class="error-message">{{ errors[`externalProject_${index}_name`] }}</div>
           </td>
           <td class="td-narrow" style="position:relative;">
             <textarea
               class="info-textarea plain-input"
               :disabled="!editMode"
-              v-model="project.description"
+              v-model="externalProject.project_description"
               rows="2"
             ></textarea>
-            <div v-if="errors && errors[`project_${index}_description`]" class="error-message">{{ errors[`project_${index}_description`] }}</div>
+            <div v-if="errors && errors[`externalProject_${index}_description`]" class="error-message">{{ errors[`externalProject_${index}_description`] }}</div>
             <div v-if="editMode" class="row-action-btns action-btn-group">
               <button type="button" class="icon-btn" :disabled="index === 0" @click="moveUp(index)" title="위로 이동">
                 <i class="fas fa-arrow-up"></i>
               </button>
-              <button type="button" class="icon-btn" :disabled="index === projects.length - 1" @click="moveDown(index)" title="아래로 이동">
+              <button type="button" class="icon-btn" :disabled="index === externalProjects.length - 1" @click="moveDown(index)" title="아래로 이동">
                 <i class="fas fa-arrow-down"></i>
               </button>
               <button type="button" class="icon-btn" @click="showDeleteConfirm(index)" title="삭제">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-        <tr v-if="projects.length === 0">
-          <td>
-            <span
-              class="info-input plain-input inline-block minw-110 cursor-pointer placeholder"
-              @focus="editMode ? autoAddProject() : null"
-            >
-              클릭하여 기간 선택
-            </span>
-          </td>
-          <td>
-            <CommonInput input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '경력명' }" @focus="editMode ? autoAddProject() : null" />
-          </td>
-          <td class="td-narrow" style="position:relative;">
-            <textarea class="info-textarea plain-input" :disabled="!editMode" rows="2" @focus="editMode ? autoAddProject() : null"></textarea>
-            <div v-if="editMode" class="row-action-btns action-btn-group">
-              <button type="button" class="icon-btn" disabled title="위로 이동">
-                <i class="fas fa-arrow-up"></i>
-              </button>
-              <button type="button" class="icon-btn" disabled title="아래로 이동">
-                <i class="fas fa-arrow-down"></i>
-              </button>
-              <button type="button" class="icon-btn delete" disabled title="삭제">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -108,7 +81,7 @@
 </template>
 
 <script>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
  import { handleEmptyRowClick } from '@/utils/empty-row-action';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
@@ -116,7 +89,7 @@ import CommonInput from '@/components/common/CommonInput.vue';
 import ToastConfirm from '@/components/common/ToastConfirm.vue';
 
 export default {
-  name: 'ProjectTable',
+  name: 'ExternalProjectTable',
   components: { DateRangePicker, Button, CommonInput, ToastConfirm },
   props: {
     employee: {
@@ -135,11 +108,6 @@ export default {
   emits: ['update:employee'],
   setup(props, { emit }) {
     // 빈 행에서 입력 시 자동 행 추가
-    const autoAddProject = () => {
-      if (props.editMode && (!props.employee.projects || props.employee.projects.length === 0)) {
-        addProject();
-      }
-    };
     const firstMount = ref(true);
     // ToastConfirm 삭제 관련 상태
     const toastConfirmVisible = ref(false);
@@ -152,20 +120,20 @@ export default {
 
     const confirmDelete = () => {
       if (deleteIndex.value !== -1) {
-        projects.value = projects.value.filter((_, i) => i !== deleteIndex.value);
+        externalProjects.value = externalProjects.value.filter((_, i) => i !== deleteIndex.value);
       }
       toastConfirmVisible.value = false;
       deleteIndex.value = -1;
     };
 
-    const projects = computed({
+    const externalProjects = computed({
       get() {
-        return props.employee?.projects || [];
+        return Array.isArray(props.employee?.external_projects) ? props.employee.external_projects : [];
       },
       set(value) {
         emit('update:employee', {
           ...props.employee,
-          projects: value,
+          external_projects: value,
         });
       },
     });
@@ -178,27 +146,27 @@ export default {
     const openPeriodPicker = (index) => {
       if (!props.editMode) return;
       selectedPeriodIndex.value = index;
-      const project = projects.value[index];
+      const externalProject = externalProjects.value[index];
       periodTemp.value = {
-        start: project.startDate || '',
-        end: project.endDate || '',
+        start: externalProject.startDate || '',
+        end: externalProject.endDate || '',
       };
       periodModalVisible.value = true;
     };
 
-    const addProject = () => {
-      const newProject = {
+    const addExternalProject = () => {
+      const newExternalProject = {
         project_name: '',
         period_start: '',
         period_end: '',
         project_description: '',
       };
-      projects.value = [...projects.value, newProject];
+      externalProjects.value = [...externalProjects.value, newExternalProject];
     };
 
     const onPeriodSelect = ({ start, end }) => {
       if (selectedPeriodIndex.value < 0) return;
-      const newList = [...projects.value];
+      const newList = [...externalProjects.value];
       newList[selectedPeriodIndex.value] = {
         ...newList[selectedPeriodIndex.value],
         period_start: start,
@@ -206,28 +174,28 @@ export default {
       };
       emit('update:employee', {
         ...props.employee,
-        projects: newList,
+        externalProjects: newList,
       });
       periodModalVisible.value = false;
     };
 
     const moveUp = (index) => {
       if (index > 0) {
-        const newProjects = [...projects.value];
-        const temp = newProjects[index];
-        newProjects[index] = newProjects[index - 1];
-        newProjects[index - 1] = temp;
-        projects.value = newProjects;
+        const newExternalProjects = [...externalProjects.value];
+        const temp = newExternalProjects[index];
+        newExternalProjects[index] = newExternalProjects[index - 1];
+        newExternalProjects[index - 1] = temp;
+        externalProjects.value = newExternalProjects;
       }
     };
 
     const moveDown = (index) => {
-      if (index < projects.value.length - 1) {
-        const newProjects = [...projects.value];
-        const temp = newProjects[index];
-        newProjects[index] = newProjects[index + 1];
-        newProjects[index + 1] = temp;
-        projects.value = newProjects;
+      if (index < externalProjects.value.length - 1) {
+        const newExternalProjects = [...externalProjects.value];
+        const temp = newExternalProjects[index];
+        newExternalProjects[index] = newExternalProjects[index + 1];
+        newExternalProjects[index + 1] = temp;
+        externalProjects.value = newExternalProjects;
       }
     };
 
@@ -262,15 +230,22 @@ export default {
 
     // 빈 행에서 기간 클릭 시: 공통 유틸 사용
     const handleEmptyPeriodClick = () => {
-      handleEmptyRowClick(addProject, openPeriodPicker);
+      handleEmptyRowClick(addExternalProject, openPeriodPicker);
     };
 
     // 최초 마운트 후 1회만 애니메이션 적용
     setTimeout(() => { firstMount.value = false; }, 700);
 
+    // 배열이 0개일 때 자동 행 추가
+    watch(() => props.employee.external_projects, (newVal) => {
+      if (Array.isArray(newVal) && newVal.length === 0) {
+        addExternalProject();
+      }
+    }, { deep: true, immediate: true });
+
     return {
-      projects,
-      addProject,
+      externalProjects,
+      addExternalProject,
       showDeleteConfirm,
       confirmDelete,
       toastConfirmVisible,
@@ -394,7 +369,7 @@ export default {
   transition: opacity 0.18s;
   z-index: 2;
 }
-.project-row:hover .row-action-btns {
+.external-project-row:hover .row-action-btns {
   opacity: 1;
   pointer-events: auto;
 }

@@ -55,11 +55,12 @@ class EmployeeDAO {
       const employee = await Employee.create(emp, { transaction: t });
       if (educations?.length) {
         for (const edu of educations) {
+          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
           const params = {
             school_name: edu.school_name || edu.school || '',
             major: edu.major || '',
-            period_start: edu.period_start || edu.periodStart || '',
-            period_end: edu.period_end || edu.periodEnd || '',
+            period_start: sanitizeDate(edu.period_start || edu.periodStart),
+            period_end: sanitizeDate(edu.period_end || edu.periodEnd),
             employee_id: employee.id
           };
           console.log('[DAO][CREATE] education params:', params);
@@ -68,11 +69,12 @@ class EmployeeDAO {
       }
       if (careers?.length) {
         for (const c of careers) {
+          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
           console.log('[DAO][CREATE] career:', c);
           await Career.create({
             ...c,
-            period_start: c.period_start || c.periodStart,
-            period_end: c.period_end || c.periodEnd,
+            period_start: sanitizeDate(c.period_start || c.periodStart),
+            period_end: sanitizeDate(c.period_end || c.periodEnd),
             employee_id: employee.id
           }, { transaction: t });
         }
@@ -88,11 +90,12 @@ class EmployeeDAO {
       }
       if (external_projects?.length) {
         for (const p of external_projects) {
+          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
           console.log('[DAO][CREATE] external_project:', p);
           await ExternalProject.create({
             ...p,
-            period_start: p.period_start || p.periodStart,
-            period_end: p.period_end || p.periodEnd,
+            period_start: sanitizeDate(p.period_start || p.periodStart),
+            period_end: sanitizeDate(p.period_end || p.periodEnd),
             employee_id: employee.id
           }, { transaction: t });
         }
@@ -115,11 +118,12 @@ class EmployeeDAO {
       await ExternalProject.destroy({ where: { employee_id: id }, transaction: t });
       if (educations?.length) {
         for (const edu of educations) {
+          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
           const params = {
             school_name: edu.school_name || edu.school || '',
             major: edu.major || '',
-            period_start: edu.period_start || edu.periodStart || '',
-            period_end: edu.period_end || edu.periodEnd || '',
+            period_start: sanitizeDate(edu.period_start || edu.periodStart),
+            period_end: sanitizeDate(edu.period_end || edu.periodEnd),
             employee_id: id
           };
           console.log('[DAO][UPDATE] education params:', params);
@@ -128,11 +132,12 @@ class EmployeeDAO {
       }
       if (careers?.length) {
         for (const c of careers) {
+          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
           console.log('[DAO][UPDATE] career:', c);
           await Career.create({
             ...c,
-            period_start: c.period_start || c.periodStart,
-            period_end: c.period_end || c.periodEnd,
+            period_start: sanitizeDate(c.period_start || c.periodStart),
+            period_end: sanitizeDate(c.period_end || c.periodEnd),
             employee_id: id
           }, { transaction: t });
         }
@@ -148,11 +153,12 @@ class EmployeeDAO {
       }
       if (external_projects?.length) {
         for (const p of external_projects) {
+          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
           console.log('[DAO][UPDATE] external_project:', p);
           await ExternalProject.create({
             ...p,
-            period_start: p.period_start || p.periodStart,
-            period_end: p.period_end || p.periodEnd,
+            period_start: sanitizeDate(p.period_start || p.periodStart),
+            period_end: sanitizeDate(p.period_end || p.periodEnd),
             employee_id: id
           }, { transaction: t });
         }

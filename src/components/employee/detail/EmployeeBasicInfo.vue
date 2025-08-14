@@ -117,7 +117,7 @@
             </td>
           </tr>
           <tr>
-            <th class="info-label">EUS 경력(수기 작성)</th>
+            <th class="info-label">EUS 경력(수기)</th>
             <td>
               <input
                 type="text"

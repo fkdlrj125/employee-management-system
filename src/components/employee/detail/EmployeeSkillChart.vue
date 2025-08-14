@@ -22,13 +22,14 @@
     <div class="chart-wrapper">
       <canvas ref="chartCanvas" width="400" height="400"></canvas>
     </div>
-    <button
-      class="btn btn-secondary btn-sm"
-      style="margin-top: 10px;"
-      @click="$emit('go-to-period-analysis')"
-    >
-      기간별 기술 역량 분석 페이지로 이동
-    </button>
+    <div class="chart-bottom-controls">
+      <button
+        class="btn btn-secondary btn-sm"
+        @click="$emit('go-to-period-analysis')"
+      >
+        기간별 기술 역량 분석
+      </button>
+    </div>
 
     <!-- 연도별 점수 변화 차트 -->
     <div class="chart-wrapper" v-if="evaluationHistory && evaluationHistory.length">
@@ -394,6 +395,12 @@ export default {
 </script>
 
 <style scoped>
+/* 하단 버튼 우측 정렬 */
+.chart-bottom-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
 
 .skill-chart-container {
   /* .table-container의 레이아웃/배경 스타일 복사 */
