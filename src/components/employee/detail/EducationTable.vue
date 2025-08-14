@@ -49,10 +49,11 @@
               v-model="education.school_name"
               input-class="info-input plain-input"
               :disabled="!editMode"
+              :input-attrs="{ placeholder: '학교명' }"
             />
           </td>
           <td style="position:relative;">
-            <CommonInput v-model="education.major" input-class="info-input plain-input" :disabled="!editMode" />
+            <CommonInput v-model="education.major" input-class="info-input plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '전공' }" />
             <div v-if="editMode" class="row-action-btns action-btn-group">
               <Button type="button" btn-class="icon-btn" :disabled="index === 0" @click="moveUp(index)" :title="'위로 이동'">
                 <i class="fa fa-arrow-up"></i>
@@ -61,35 +62,6 @@
                 <i class="fa fa-arrow-down"></i>
               </Button>
               <Button type="button" btn-class="icon-btn delete" @click="showDeleteConfirm(index)" :title="'삭제'">
-                <i class="fa fa-trash"></i>
-              </Button>
-            </div>
-          </td>
-        </tr>
-        <!-- 이 부분이 나눠져서 기본행이 인식이 안 됨 이거 처리해야 됨 -->
-        <tr v-if="educations.length === 0">
-          <td>
-            <CommonInput
-              :input-attrs="{ placeholder: '클릭하여 기간 선택', readonly: true }"
-              input-class="info-input plain-input"
-              :disabled="!editMode"
-              @focus="editMode ? autoAddEducation() : null"
-              class="cursor-pointer"
-            />
-          </td>
-          <td>
-            <CommonInput input-class="edu-school plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '학교명' }" @focus="editMode ? autoAddEducation() : null" />
-          </td>
-          <td style="position:relative;">
-            <CommonInput input-class="edu-major plain-input" :disabled="!editMode" :input-attrs="{ placeholder: '전공' }" @focus="editMode ? autoAddEducation() : null" />
-            <div v-if="editMode" class="row-action-btns action-btn-group">
-              <Button type="button" btn-class="icon-btn" disabled :title="'위로 이동'">
-                <i class="fa fa-arrow-up"></i>
-              </Button>
-              <Button type="button" btn-class="icon-btn" disabled :title="'아래로 이동'">
-                <i class="fa fa-arrow-down"></i>
-              </Button>
-              <Button type="button" btn-class="icon-btn delete" disabled :title="'삭제'">
                 <i class="fa fa-trash"></i>
               </Button>
             </div>
@@ -134,6 +106,39 @@ export default {
   },
   emits: ['update:employee'],
   setup(props, { emit }) {
+    // emit 직전 employee 전체 로그
+    const emitUpdateEmployee = (newEmployee) => {
+      // 디버깅: emit 직전 전체 객체와 educations 배열 출력
+      emit('update:employee', newEmployee);
+    };
+
+    // 실제 데이터 배열에 빈 행 추가 함수
+    const addEducation = () => {
+      const newEducation = {
+        id: Date.now() + Math.random(),
+        school_name: '',
+        major: '',
+        period_start: '',
+        period_end: '',
+      };
+      
+      emitUpdateEmployee({
+        ...props.employee,
+        educations: [...(props.employee.educations ? props.employee.educations : []), newEducation],
+      });
+    };
+
+    // employee.educations가 비어 있거나 undefined/null일 때 자동으로 실제 데이터 배열에 빈 행을 추가
+    watch(
+      () => props.employee.educations,
+      (newVal) => {
+        if ((Array.isArray(newVal) && newVal.length === 0)) {
+          addEducation();
+        }
+        // 디버깅 로그
+      },
+      { deep: true, immediate: true }
+    );
     // 입력값 변경 시마다 부모에 데이터 반영
     watch(educations, (newVal) => {
       emitUpdateEmployee({
@@ -170,11 +175,6 @@ export default {
       console.log('[EducationTable.vue] employee.educations changed:', JSON.parse(JSON.stringify(newVal)));
     }, { deep: true });
 
-    // emit 직전 employee 전체 로그
-    const emitUpdateEmployee = (newEmployee) => {
-      emit('update:employee', newEmployee);
-    };
-
     // ToastConfirm 삭제 관련 상태
     const toastConfirmVisible = ref(false);
     const deleteIndex = ref(-1);
@@ -196,23 +196,6 @@ export default {
 
     // 기간 선택 모달 상태
     const periodModalVisible = ref(false);
-
-
-
-    const addEducation = () => {
-      const newEducation = {
-        id: Date.now() + Math.random(),
-        school_name: '',
-        major: '',
-        period_start: '',
-        period_end: '',
-      };
-      // 불변성 방식으로 배열 전체를 새로 할당
-      emitUpdateEmployee({
-        ...props.employee,
-        educations: [...(props.employee.educations ? props.employee.educations : []), newEducation],
-      });
-    };
 
     // 빈 입력 행 객체
     const emptyEducation = ref({ school_name: '', major: '', period_start: '', period_end: '' });
