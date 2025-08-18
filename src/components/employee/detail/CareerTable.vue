@@ -29,7 +29,7 @@
         <tr v-for="(career, index) in careers" :key="career.id || index" class="career-row">
           <td>
             <CommonInput
-              :model-value="formatPeriod(career.startDate, career.endDate)"
+              :model-value="formatPeriod(career.period_start, career.period_end)"
               :input-attrs="{ placeholder: '클릭하여 기간 선택', readonly: true }"
               input-class="info-input plain-input"
               :disabled="!editMode"
@@ -90,7 +90,7 @@
 
 <script>
 import { computed, ref, watch } from 'vue';
- import { handleEmptyRowClick } from '@/utils/empty-row-action';
+import { handleEmptyRowClick } from '@/utils/emptyRowAction';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -185,6 +185,7 @@ export default {
         ...props.employee,
         careers: newList,
       });
+      emit('career-change', newList); // 기간 변경 시 커스텀 이벤트 emit
       periodModalVisible.value = false;
     };
 

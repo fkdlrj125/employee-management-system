@@ -156,7 +156,7 @@ export default {
       default: () => ({}),
     },
   },
-  emits: ['update:employee', 'photo-change', 'validate-field', 'career-change'],
+  emits: ['update:employee', 'photo-change', 'validate-field'],
   data() {
     return {
       localEmployee: { ...this.employee },
@@ -185,6 +185,26 @@ export default {
     this.calculateTotalCareer();
   },
   methods: {
+    // 경력테이블 경력 개월수 합산 함수
+    calculateCareerTableMonths() {
+      if (!Array.isArray(this.employee.careers)) return 0;
+      let total = 0;
+      this.employee.careers.forEach(career => {
+        const start = career.period_start;
+        let end = career.period_end;
+        if (start) {
+          const startDate = new Date(start);
+          // end가 없으면 현재 날짜로 처리(재직 중)
+          const endDate = end ? new Date(end) : new Date();
+          if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+            let months = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth());
+            if (endDate.getDate() < startDate.getDate()) months--;
+            total += Math.max(0, months + 1); // +1: 시작월 포함
+          }
+        }
+      });
+      return total;
+    },
     onPhotoChange(event) {
       const file = event.target.files[0];
       if (file) {
@@ -243,21 +263,12 @@ export default {
       // MITMAS 경력
       const mitmasMonths = this.mitmasCareer;
 
-      // EUS 경력 파싱
-      let eusMonths = 0;
-      if (this.localEmployee.eus_career) {
-        const eusText = this.localEmployee.eus_career.trim();
-        const yearMatch = eusText.match(/(\d+)년/);
-        const monthMatch = eusText.match(/(\d+)개월/);
+      // 경력테이블 경력 개월수만 합산 (EUS 경력 제외)
+      const tableMonths = this.calculateCareerTableMonths();
 
-        if (yearMatch) eusMonths += parseInt(yearMatch[1]) * 12;
-        if (monthMatch) eusMonths += parseInt(monthMatch[1]);
-      }
-
-      const totalMonths = mitmasMonths + eusMonths;
+      const totalMonths = mitmasMonths + tableMonths;
       this.totalCareer = this.formatCareer(totalMonths);
-
-      this.$emit('career-change', totalMonths);
+      // 무한 루프 방지를 위해 career-change emit 제거
     },
 
     formatCareer(months) {

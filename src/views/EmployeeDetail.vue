@@ -102,6 +102,7 @@
               :edit-mode="editMode"
               :errors="errors"
               @update:employee="updateEmployee"
+              @career-change="onCareerChange"
               :key="'career'"
             />
           </div>
@@ -128,7 +129,6 @@
             class="table-container"
             :employee="employee"
             :edit-mode="editMode"
-            :leader-skill-scores="employee.leaderSkillScores"
             @update:employee="updateEmployee"
             @go-to-period-analysis="goToPerformanceAnalysis"
             :key="'skill'"
@@ -158,7 +158,8 @@ import EmployeeBasicInfo from '@/components/employee/detail/EmployeeBasicInfo.vu
 import EmployeeContactInfo from '@/components/employee/detail/EmployeeContactInfo.vue';
 import EmployeeSkillChart from '@/components/employee/detail/EmployeeSkillChart.vue';
 import EmployeePeriodSelector from '@/components/employee/detail/EmployeePeriodSelector.vue';
- import EmployeeApiService from '@/services/employee-api-service';
+import EmployeeApiService from '@/services/EmployeeApiService';
+import evaluationApiService from '@/services/EvaluationApiService';
 import EmployeeDetailHeader from '@/components/employee/detail/EmployeeDetailHeader.vue';
 import EducationTable from '@/components/employee/detail/EducationTable.vue';
 import CareerTable from '@/components/employee/detail/CareerTable.vue';
@@ -219,6 +220,7 @@ export default {
       showConfirm: false,
       confirmMessage: '',
       confirmAction: null,
+      // 평가 이력 상태 제거
     };
   },
   computed: {
@@ -403,6 +405,7 @@ export default {
       }
       this.errors = errors;
     },
+
     // 직원 데이터 로드
     async loadEmployee() {
       if (!this.employeeId || this.employeeId === 'new') return;
@@ -648,8 +651,12 @@ export default {
     onPhotoChange(photoData) {
       this.employee.photo = photoData;
     },
-    onCareerChange() {
-      // 경력 변경 시 추가 로직이 필요하면 여기에 구현
+    onCareerChange(newCareers) {
+      // 경력 변경 시 employee.careers를 새 배열로 할당하여 반응성 보장
+      this.employee = {
+        ...this.employee,
+        careers: Array.isArray(newCareers) ? JSON.parse(JSON.stringify(newCareers)) : [],
+      };
     },
     addEducation() {
       if (!this.employee.educations) {

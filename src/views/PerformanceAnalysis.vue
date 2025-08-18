@@ -59,7 +59,7 @@
 <script>
 import EmployeeSkillChart from '@/components/employee/detail/EmployeeSkillChart.vue';
 import EmployeeDetailHeader from '@/components/employee/detail/EmployeeDetailHeader.vue';
- import EmployeeApiService from '@/services/employee-api-service.js';
+import EmployeeApiService from '@/services/EmployeeApiService';
 
 export default {
   name: 'PerformanceAnalysis',

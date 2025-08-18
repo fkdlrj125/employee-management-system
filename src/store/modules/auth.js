@@ -1,4 +1,4 @@
- import EmployeeApiService from '@/services/employee-api-service.js';
+import EmployeeApiService from '@/services/EmployeeApiService';
 import router from '@/router';
 
 const state = {

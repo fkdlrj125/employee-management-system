@@ -82,7 +82,7 @@
 
 <script>
 import { computed, ref, watch } from 'vue';
- import { handleEmptyRowClick } from '@/utils/empty-row-action';
+import { handleEmptyRowClick } from '@/utils/emptyRowAction';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -145,12 +145,12 @@ export default {
 
     const openPeriodPicker = (index) => {
       if (!props.editMode) return;
-      selectedPeriodIndex.value = index;
       const externalProject = externalProjects.value[index];
       periodTemp.value = {
-        start: externalProject.startDate || '',
-        end: externalProject.endDate || '',
+        start: externalProject.period_start || null,
+        end: externalProject.period_end || null,
       };
+      selectedPeriodIndex.value = index;
       periodModalVisible.value = true;
     };
 
@@ -174,7 +174,7 @@ export default {
       };
       emit('update:employee', {
         ...props.employee,
-        externalProjects: newList,
+        external_projects: newList,
       });
       periodModalVisible.value = false;
     };

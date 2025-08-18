@@ -59,7 +59,7 @@
 <script>
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
- import EmployeeApiService from '@/services/employee-api-service';
+import EmployeeApiService from '@/services/EmployeeApiService';
 export default {
   components: { Button, CommonInput },
   name: 'EmployeeDetailHeader',

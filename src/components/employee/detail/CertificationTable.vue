@@ -86,7 +86,7 @@
 
 <script>
 import { computed, ref, nextTick, watch } from 'vue';
-import { handleEmptyRowClick } from '@/utils/empty-row-action';
+import { handleEmptyRowClick } from '@/utils/emptyRowAction';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';

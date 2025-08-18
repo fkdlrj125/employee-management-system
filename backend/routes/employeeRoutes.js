@@ -44,9 +44,6 @@ router.put('/:id',
   (req, res) => employeeController.updateEmployee(req, res)
 )
 
-// PUT /api/employees/:id/skill-scores - 기술역량 점수만 저장
-router.put('/:id/skill-scores', (req, res) => employeeController.updateSkillScores(req, res))
-
 // DELETE /api/employees/:id - 직원 삭제
 router.delete('/:id', (req, res) => employeeController.deleteEmployee(req, res))
 

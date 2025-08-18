@@ -14,7 +14,7 @@
         </button>
       </div>
       <div v-if="editMode" class="chart-controls">
-        <button @click="showSkillModal = true" class="btn btn-secondary btn-sm">평가 입력</button>
+        <button @click="openModal" class="btn btn-secondary btn-sm">평가 입력</button>
       </div>
     </div>
 
@@ -31,9 +31,12 @@
       </button>
     </div>
 
-    <!-- 연도별 점수 변화 차트 -->
-    <div class="chart-wrapper" v-if="evaluationHistory && evaluationHistory.length">
-      <canvas ref="historyChartCanvas" width="400" height="300"></canvas>
+    <!-- 차트 아래, 버튼 아래에 항상 보이는 비고 영역 -->
+    <div class="special-note-display">
+      <label class="special-note-label">비고</label>
+      <div class="special-note-content">
+        {{ latestSpecialNote ? latestSpecialNote : '비고 없음' }}
+      </div>
     </div>
 
     <!-- 기술 평가 입력 모달 -->
@@ -53,6 +56,11 @@
               </div>
             </div>
           </div>
+        <!-- 비고란 추가 -->
+        <div class="special-note-group">
+          <label for="specialNote" class="special-note-label">비고</label>
+          <textarea id="specialNote" v-model="specialNote" rows="3" class="special-note-textarea"></textarea>
+        </div>
         </div>
         <div class="modal-footer">
           <button @click="closeModal" class="btn btn-secondary">취소</button>
@@ -74,7 +82,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
- import employeeApiService from '@/services/employee-api-service';
+import evaluationApiService from '@/services/EvaluationApiService';
 
 // Chart.js 컴포넌트 등록 (Filler는 unregister)
 Chart.register(
@@ -97,10 +105,6 @@ export default {
     editMode: {
       type: Boolean,
       default: false,
-    },
-    evaluationHistory: {
-      type: Array,
-      default: () => [],
     },
   },
   data() {
@@ -126,11 +130,27 @@ export default {
         { label: ['혁신 및 ', '지속적인 개선 노력'], score: 0 },
       ],
       firstMount: true,
+      specialNote: '',
+      evaluationHistory: [], // 내부 상태로 관리
+      isChartRendering: false, // 차트 렌더링 중 플래그
+      chartUpdateQueue: [], // 차트 변경 요청 큐
     };
   },
   computed: {
     skillCategories() {
       return this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
+    },
+    // 평가 이력 배열 반환 (role 분기 불필요, 단일 배열)
+    currentEvaluations() {
+      return Array.isArray(this.evaluationHistory) ? this.evaluationHistory : [];
+    },
+    latestSpecialNote() {
+      // 현재 role에 맞는 평가 이력에서 가장 최근 평가의 special_note 추출
+      const arr = Array.isArray(this.currentEvaluations) ? this.currentEvaluations : [];
+      if (arr.length === 0) return '';
+      const sorted = [...arr].sort((a, b) => new Date(b.evaluation_date) - new Date(a.evaluation_date));
+      const pureLatest = JSON.parse(JSON.stringify(sorted[0]));
+      return pureLatest?.special_note || '';
     }
   },
   watch: {
@@ -172,17 +192,40 @@ export default {
       deep: true,
     },
   },
-  mounted() {
-    console.log('[EmployeeSkillChart] mounted');
-    this.loadSkillData();
-    this.initChart();
-    this.initHistoryChart();
+  async mounted() {
+    // employee.id로 평가 이력 직접 조회
+    if (this.employee && this.employee.id) {
+      try {
+        let history = await evaluationApiService.getEvaluationHistory(this.employee.id);
+        // Proxy/reactive 객체를 순수 객체로 변환
+        history = JSON.parse(JSON.stringify(history));
+        this.evaluationHistory = Array.isArray(history) ? history : [];
+        // 평가 이력 세팅 후 항상 점수 세팅 함수 호출
+        this.setSkillScoresFromHistory();
+        this.loadSkillData();
+        this.initChart();
+        this.initHistoryChart();
+      } catch (e) {
+        this.evaluationHistory = [];
+        // 평가 이력 없을 때도 점수 세팅 함수 호출
+        this.setSkillScoresFromHistory();
+        this.loadSkillData();
+        this.initChart();
+        this.initHistoryChart();
+      }
+    } else {
+      // employee.id 없을 때도 점수 세팅 함수 호출
+      this.setSkillScoresFromHistory();
+      this.loadSkillData();
+      this.initChart();
+      this.initHistoryChart();
+    }
     setTimeout(() => {
       this.firstMount = false;
     }, 700);
   },
+      
   beforeUnmount() {
-    console.log('[EmployeeSkillChart] beforeUnmount');
     if (this.chart) {
       this.chart.destroy();
     }
@@ -190,106 +233,152 @@ export default {
       this.historyChart.destroy();
     }
   },
+      
   methods: {
     toggleRole() {
       this.selectedRole = this.selectedRole === 'member' ? 'leader' : 'member';
+      // 역할 변경 시 specialNote도 최신 평가 special_note로 초기화
+      if (Array.isArray(this.evaluationHistory) && this.evaluationHistory.length > 0) {
+        const latest = this.evaluationHistory[0].evaluation_date
+          ? [...this.evaluationHistory].sort((a, b) => new Date(b.evaluation_date || 0) - new Date(a.evaluation_date || 0))[0]
+          : this.evaluationHistory[0];
+        const pureLatest = JSON.parse(JSON.stringify(latest));
+        this.specialNote = pureLatest.special_note || '';
+      }
     },
+
+     // 평가 이력에서 최신 점수 employee에 세팅
+    setSkillScoresFromHistory() {
+      // 현재 role에 맞는 평가 이력에서 최신 평가 추출
+      const arr = Array.isArray(this.currentEvaluations) ? this.currentEvaluations : [];
+      if (!this.employee || arr.length === 0) return;
+
+      function getLatestHistory(historyArr) {
+        if (!Array.isArray(historyArr) || historyArr.length === 0) return null;
+        if (historyArr[0] && historyArr[0].evaluation_date) {
+          return JSON.parse(JSON.stringify([...historyArr].sort((a, b) => new Date(b.evaluation_date || 0) - new Date(a.evaluation_date || 0))[0]));
+        }
+        return JSON.parse(JSON.stringify(historyArr[0]));
+      }
+
+      function makeScores(obj, prefix) {
+        if (!obj) return [0,0,0,0,0,0];
+        return [1,2,3,4,5,6].map(i => Number(obj[`${prefix}${i}`]) || 0);
+      }
+
+      const pureLatest = getLatestHistory(arr);
+      let memberScores = [0,0,0,0,0,0];
+      let leaderScores = [0,0,0,0,0,0];
+      if (this.selectedRole === 'member') {
+        memberScores = makeScores(pureLatest, 'score');
+      } else {
+        leaderScores = makeScores(pureLatest, 'score');
+      }
+
+      this.employee.skillScores = memberScores;
+      this.employee.leaderSkillScores = leaderScores;
+      this.memberSkills.forEach((category, idx) => { category.score = memberScores[idx]; });
+      this.leaderSkills.forEach((category, idx) => { category.score = leaderScores[idx]; });
+
+      this.specialNote = pureLatest?.special_note || '';
+      this.loadSkillData();
+      this.initChart();
+    },
+
     loadSkillData() {
-      // selectedRole에 따라 본인/리더 평가 점수 분기 적용
-      const scores = this.selectedRole === 'leader'
-        ? (this.employee.leaderSkillScores || [])
-        : (this.employee.skillScores || []);
+      // 이미 세팅된 memberSkills/leaderSkills의 score만 화면에 반영
       const arr = this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
       arr.forEach((category, index) => {
-        if (scores[index] !== undefined) {
-          category.score = scores[index];
-        }
+        // score 값이 undefined/null이면 0으로 보정
+        category.score = typeof category.score === 'number' && !isNaN(category.score) ? category.score : 0;
+        // label이 Proxy(Array)일 경우 실제 값으로 변환해서 출력
+        const labelStr = Array.isArray(category.label) ? category.label.join('') : String(category.label);
       });
     },
 
     initChart() {
-      try {
-        const ctx = this.$refs.chartCanvas.getContext('2d');
-        // 순수 객체로 변환 (reactive 방지)
-        let skillCategoriesCopy = JSON.parse(JSON.stringify(this.skillCategories || []));
-        // skillCategories가 비어있으면 최소 1개 dummy라도 넣기
-        if (!Array.isArray(skillCategoriesCopy) || skillCategoriesCopy.length === 0) {
-          skillCategoriesCopy = [{ label: 'N/A', score: 0 }];
-        }
-        // score가 숫자인지, NaN/undefined가 아닌지 보장
-        const safeScores = skillCategoriesCopy.map((skill) => {
-          const n = parseInt(skill.score, 10);
-          return isNaN(n) ? 0 : n;
-        });
-        // datasets/data가 항상 1개 이상
-        const datasets = [
-          {
-            label: '현재 역량',
-            data: safeScores,
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 2,
-            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            pointRadius: 5,
-          },
-        ].filter(ds => ds && Array.isArray(ds.data) && ds.data.length > 0);
-        const plugins = {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            titleColor: '#fff',
-            bodyColor: '#fff',
-            callbacks: {
-              label: function (context) {
-                return `${context.label}: ${context.parsed.r}/10`;
-              },
-            },
-          },
-          filler: false, // Filler 플러그인 비활성화
-        };
-        // 콘솔로 데이터 구조 확인
-        this.chart = new Chart(ctx, {
-          type: 'radar',
-          data: {
-            labels: skillCategoriesCopy.map((skill) => skill.label),
-            datasets,
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              r: {
-                beginAtZero: true,
-                max: 5,
-                min: 0,
-                ticks: {
-                  stepSize: 1,
-                  display: false,
-                  showLabelBackdrop: false,
-                  color: '#666',
-                },
-                grid: {
-                  color: '#e0e0e0',
-                },
-                pointLabels: {
-                  font: {
-                    size: 12,
-                  },
-                  color: '#333',
-                },
-              },
-            },
-            plugins: {
-              ...plugins,
-              filler: false
-            },
-          },
-        });
-      } catch (e) {
-        console.error('initChart error:', e);
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
       }
+      const canvas = this.$refs.chartCanvas;
+      if (!canvas || !(canvas instanceof HTMLCanvasElement)) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      // 데이터 변환 및 차트 생성
+      const skillCategoriesCopy = JSON.parse(JSON.stringify(this.skillCategories || []));
+      const labels = skillCategoriesCopy.map(skill => Array.isArray(skill.label) ? skill.label.join('') : String(skill.label));
+      let safeScores = skillCategoriesCopy.map(skill => {
+        const n = parseInt(skill.score, 10);
+        return isNaN(n) ? 0 : n;
+      });
+      if (safeScores.length < 6) safeScores = [...safeScores, ...Array(6 - safeScores.length).fill(0)];
+      const datasets = [
+        {
+          label: '현재 역량',
+          data: safeScores,
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+        },
+      ];
+      const plugins = {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          callbacks: {
+            label: function (context) {
+              return `${context.label}: ${context.parsed.r}/10`;
+            },
+          },
+        },
+        filler: false,
+      };
+      this.chart = new Chart(ctx, {
+        type: 'radar',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 5,
+              min: 0,
+              ticks: {
+                stepSize: 1,
+                display: false,
+                showLabelBackdrop: false,
+                color: '#666',
+              },
+              grid: { color: '#e0e0e0' },
+              pointLabels: {
+                font: { size: 12 },
+                color: '#333',
+              },
+            },
+          },
+          plugins: {
+            ...plugins,
+            filler: false,
+          },
+          animation: {
+            onComplete: () => {
+              this.isChartRendering = false;
+              if (this.chartUpdateQueue.length > 0) {
+                const next = this.chartUpdateQueue.shift();
+                if (typeof next === 'function') next();
+              }
+            },
+          },
+        },
+      });
     },
 
     // 연도별 점수 변화 라인차트(또는 레이더차트) 추가
@@ -339,17 +428,22 @@ export default {
     },
 
     updateChart() {
+      if (this.isChartRendering) {
+        this.chartUpdateQueue.push(() => this.updateChart());
+        return;
+      }
+      this.isChartRendering = true;
       try {
         if (this.chart) {
           this.chart.destroy();
           this.chart = null;
         }
-        // 콘솔로 데이터 구조 확인
-        this.initChart();
+        this.chartKey++;
+        this.$nextTick(() => {
+          this.initChart();
+        });
       } catch (e) {
-        console.error('Chart update error:', e);
-        if (this.chart && this.chart.data) {
-        }
+        this.isChartRendering = false;
       }
     },
 
@@ -363,20 +457,35 @@ export default {
         return n > 5 ? 5 : n;
       });
       let payload = {};
-      if (this.selectedRole === 'leader') {
-        payload.leaderSkillScores = scores;
-      } else {
-        payload.skillScores = scores;
+      const now = new Date();
+      payload.evaluation_date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-01`;
+      payload.special_note = this.specialNote;
+      const user = this.$store.getters['auth/authUser'] || this.$store.getters['auth/currentUser'];
+      if (user && user.id) {
+        payload.evaluated_by = user.id;
       }
+      let res;
       try {
-        const res = await employeeApiService.updateEmployeeSkillScores(this.employee.id, payload);
-        if (res.success) {
-          // 프론트 상태도 즉시 반영
-          if (this.selectedRole === 'leader') {
-            this.$emit('update:employee', { ...this.employee, leaderSkillScores: scores });
+        if (this.selectedRole === 'leader') {
+          payload.leaderSkillScores = scores;
+          // 리더 평가 저장 API 호출 (/evaluations/leader/:id)
+          res = await evaluationApiService.saveLeaderSkillScores(this.employee.id, payload);
+        } else {
+          payload.skillScores = scores;
+          // 멤버 평가 저장 API 호출 (/evaluations/:id)
+          res = await evaluationApiService.saveSkillScores(this.employee.id, payload);
+        }
+        if (res && res.success) {
+          // 평가 이력 재조회 및 점수 갱신
+          if (this.employee && this.employee.id) {
+            const id = this.employee.id;
+            const history = await evaluationApiService.getEvaluationHistory(id);
+            this.evaluationHistory = Array.isArray(history) ? history : [];
+            this.setSkillScoresFromHistory();
           } else {
-            this.$emit('update:employee', { ...this.employee, skillScores: scores });
+            this.setSkillScoresFromHistory();
           }
+          this.specialNote = '';
           this.updateChart();
           this.closeModal();
         } else {
@@ -384,12 +493,27 @@ export default {
         }
       } catch (e) {
         alert('저장 중 오류가 발생했습니다.');
+        this.setSkillScoresFromHistory();
       }
     },
 
     closeModal() {
       this.showSkillModal = false;
     },
+    // 모달 열릴 때 specialNote를 최신 평가 special_note로 초기화
+    openModal() {
+      if (Array.isArray(this.evaluationHistory) && this.evaluationHistory.length > 0) {
+        const latest = this.evaluationHistory[0].evaluation_date
+          ? [...this.evaluationHistory].sort((a, b) => new Date(b.evaluation_date || 0) - new Date(a.evaluation_date || 0))[0]
+          : this.evaluationHistory[0];
+        const pureLatest = JSON.parse(JSON.stringify(latest));
+        this.specialNote = pureLatest.special_note || '';
+      } else {
+        this.specialNote = '';
+      }
+      this.showSkillModal = true;
+    },
+     
   },
 };
 </script>
@@ -461,6 +585,47 @@ export default {
   background: #f8f9fa;
   border-radius: 8px;
   padding: 20px;
+}
+
+/* 최근 평가 비고 라벨 밑줄 스타일 명확히 추가 (모든 화면에서 적용) */
+.special-note-label {
+  font-weight: 600;
+  color: #343a40;
+  font-size: 18px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #007bff;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.special-note-group, .special-note-display {
+  margin-top: 24px;
+}
+
+.special-note-content {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  white-space: pre-line;
+  min-height: 56px;
+  font-size: 15px;
+  color: #222;
+  margin-top: 4px;
+}
+
+.special-note-textarea {
+  width: 100%;
+  resize: none; /* 크기 조절 불가 */
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  font-size: 15px;
+  background: #f8f9fa;
+  color: #222;
+  min-height: 56px;
+  box-sizing: border-box;
+  margin-top: 6px;
 }
 
 /* 모달 스타일 */

@@ -17,7 +17,7 @@ const getDefaultState = () => ({
  * Employee Vuex Store
  * 임시 더미 데이터 사용 (백엔드 서버 연결 전까지)
  */
- import EmployeeApiService from '@/services/employee-api-service.js';
+import EmployeeApiService from '@/services/EmployeeApiService';
 
 const state = getDefaultState();
 

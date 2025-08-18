@@ -22,7 +22,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(education, index) in educations" :key="education.id">
+        <tr v-for="(education, index) in educations" :key="education.id || index">
           <td>
             <CommonInput
               :model-value="formatPeriod(education.period_start, education.period_end)"
@@ -81,7 +81,7 @@
 
 <script>
 import { computed, ref, watch } from 'vue';
- import { handleEmptyRowClick } from '@/utils/empty-row-action';
+import { handleEmptyRowClick } from '@/utils/emptyRowAction';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -162,11 +162,12 @@ export default {
     const selectedPeriodIndex = ref(-1);
 
     function openPeriodPicker(index) {
+      console.log('[디버그] openPeriodPicker called', periodModalVisible, props.editMode);
       if (!props.editMode) return;
       const edu = educations.value[index];
       periodTemp.value = {
-        start: edu.period_start || '',
-        end: edu.period_end || '',
+        start: edu.startDate || '',
+        end: edu.endDate || '',
       };
       selectedPeriodIndex.value = index;
       periodModalVisible.value = true;
@@ -180,7 +181,10 @@ export default {
         period_start: start,
         period_end: end,
       };
-      educations.value = newList;
+      emit('update:employee', {
+        ...props.employee,
+        educations: newList,
+      });
       periodModalVisible.value = false;
     }
     const moveUp = (index) => {
@@ -252,6 +256,7 @@ export default {
       openPeriodPicker,
       periodModalVisible,
       periodTemp,
+      selectedPeriodIndex,
       onPeriodSelect,
       firstMount,
       handleEmptyPeriodClick,
