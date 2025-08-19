@@ -90,7 +90,10 @@
 
 <script>
 import { computed, ref, watch } from 'vue';
+import { useTableRows } from '@/composables/useTableRows';
 import { handleEmptyRowClick } from '@/utils/emptyRowAction';
+import { DEFAULT_CAREER_ROW } from '@/utils/defaultTableRows';
+import { formatPeriod } from '@/utils/formatPeriod';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -115,25 +118,42 @@ export default {
   },
   emits: ['update:employee'],
   setup(props, { emit }) {
-    // 빈 행에서 입력 시 자동 행 추가
-    const firstMount = ref(true);
-    // ToastConfirm 삭제 관련 상태
-    const toastConfirmVisible = ref(false);
-    const deleteIndex = ref(-1);
+    // 행 추가 이벤트 emit
+    function addCareerRow() {
+      const newRow = {
+        ...DEFAULT_CAREER_ROW,
+        id: Date.now() + Math.random(),
+      };
+      addRow(newRow);
+      emit('row-add', newRow);
+    }
 
-    const showDeleteConfirm = (index) => {
-      deleteIndex.value = index;
-      toastConfirmVisible.value = true;
-    };
-
-    const confirmDelete = () => {
+    // 행 삭제 이벤트 emit
+    function confirmDeleteWithEmit() {
       if (deleteIndex.value !== -1) {
-        careers.value = careers.value.filter((_, i) => i !== deleteIndex.value);
+        emit('row-delete', deleteIndex.value);
       }
-      toastConfirmVisible.value = false;
-      deleteIndex.value = -1;
-    };
+      confirmDelete();
+    }
 
+    // 행 이동 이벤트 emit
+    function moveUpWithEmit(index) {
+      if (index > 0) {
+        emit('row-move', { from: index, to: index - 1 });
+      }
+      moveUp(index);
+    }
+    function moveDownWithEmit(index) {
+      if (index < rows.value.length - 1) {
+        emit('row-move', { from: index, to: index + 1 });
+      }
+      moveDown(index);
+    }
+    // 에러 메시지 렌더링 공통 함수
+    function getError(key) {
+      return props.errors && props.errors[key] ? props.errors[key] : '';
+    }
+    // computed get/set 방식으로 employee.careers와 연결
     const careers = computed({
       get() {
         return Array.isArray(props.employee?.careers) ? props.employee.careers : [];
@@ -146,6 +166,33 @@ export default {
       },
     });
 
+    // useTableRows 훅 사용
+    const {
+      rows,
+      addRow,
+      showDeleteConfirm,
+      confirmDelete,
+      moveUp,
+      moveDown,
+      toastConfirmVisible,
+      deleteIndex,
+    } = useTableRows(careers.value);
+
+    // rows와 employee.careers 동기화
+    watch(rows, (newRows) => {
+      careers.value = newRows;
+    }, { deep: true });
+
+    // employee.careers가 비어 있으면 자동으로 빈 행 추가
+    watch(() => props.employee.careers, (newVal) => {
+      if (Array.isArray(newVal) && newVal.length === 0) {
+        addRow({
+          ...DEFAULT_CAREER_ROW,
+          id: Date.now() + Math.random(),
+        });
+      }
+    }, { deep: true, immediate: true });
+
     // 기간 선택 모달 상태
     const periodModalVisible = ref(false);
     const periodTemp = ref({ start: '', end: '' });
@@ -153,60 +200,26 @@ export default {
 
     const openPeriodPicker = (index) => {
       if (!props.editMode) return;
-      selectedPeriodIndex.value = index;
-      const career = careers.value[index];
+      const career = rows.value[index];
       periodTemp.value = {
-        start: career.startDate || '',
-        end: career.endDate || '',
+        start: career.period_start || '',
+        end: career.period_end || '',
       };
+      selectedPeriodIndex.value = index;
       periodModalVisible.value = true;
-    };
-
-    const addCareer = () => {
-      const newCareer = {
-        company_name: '',
-        position: '',
-        responsibilities: '',
-        period_start: '',
-        period_end: '',
-      };
-      careers.value = [...careers.value, newCareer];
     };
 
     const onPeriodSelect = ({ start, end }) => {
       if (selectedPeriodIndex.value < 0) return;
-      const newList = [...careers.value];
+      const newList = [...rows.value];
       newList[selectedPeriodIndex.value] = {
         ...newList[selectedPeriodIndex.value],
         period_start: start,
         period_end: end,
       };
-      emit('update:employee', {
-        ...props.employee,
-        careers: newList,
-      });
+      rows.value = newList;
       emit('career-change', newList); // 기간 변경 시 커스텀 이벤트 emit
       periodModalVisible.value = false;
-    };
-
-    const moveUp = (index) => {
-      if (index > 0) {
-        const newCareers = [...careers.value];
-        const temp = newCareers[index];
-        newCareers[index] = newCareers[index - 1];
-        newCareers[index - 1] = temp;
-        careers.value = newCareers;
-      }
-    };
-
-    const moveDown = (index) => {
-      if (index < careers.value.length - 1) {
-        const newCareers = [...careers.value];
-        const temp = newCareers[index];
-        newCareers[index] = newCareers[index + 1];
-        newCareers[index + 1] = temp;
-        careers.value = newCareers;
-      }
     };
 
     const formatPeriod = (startDate, endDate) => {
@@ -238,10 +251,15 @@ export default {
 
     // 빈 행에서 기간 클릭 시: 공통 유틸 사용
     const handleEmptyPeriodClick = () => {
-      handleEmptyRowClick(addCareer, openPeriodPicker);
+      handleEmptyRowClick(() => addRow({
+        ...DEFAULT_CAREER_ROW,
+        id: Date.now() + Math.random(),
+      }), openPeriodPicker);
     };
 
-        // 총 근무 개월수 계산
+    const firstMount = ref(true);
+
+    // 총 근무 개월수 계산
     function getMonthDiff(start, end) {
       if (!start) return 0;
       const startDate = new Date(start);
@@ -263,23 +281,15 @@ export default {
       }, 0);
     });
 
-    // 배열이 0개일 때 자동 행 추가
-    watch(() => props.employee.careers, (newVal) => {
-      if (Array.isArray(newVal) && newVal.length === 0) {
-        addCareer();
-      }
-    }, { deep: true, immediate: true });
-
-    setTimeout(() => { firstMount.value = false; }, 700);
     return {
-      careers,
-      addCareer,
+      careers: rows,
+      addCareer: addCareerRow,
       showDeleteConfirm,
-      confirmDelete,
+      confirmDelete: confirmDeleteWithEmit,
       toastConfirmVisible,
       deleteIndex,
-      moveUp,
-      moveDown,
+      moveUp: moveUpWithEmit,
+      moveDown: moveDownWithEmit,
       openPeriodPicker,
       periodModalVisible,
       periodTemp,
@@ -287,8 +297,9 @@ export default {
       onPeriodSelect,
       formatPeriod,
       firstMount,
-      handleEmptyPeriodClick, 
+      handleEmptyPeriodClick,
       totalMonths,
+      getError,
     };
   },
 };

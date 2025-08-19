@@ -82,7 +82,10 @@
 
 <script>
 import { computed, ref, watch } from 'vue';
+import { useTableRows } from '@/composables/useTableRows';
 import { handleEmptyRowClick } from '@/utils/emptyRowAction';
+import { DEFAULT_EXTERNAL_PROJECT_ROW } from '@/utils/defaultTableRows';
+import { formatPeriod } from '@/utils/formatPeriod';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -107,25 +110,42 @@ export default {
   },
   emits: ['update:employee'],
   setup(props, { emit }) {
-    // 빈 행에서 입력 시 자동 행 추가
-    const firstMount = ref(true);
-    // ToastConfirm 삭제 관련 상태
-    const toastConfirmVisible = ref(false);
-    const deleteIndex = ref(-1);
+    // 행 추가 이벤트 emit
+    function addExternalProjectRow() {
+      const newRow = {
+        ...DEFAULT_EXTERNAL_PROJECT_ROW,
+        id: Date.now() + Math.random(),
+      };
+      addRow(newRow);
+      emit('row-add', newRow);
+    }
 
-    const showDeleteConfirm = (index) => {
-      deleteIndex.value = index;
-      toastConfirmVisible.value = true;
-    };
-
-    const confirmDelete = () => {
+    // 행 삭제 이벤트 emit
+    function confirmDeleteWithEmit() {
       if (deleteIndex.value !== -1) {
-        externalProjects.value = externalProjects.value.filter((_, i) => i !== deleteIndex.value);
+        emit('row-delete', deleteIndex.value);
       }
-      toastConfirmVisible.value = false;
-      deleteIndex.value = -1;
-    };
+      confirmDelete();
+    }
 
+    // 행 이동 이벤트 emit
+    function moveUpWithEmit(index) {
+      if (index > 0) {
+        emit('row-move', { from: index, to: index - 1 });
+      }
+      moveUp(index);
+    }
+    function moveDownWithEmit(index) {
+      if (index < rows.value.length - 1) {
+        emit('row-move', { from: index, to: index + 1 });
+      }
+      moveDown(index);
+    }
+    // 에러 메시지 렌더링 공통 함수
+    function getError(key) {
+      return props.errors && props.errors[key] ? props.errors[key] : '';
+    }
+    // computed get/set 방식으로 employee.external_projects와 연결
     const externalProjects = computed({
       get() {
         return Array.isArray(props.employee?.external_projects) ? props.employee.external_projects : [];
@@ -138,6 +158,33 @@ export default {
       },
     });
 
+    // useTableRows 훅 사용
+    const {
+      rows,
+      addRow,
+      showDeleteConfirm,
+      confirmDelete,
+      moveUp,
+      moveDown,
+      toastConfirmVisible,
+      deleteIndex,
+    } = useTableRows(externalProjects.value);
+
+    // rows와 employee.external_projects 동기화
+    watch(rows, (newRows) => {
+      externalProjects.value = newRows;
+    }, { deep: true });
+
+    // employee.external_projects가 비어 있으면 자동으로 빈 행 추가
+    watch(() => props.employee.external_projects, (newVal) => {
+      if (Array.isArray(newVal) && newVal.length === 0) {
+        addRow({
+          ...DEFAULT_EXTERNAL_PROJECT_ROW,
+          id: Date.now() + Math.random(),
+        });
+      }
+    }, { deep: true, immediate: true });
+
     // 기간 선택 모달 상태
     const periodModalVisible = ref(false);
     const periodTemp = ref({ start: '', end: '' });
@@ -145,7 +192,7 @@ export default {
 
     const openPeriodPicker = (index) => {
       if (!props.editMode) return;
-      const externalProject = externalProjects.value[index];
+      const externalProject = rows.value[index];
       periodTemp.value = {
         start: externalProject.period_start || null,
         end: externalProject.period_end || null,
@@ -154,52 +201,21 @@ export default {
       periodModalVisible.value = true;
     };
 
-    const addExternalProject = () => {
-      const newExternalProject = {
-        project_name: '',
-        period_start: '',
-        period_end: '',
-        project_description: '',
-      };
-      externalProjects.value = [...externalProjects.value, newExternalProject];
-    };
-
     const onPeriodSelect = ({ start, end }) => {
       if (selectedPeriodIndex.value < 0) return;
-      const newList = [...externalProjects.value];
+      const newList = [...rows.value];
       newList[selectedPeriodIndex.value] = {
         ...newList[selectedPeriodIndex.value],
         period_start: start,
         period_end: end,
       };
+      rows.value = newList;
       emit('update:employee', {
         ...props.employee,
         external_projects: newList,
       });
       periodModalVisible.value = false;
     };
-
-    const moveUp = (index) => {
-      if (index > 0) {
-        const newExternalProjects = [...externalProjects.value];
-        const temp = newExternalProjects[index];
-        newExternalProjects[index] = newExternalProjects[index - 1];
-        newExternalProjects[index - 1] = temp;
-        externalProjects.value = newExternalProjects;
-      }
-    };
-
-    const moveDown = (index) => {
-      if (index < externalProjects.value.length - 1) {
-        const newExternalProjects = [...externalProjects.value];
-        const temp = newExternalProjects[index];
-        newExternalProjects[index] = newExternalProjects[index + 1];
-        newExternalProjects[index + 1] = temp;
-        externalProjects.value = newExternalProjects;
-      }
-    };
-
-
 
     const formatPeriod = (startDate, endDate) => {
       if (!startDate && !endDate) return '';
@@ -230,28 +246,26 @@ export default {
 
     // 빈 행에서 기간 클릭 시: 공통 유틸 사용
     const handleEmptyPeriodClick = () => {
-      handleEmptyRowClick(addExternalProject, openPeriodPicker);
+      handleEmptyRowClick(() => addRow({
+        ...DEFAULT_EXTERNAL_PROJECT_ROW,
+        id: Date.now() + Math.random(),
+      }), openPeriodPicker);
     };
+
+    const firstMount = ref(true);
 
     // 최초 마운트 후 1회만 애니메이션 적용
     setTimeout(() => { firstMount.value = false; }, 700);
 
-    // 배열이 0개일 때 자동 행 추가
-    watch(() => props.employee.external_projects, (newVal) => {
-      if (Array.isArray(newVal) && newVal.length === 0) {
-        addExternalProject();
-      }
-    }, { deep: true, immediate: true });
-
     return {
-      externalProjects,
-      addExternalProject,
+      externalProjects: rows,
+      addExternalProject: addExternalProjectRow,
       showDeleteConfirm,
-      confirmDelete,
+      confirmDelete: confirmDeleteWithEmit,
       toastConfirmVisible,
       deleteIndex,
-      moveUp,
-      moveDown,
+      moveUp: moveUpWithEmit,
+      moveDown: moveDownWithEmit,
       openPeriodPicker,
       periodModalVisible,
       periodTemp,
@@ -260,6 +274,7 @@ export default {
       formatPeriod,
       firstMount,
       handleEmptyPeriodClick,
+      getError,
     };
   },
 };

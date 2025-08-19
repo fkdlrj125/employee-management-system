@@ -1,4 +1,3 @@
-// MOVE TO: src/components/employee/list/EmployeeTable.vue
 <template>
   <div class="table-container">
     <table class="employee-table">

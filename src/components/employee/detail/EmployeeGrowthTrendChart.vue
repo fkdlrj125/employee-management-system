@@ -18,7 +18,7 @@
 
 <script>
 import Chart from 'chart.js/auto';
- import employeeApiService from '@/services/employee-api-service';
+ import employeeApiService from '@/services/EmployeeApiService';
 
 export default {
   name: 'EmployeeGrowthTrendChart',
@@ -41,7 +41,7 @@ export default {
   },
   watch: {
     employeeId: 'fetchTrend',
-    selectedRole: 'fetchTrend',
+    selectedRole: 'fetchTrend',S
     from: 'fetchTrend',
     to: 'fetchTrend',
   },

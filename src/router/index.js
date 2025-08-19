@@ -28,6 +28,11 @@ const routes = [
     component: () => import('@/views/PerformanceAnalysis.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: () => import('@/views/ResetPassword.vue'),
+  },
 ];
 
 const router = createRouter({

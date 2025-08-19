@@ -81,7 +81,10 @@
 
 <script>
 import { computed, ref, watch } from 'vue';
+import { useTableRows } from '@/composables/useTableRows';
 import { handleEmptyRowClick } from '@/utils/emptyRowAction';
+import { DEFAULT_EDUCATION_ROW } from '@/utils/defaultTableRows';
+import { formatPeriod } from '@/utils/formatPeriod';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -106,7 +109,11 @@ export default {
   },
   emits: ['update:employee'],
   setup(props, { emit }) {
-    // computed get/set 방식으로 변경
+    // 에러 메시지 렌더링 공통 함수
+    function getError(key) {
+      return props.errors && props.errors[key] ? props.errors[key] : '';
+    }
+    // computed get/set 방식으로 employee.educations와 연결
     const educations = computed({
       get() {
         return Array.isArray(props.employee?.educations) ? props.employee.educations : [];
@@ -119,42 +126,64 @@ export default {
       },
     });
 
-    // 실제 데이터 배열에 빈 행 추가 함수
-    const addEducation = () => {
-      const newEducation = {
+    // useTableRows 훅 사용
+    const {
+      rows,
+      addRow,
+      showDeleteConfirm,
+      confirmDelete,
+      moveUp,
+      moveDown,
+      toastConfirmVisible,
+      deleteIndex,
+    } = useTableRows(educations.value);
+
+    // 행 추가 이벤트 emit
+    function addEducationRow() {
+      const newRow = {
+        ...DEFAULT_EDUCATION_ROW,
         id: Date.now() + Math.random(),
-        school_name: '',
-        major: '',
-        period_start: '',
-        period_end: '',
       };
-      educations.value = [...educations.value, newEducation];
-    };
+      addRow(newRow);
+      emit('row-add', newRow);
+    }
+
+    // 행 삭제 이벤트 emit
+    function confirmDeleteWithEmit() {
+      if (deleteIndex.value !== -1) {
+        emit('row-delete', deleteIndex.value);
+      }
+      confirmDelete();
+    }
+
+    // 행 이동 이벤트 emit
+    function moveUpWithEmit(index) {
+      if (index > 0) {
+        emit('row-move', { from: index, to: index - 1 });
+      }
+      moveUp(index);
+    }
+    function moveDownWithEmit(index) {
+      if (index < rows.value.length - 1) {
+        emit('row-move', { from: index, to: index + 1 });
+      }
+      moveDown(index);
+    }
+
+    // rows와 employee.educations 동기화
+    watch(rows, (newRows) => {
+      educations.value = newRows;
+    }, { deep: true });
 
     // employee.educations가 비어 있으면 자동으로 빈 행 추가
     watch(() => props.employee.educations, (newVal) => {
       if (Array.isArray(newVal) && newVal.length === 0) {
-        addEducation();
+        addRow({
+          ...DEFAULT_EDUCATION_ROW,
+          id: Date.now() + Math.random(),
+        });
       }
     }, { deep: true, immediate: true });
-
-    const firstMount = ref(true);
-
-    // ToastConfirm 삭제 관련 상태
-    const toastConfirmVisible = ref(false);
-    const deleteIndex = ref(-1);
-    const showDeleteConfirm = (index) => {
-      deleteIndex.value = index;
-      toastConfirmVisible.value = true;
-    };
-
-    const confirmDelete = () => {
-      if (deleteIndex.value !== -1) {
-        educations.value = educations.value.filter((_, i) => i !== deleteIndex.value);
-      }
-      toastConfirmVisible.value = false;
-      deleteIndex.value = -1;
-    };
 
     // 기간 선택 모달 상태
     const periodModalVisible = ref(false);
@@ -162,12 +191,11 @@ export default {
     const selectedPeriodIndex = ref(-1);
 
     function openPeriodPicker(index) {
-      console.log('[디버그] openPeriodPicker called', periodModalVisible, props.editMode);
       if (!props.editMode) return;
-      const edu = educations.value[index];
+      const edu = rows.value[index];
       periodTemp.value = {
-        start: edu.startDate || '',
-        end: edu.endDate || '',
+        start: edu.period_start || '',
+        end: edu.period_end || '',
       };
       selectedPeriodIndex.value = index;
       periodModalVisible.value = true;
@@ -175,83 +203,36 @@ export default {
 
     function onPeriodSelect({ start, end }) {
       if (selectedPeriodIndex.value < 0) return;
-      const newList = [...educations.value];
+      const newList = [...rows.value];
       newList[selectedPeriodIndex.value] = {
         ...newList[selectedPeriodIndex.value],
         period_start: start,
         period_end: end,
       };
-      emit('update:employee', {
-        ...props.employee,
-        educations: newList,
-      });
+      rows.value = newList;
       periodModalVisible.value = false;
     }
-    const moveUp = (index) => {
-      if (index > 0) {
-        const newEducations = [...educations.value];
-        [newEducations[index - 1], newEducations[index]] = [newEducations[index], newEducations[index - 1]];
-        emitUpdateEmployee({
-          ...props.employee,
-          educations: newEducations,
-        });
-      }
-    };
 
-    const moveDown = (index) => {
-      if (index < educations.value.length - 1) {
-        const newEducations = [...educations.value];
-        [newEducations[index], newEducations[index + 1]] = [newEducations[index + 1], newEducations[index]];
-        emitUpdateEmployee({
-          ...props.employee,
-          educations: newEducations,
-        });
-      }
-    };
 
-    const formatPeriod = (startDate, endDate) => {
-      if (!startDate && !endDate) return '';
-      if (startDate && !endDate) {
-        const start = new Date(startDate).toLocaleDateString('ko-KR', {
-          year: 'numeric',
-          month: '2-digit',
-        });
-        return `${start} ~`;
-      }
-      if (!startDate && endDate) {
-        const end = new Date(endDate).toLocaleDateString('ko-KR', {
-          year: 'numeric',
-          month: '2-digit',
-        });
-        return `~ ${end}`;
-      }
-      const start = new Date(startDate).toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-      });
-      const end = new Date(endDate).toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-      });
-      return `${start} ~ ${end}`;
-    };
-    
-    // 빈 행에서 기간 클릭 시: 공통 유틸 사용 (불필요한 setTimeout 제거)
+    // 빈 행에서 기간 클릭 시: 공통 유틸 사용
     const handleEmptyPeriodClick = () => {
-      handleEmptyRowClick(addEducation, openPeriodPicker);
+      handleEmptyRowClick(() => addRow({
+        ...DEFAULT_EDUCATION_ROW,
+        id: Date.now() + Math.random(),
+      }), openPeriodPicker);
     };
 
-    // 첫 마운트 애니메이션 플래그
-    // setTimeout 제거 (불필요한 애니메이션)
+    const firstMount = ref(true);
+
     return {
-      educations,
-      addEducation,
+      educations: rows,
+      addEducation: addEducationRow,
       showDeleteConfirm,
-      confirmDelete,
+      confirmDelete: confirmDeleteWithEmit,
       toastConfirmVisible,
       deleteIndex,
-      moveUp,
-      moveDown,
+      moveUp: moveUpWithEmit,
+      moveDown: moveDownWithEmit,
       formatPeriod,
       openPeriodPicker,
       periodModalVisible,
@@ -260,6 +241,7 @@ export default {
       onPeriodSelect,
       firstMount,
       handleEmptyPeriodClick,
+      getError,
     };
   },
 };

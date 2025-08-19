@@ -18,6 +18,7 @@ const getDefaultState = () => ({
  * 임시 더미 데이터 사용 (백엔드 서버 연결 전까지)
  */
 import EmployeeApiService from '@/services/EmployeeApiService';
+import { toast } from 'vue3-toastify';
 
 const state = getDefaultState();
 
@@ -62,14 +63,11 @@ const actions = {
   },
   // 직원 목록 조회 (실제 API 연동)
   async fetchEmployees({ commit, state }) {
-    console.log('[employee] fetchEmployees called, filters:', state.filters);
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
     try {
       const params = { ...state.filters };
-      console.log('[employee] API request params:', params);
       const res = await EmployeeApiService.getEmployees(params);
-      console.log('[employee] API response:', res);
       if (res.success) {
         commit('SET_EMPLOYEES', {
           employees: res.data,
@@ -77,11 +75,11 @@ const actions = {
         });
       } else {
         commit('SET_ERROR', res.error || '직원 목록을 불러오는데 실패했습니다.');
-        console.error('[employee] API error:', res.error);
+        toast.error(`[employee] API error: ${res.error}`);
       }
     } catch (error) {
       commit('SET_ERROR', error.message || '직원 목록을 불러오는데 실패했습니다.');
-      console.error('[employee] fetchEmployees exception:', error);
+      toast.error(`[employee] fetchEmployees exception: ${error}`);
     } finally {
       commit('SET_LOADING', false);
     }

@@ -3,22 +3,6 @@
 import axios from 'axios';
 
 class EvaluationApiService {
-  // 리더 기술역량 점수 저장 (리더 평가)
-  async saveLeaderSkillScores(employeeId, { leaderSkillScores, evaluation_date, special_note, evaluated_by }) {
-    try {
-      const payload = { leaderSkillScores, evaluation_date };
-      if (special_note) payload.special_note = special_note;
-      if (evaluated_by) payload.evaluated_by = evaluated_by;
-      const response = await this.api.post(`/evaluations/leader/${employeeId}`, payload);
-      return {
-        success: response.data.success,
-        data: response.data,
-        message: response.data.message,
-      };
-    } catch (error) {
-      return this.handleError(error, '리더 기술역량 점수 저장에 실패했습니다.');
-    }
-  }
   constructor() {
     this.baseURL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:3000/api';
     this.api = axios.create({
@@ -40,6 +24,22 @@ class EvaluationApiService {
       (error) => Promise.reject(error)
     );
   }
+  // 리더 기술역량 점수 저장 (리더 평가)
+  async saveLeaderSkillScores(employeeId, { leaderSkillScores, evaluation_date, special_note, evaluated_by }) {
+    try {
+      const payload = { leaderSkillScores, evaluation_date };
+      if (special_note) payload.special_note = special_note;
+      if (evaluated_by) payload.evaluated_by = evaluated_by;
+      const response = await this.api.post(`/evaluations/leader/${employeeId}`, payload);
+      return {
+        success: response.data.success,
+        data: response.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      return this.handleError(error, '리더 기술역량 점수 저장에 실패했습니다.');
+    }
+  }
 
   // 기술역량 점수 저장 (평가)
   async saveSkillScores(employeeId, { skillScores, leaderSkillScores, evaluation_date }) {
@@ -56,6 +56,30 @@ class EvaluationApiService {
       };
     } catch (error) {
       return this.handleError(error, '기술역량 점수 저장에 실패했습니다.');
+    }
+  }
+    // 리더 평가점수 이력 조회
+  async getLeaderEvaluationHistory(employeeId, year = null) {
+    try {
+      let url = `/evaluations/leader/${employeeId}`;
+      if (year) {
+        url += `?year=${year}`;
+      }
+      const response = await this.api.get(url);
+      // 배열 형태로 바로 반환되는 경우 보정
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      if (Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      // 혹시 객체로 오면 배열로 래핑
+      if (response.data && typeof response.data === 'object') {
+        return [response.data];
+      }
+      return [];
+    } catch (error) {
+      return [];
     }
   }
 

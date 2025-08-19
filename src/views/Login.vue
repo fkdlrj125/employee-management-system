@@ -50,6 +50,7 @@
             <span class="checkmark"></span>
             아이디 기억하기
           </label>
+          <button type="button" class="change-password-link" @click="openDeptModal">비밀번호 변경</button>
         </div>
 
         <button
@@ -63,7 +64,7 @@
           </span>
           <span v-else>로그인</span>
         </button>
-
+        
         <!-- 로그인 시도 횟수 경고 -->
         <div v-if="loginAttempts > 0 && !isLoginBlocked" class="warning-message">
           <i class="fas fa-exclamation-triangle"></i>
@@ -82,18 +83,34 @@
           {{ error }}
         </div>
 
-        <!-- 테스트 계정 안내 -->
-        <div class="test-info">
-          <p><strong>테스트 계정:</strong></p>
-          <p>ID: admin / PW: admin</p>
-        </div>
       </form>
+    </div>
+        <!-- 비밀번호 변경 모달 (최상위) -->
+    <div v-if="showDeptModal" class="modal-overlay">
+      <div class="modal-box">
+        <h2>비밀번호 변경 요청</h2>
+        <p>비밀번호 변경을 위해 아이디를 입력해 주세요.<br>입력한 아이디에서 부서 정보를 자동 추출합니다.</p>
+        <div class="modal-info">
+          <input type="text" v-model="modalUsername" class="modal-username-input" placeholder="아이디를 입력하세요" @input="updateExtractedDept" />
+          <span class="extracted-dept">추출된 부서: <strong>{{ extractedDept || '부서 정보 없음' }}</strong></span>
+          <div v-if="isAdminAccount" class="admin-warning">관리자 계정은 비밀번호 변경 요청이 불가합니다.</div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" @click="sendChangeRequest" :disabled="!extractedDept || sending || isAdminAccount">
+            <span v-if="sending"><i class="fas fa-spinner fa-spin"></i> 처리 중...</span>
+            <span v-else>확인</span>
+          </button>
+          <button class="btn btn-secondary" @click="closeDeptModal" :disabled="sending">취소</button>
+        </div>
+        <div v-if="modalMessage" class="modal-message">{{ modalMessage }}</div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
+import { employeeApiService } from '@/services/EmployeeApiService';
 
 export default {
   name: 'Login',
@@ -111,6 +128,13 @@ export default {
       blockTime: 5 * 60 * 1000, // 5분
       blockEndTime: null,
       showPassword: false,
+      // 모달 관련 상태
+      showDeptModal: false,
+      sending: false,
+      isLoading: false, // 추가된 데이터
+      modalMessage: '',
+      modalUsername: '',
+      extractedDept: '',
     };
   },
   computed: {
@@ -136,10 +160,57 @@ export default {
       const seconds = this.remainingBlockTime % 60;
       return `${minutes}분 ${seconds}초`;
     },
+    isAdminAccount() {
+      return this.modalUsername && this.modalUsername.trim().toLowerCase() === 'admin';
+    },
   },
   methods: {
     ...mapActions('auth', ['login']),
-
+    openDeptModal() {
+      this.showDeptModal = true;
+      this.modalMessage = '';
+      this.modalUsername = this.username;
+      this.extractedDept = this.extractDeptFromUsername(this.modalUsername);
+    },
+    updateExtractedDept() {
+      const usernameNormalized = this.modalUsername ? this.modalUsername.trim().toUpperCase() : '';
+      this.extractedDept = this.extractDeptFromUsername(usernameNormalized);
+    },
+    closeDeptModal() {
+      this.showDeptModal = false;
+      this.modalMessage = '';
+      this.modalUsername = '';
+      this.extractedDept = '';
+    },
+    async sendChangeRequest() {
+      if (!this.extractedDept || !this.modalUsername || this.isAdminAccount) return;
+      this.sending = true;
+      this.modalMessage = '';
+      try {
+        const res = await employeeApiService.requestPasswordChange({
+          department: this.extractedDept,
+          username: this.modalUsername,
+        });
+        if (res.success) {
+          this.modalMessage = res.message || '비밀번호 변경 요청이 해당 부서 관리자에게 전송되었습니다.';
+        } else {
+          this.modalMessage = res.error || '비밀번호 변경 요청에 실패했습니다.';
+        }
+      } catch (err) {
+        this.modalMessage = '비밀번호 변경 요청 중 오류가 발생했습니다.';
+      }
+      this.sending = false;
+    },
+    extractDeptFromUsername(username) {
+      // 예시: 아이디가 'DSS1_홍길동' 또는 '홍길동-DSS1' 등일 때 부서 추출
+      if (!username) return '';
+      // DSS1, DSS2, CSC, HR, IT 등 부서 코드가 포함된 경우 추출
+      const deptList = ['DSS1', 'DSS2', 'CSC', 'HR'];
+      for (const dept of deptList) {
+        if (username.includes(dept)) return dept;
+      }
+      return '';
+    },
     async handleLogin() {
       // 로그인 차단 상태 확인
       if (this.isLoginBlocked) {
@@ -183,7 +254,6 @@ export default {
         }
       }
     },
-
     handleLoginFailure() {
       this.loginAttempts++;
 
@@ -195,7 +265,6 @@ export default {
       localStorage.setItem('login_attempts', this.loginAttempts.toString());
       localStorage.setItem('last_attempt_time', Date.now().toString());
     },
-
     blockLogin() {
       this.isBlocked = true;
       this.blockEndTime = Date.now() + this.blockTime;
@@ -204,7 +273,6 @@ export default {
       // 블록 시간 동안 카운트다운 시작
       this.startBlockTimer();
     },
-
     startBlockTimer() {
       const timer = setInterval(() => {
         if (this.remainingBlockTime <= 0) {
@@ -213,20 +281,17 @@ export default {
         }
       }, 1000);
     },
-
     clearBlock() {
       this.isBlocked = false;
       this.blockEndTime = null;
       this.resetLoginAttempts();
       localStorage.removeItem('login_blocked_until');
     },
-
     resetLoginAttempts() {
       this.loginAttempts = 0;
       localStorage.removeItem('login_attempts');
       localStorage.removeItem('last_attempt_time');
     },
-
     loadSavedData() {
       // 저장된 아이디 불러오기
       const rememberedUsername = localStorage.getItem('remembered_username');
@@ -264,11 +329,9 @@ export default {
         }
       }
     },
-
     togglePasswordVisibility() {
       this.showPassword = !this.showPassword;
     },
-
     validateForm() {
       // 유효성 검사 로직
       this.usernameError = !this.username.trim() ? '아이디를 입력해주세요.' : '';
@@ -284,9 +347,82 @@ export default {
 </script>
 
 <style scoped>
+.extracted-dept {
+  display: block;
+  margin-top: 8px;
+}
+.admin-warning {
+  color: #dc3545;
+  margin-top: 8px;
+  font-size: 14px;
+}
+.modal-username-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+.modal-username-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(44, 62, 80, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.modal-box {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(44, 62, 80, 0.18);
+  padding: 32px 28px 24px 28px;
+  min-width: 320px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.modal-box h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+.modal-box p {
+  font-size: 15px;
+  color: #495057;
+  margin-bottom: 18px;
+}
+.modal-info {
+  margin-bottom: 18px;
+  font-size: 15px;
+  color: #495057;
+  text-align: center;
+}
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.modal-message {
+  font-size: 14px;
+  text-align: center;
+}
+/* 통일된 레이아웃 및 스타일 적용 (직원목록 등과 일관) */
 .main-bg {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(120deg, #f8f9fa 60%, #e3e6f3 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -295,54 +431,57 @@ export default {
 
 .login-container {
   background: white;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 36px 28px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.12);
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 22px;
 }
-
 .login-header h1 {
   color: #2c3e50;
-  margin-bottom: 10px;
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  font-weight: 600;
 }
-
 .login-header p {
   color: #7f8c8d;
   margin: 0;
+  font-size: 15px;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
-
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #555;
+  color: #495057;
   font-weight: 500;
 }
-
 .form-group input {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid #e1e5e9;
   border-radius: 8px;
   font-size: 16px;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   box-sizing: border-box;
+  background: #fff;
 }
-
 .form-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
 }
-
 .form-group input:disabled {
   background-color: #f8f9fa;
   cursor: not-allowed;
@@ -351,7 +490,6 @@ export default {
 .password-input-wrapper {
   position: relative;
 }
-
 .password-toggle {
   position: absolute;
   right: 12px;
@@ -363,22 +501,22 @@ export default {
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
 }
-
 .password-toggle:hover:not(:disabled) {
-  color: #495057;
+  color: #007bff;
 }
-
 .password-toggle:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
 
 .checkbox-group {
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;
   margin-bottom: 15px;
 }
-
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -387,16 +525,32 @@ export default {
   color: #495057;
   margin-bottom: 0;
 }
-
 .checkbox-label input[type='checkbox'] {
   width: auto;
   margin: 0;
   margin-right: 8px;
   cursor: pointer;
 }
-
 .checkmark {
   margin-left: 4px;
+}
+
+
+.btn {
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 27px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  font-size: 16px;
+}
+
+.login-btn {
+  /* 공통 버튼 스타일 적용 */
+  /* .btn, .btn-primary 클래스가 이미 import되어 있으므로 별도 스타일 최소화 */
 }
 
 .warning-message {
@@ -411,7 +565,6 @@ export default {
   align-items: center;
   gap: 8px;
 }
-
 .warning-message i {
   color: #f39c12;
 }
@@ -427,41 +580,11 @@ export default {
   text-align: center;
   line-height: 1.5;
 }
-
 .block-message i {
   color: #dc3545;
   margin-bottom: 5px;
   display: block;
   font-size: 18px;
-}
-
-.btn {
-  width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 10px;
-}
-
-.btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn .fas {
-  margin-right: 6px;
 }
 
 .error-message {
@@ -470,23 +593,66 @@ export default {
   opacity: 0;
   height: 0;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
-
 .error-message.show {
   opacity: 1;
   height: auto;
   margin-top: 5px;
 }
 
-.test-info {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #e7f3ff;
-  border: 1px solid #b3d9ff;
-  border-radius: 8px;
-  text-align: center;
+
+.change-password-link {
   font-size: 14px;
-  color: #0066cc;
+  color: #007bff;
+  text-decoration: underline;
+  margin-left: 12px;
+  cursor: pointer;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  padding: 0;
+  outline: none;
+}
+.change-password-link:focus {
+  outline: none;
+}
+.change-password-link:hover {
+  color: #0056b3;
+}
+
+.loading-spinner {
+  margin-top: 12px;
+  color: #007bff;
+  font-size: 15px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .login-container {
+    padding: 16px 8px;
+    max-width: 100%;
+  }
+  .form-group input {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+  .btn {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+}
+@media (max-width: 480px) {
+  .login-container {
+    padding: 8px 2px;
+  }
+  .form-group input {
+    font-size: 14px;
+    padding: 8px 8px;
+  }
+  .btn {
+    font-size: 14px;
+    padding: 8px 8px;
+  }
 }
 </style>

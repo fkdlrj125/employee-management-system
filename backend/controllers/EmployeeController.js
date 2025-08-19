@@ -74,15 +74,27 @@ class EmployeeController {
         department = '',
         position = '',
         search = ''
-      } = req.query
+      } = req.query;
+
+      // 로그인 정보에서 role, department 추출 (예: req.user)
+      // 실제 인증 미들웨어에서 req.user에 할당되어 있다고 가정
+      const user = req.user || {};
+      const userRole = user.role || req.query.role || '';
+      const userDept = user.department || req.query.userDept || '';
+
+      let queryDept = department;
+      // admin이 아니면 자신의 부서만 조회
+      if (userRole !== 'admin') {
+        queryDept = userDept || department;
+      }
 
       const result = await EmployeeService.getEmployees({
         page: parseInt(page),
         limit: parseInt(limit),
-        department,
+        department: queryDept,
         position,
         search
-      })
+      });
 
       res.json({
         success: true,
@@ -94,14 +106,14 @@ class EmployeeController {
           limit: result.limit,
           totalPages: result.totalPages
         }
-      })
+      });
     } catch (error) {
-      console.error('Get employees error:', error)
+      console.error('Get employees error:', error);
       res.status(500).json({
         success: false,
         message: '직원 목록 조회에 실패했습니다.',
         error: error.message
-      })
+      });
     }
   }
 

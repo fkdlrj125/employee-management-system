@@ -44,7 +44,6 @@
         @sort="sortByColumn"
         @detail="navigateToDetail"
       />
-
     <!-- 페이지네이션 -->
     <Pagination
       v-if="totalPages > 1"
@@ -60,7 +59,7 @@
 <script>
 import { mapActions, mapGetters } from 'vuex';
 import Button from '@/components/common/Button.vue';
-import HeaderActions from '@/components/employee/common/HeaderActions.vue';
+import HeaderActions from '@/components/employee/list/ListHeader.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
 import SearchBar from '@/components/employee/list/SearchBar.vue';
 import FilterControls from '@/components/employee/list/FilterControls.vue';

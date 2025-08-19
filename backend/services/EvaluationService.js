@@ -5,9 +5,14 @@ const LeaderEvaluationDAO = require('../dao/LeaderEvaluationDAO');
 const LeaderEvaluationDTO = require('../dto/LeaderEvaluationDTO');
 
 class EvaluationService {
-  // 직원별 평가 이력 전체 조회
+  // 리더 최신 평가 이력 조회
+  async getLeaderEvaluationHistory(employeeId) {
+    return LeaderEvaluationDAO.findLatestByEmployee(employeeId);
+  }
+
+  // 직원별 최신 평가 이력 조회
   async getEvaluationHistory(employeeId) {
-    return EvaluationDAO.findAllByEmployee(employeeId);
+    return EvaluationDAO.findLatestByEmployee(employeeId);
   }
 
   // 평가 이력 등록/수정(연월 중복 시 update)

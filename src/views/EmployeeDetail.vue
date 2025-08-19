@@ -25,8 +25,8 @@
 
     <!-- 직원 정보 표시 -->
     <div class="resume-container resume-container-relative" id="employeeDetailContainer" v-else>
-      <!-- 상단 바: EmployeeDetailHeader 컴포넌트 복원 -->
-      <EmployeeDetailHeader
+      <!-- 상단 바: DetailHeader 컴포넌트 복원 -->
+      <DetailHeader
         :edit-mode="editMode"
         :is-add-mode="isAddMode"
         :current-user="currentUser"
@@ -49,7 +49,7 @@
         <div class="resume-left">
           <!-- 프로필+기본정보+연락처를 하나의 카드로 묶음 -->
           <div class="profile-card">
-            <EmployeeBasicInfo
+            <BasicInfo
               :employee="employee"
               :edit-mode="editMode"
               :errors="errors"
@@ -60,7 +60,7 @@
               :key="'basic-' + editMode"
             />
             <div class="divider"></div>
-            <EmployeeContactInfo
+            <ContactInfo
               :employee="employee"
               :edit-mode="editMode"
               :errors="errors"
@@ -125,7 +125,7 @@
 
 
           <!-- 기술 역량 차트 + 기간별 기술 역량 분석 이동 버튼 -->
-          <EmployeeSkillChart
+          <SkillChart
             class="table-container"
             :employee="employee"
             :edit-mode="editMode"
@@ -135,7 +135,7 @@
           />
 
           <!-- 기간별 성과 분석(기존) -->
-          <EmployeePeriodSelector
+          <PeriodSelector
             class="table-container"
             :employee="employee"
             @generate-report="onGenerateReport"
@@ -154,13 +154,12 @@
 </template>
 
 <script>
-import EmployeeBasicInfo from '@/components/employee/detail/EmployeeBasicInfo.vue';
-import EmployeeContactInfo from '@/components/employee/detail/EmployeeContactInfo.vue';
-import EmployeeSkillChart from '@/components/employee/detail/EmployeeSkillChart.vue';
-import EmployeePeriodSelector from '@/components/employee/detail/EmployeePeriodSelector.vue';
+import BasicInfo from '@/components/employee/detail/BasicInfo.vue';
+import ContactInfo from '@/components/employee/detail/ContactInfo.vue';
+import SkillChart from '@/components/employee/detail/SkillChart.vue';
+import PeriodSelector from '@/components/employee/detail/PeriodSelector.vue';
 import EmployeeApiService from '@/services/EmployeeApiService';
-import evaluationApiService from '@/services/EvaluationApiService';
-import EmployeeDetailHeader from '@/components/employee/detail/EmployeeDetailHeader.vue';
+import DetailHeader from '@/components/employee/detail/DetailHeader.vue';
 import EducationTable from '@/components/employee/detail/EducationTable.vue';
 import CareerTable from '@/components/employee/detail/CareerTable.vue';
 import CertificationTable from '@/components/employee/detail/CertificationTable.vue';
@@ -171,15 +170,15 @@ export default {
   name: 'EmployeeDetail',
   components: {
     ToastConfirm,
-    EmployeeBasicInfo,
-    EmployeeContactInfo,
-    EmployeeSkillChart,
-    EmployeePeriodSelector,
+    BasicInfo,
+    ContactInfo,
+    SkillChart,
+    PeriodSelector,
     EducationTable,
     CareerTable,
     CertificationTable,
     ExternalProjectTable,
-    EmployeeDetailHeader,
+    DetailHeader,
   },
   data() {
     return {
@@ -301,6 +300,24 @@ export default {
     }
   },
   methods: {
+    deleteEmployee() {
+      this.confirmMessage = '정말로 이 직원을 삭제하시겠습니까?';
+      this.confirmAction = async () => {
+        try {
+          const result = await EmployeeApiService.deleteEmployee(this.employee.id);
+          if (result.success) {
+            this.showMessage('직원 정보가 삭제되었습니다.', 'success');
+            this.$router.push('/employee-list');
+          } else {
+            this.showMessage(result.error || '삭제에 실패했습니다.', 'error');
+          }
+        } catch (error) {
+          this.showMessage(error.message || '삭제 중 오류가 발생했습니다.', 'error');
+        }
+        this.showConfirm = false;
+      };
+      this.showConfirm = true;
+    },
     // 날짜 필드 전처리: 빈 문자열, 'Invalid date'를 null로 변환
     sanitizeDate(val) {
       if (!val || val === 'Invalid date' || val === undefined) return null;

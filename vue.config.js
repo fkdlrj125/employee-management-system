@@ -1,3 +1,5 @@
+const webpack = require('webpack');
+
 module.exports = {
   transpileDependencies: [],
   lintOnSave: false, // ESLint 검증 비활성화
@@ -10,5 +12,12 @@ module.exports = {
         changeOrigin: true,
       },
     },
-  }
+  },
+  configureWebpack: {
+    plugins: [
+      new webpack.DefinePlugin({
+        __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
+      }),
+    ],
+  },
 }

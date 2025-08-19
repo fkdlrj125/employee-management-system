@@ -4,6 +4,14 @@ const sequelize = require('../config/sequelize');
 const Evaluation = require('../models/Evaluation')(sequelize, DataTypes);
 
 class EvaluationDAO {
+  // 직원별 최신 평가 이력 조회
+  async findLatestByEmployee(employee_id) {
+    if (!employee_id) throw new Error('employee_id 값이 필요합니다.');
+    return Evaluation.findOne({
+      where: { employee_id },
+      order: [['evaluation_date', 'DESC']],
+    });
+  }
   // 평가 이력 수정
   async update(evaluation, data) {
     // special_note, evaluated_by도 포함

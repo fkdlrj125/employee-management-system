@@ -4,6 +4,14 @@ const sequelize = require('../config/sequelize');
 const LeaderEvaluation = require('../models/LeaderEvaluation')(sequelize, DataTypes);
 
 class LeaderEvaluationDAO {
+  // 직원별 최신 리더 평가 이력 조회
+  async findLatestByEmployee(employee_id) {
+    if (!employee_id) throw new Error('employee_id 값이 필요합니다.');
+    return LeaderEvaluation.findOne({
+      where: { employee_id },
+      order: [['evaluation_date', 'DESC']],
+    });
+  }
   // 리더 평가 이력 수정
   async update(evaluation, data) {
     const updateData = { ...data };

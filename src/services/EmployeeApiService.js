@@ -167,6 +167,19 @@ class EmployeeApiService {
     return formData;
   }
 
+  // 비밀번호 변경 요청 (부서 관리자에게 메일 발송)
+  async requestPasswordChange({ department, username }) {
+    try {
+      const response = await this.api.post('/auth/request-password-change', { department, username });
+      return {
+        success: true,
+        message: response.data?.message || '비밀번호 변경 요청이 관리자에게 전송되었습니다.',
+      };
+    } catch (error) {
+      return this.handleError(error, '비밀번호 변경 요청에 실패했습니다.');
+    }
+  }
+
   // 에러 처리
   handleError(error, defaultMessage) {
 

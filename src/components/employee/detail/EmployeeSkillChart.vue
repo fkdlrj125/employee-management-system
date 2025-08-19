@@ -22,7 +22,7 @@
     <div class="chart-wrapper">
       <canvas ref="chartCanvas" width="400" height="400"></canvas>
     </div>
-    <div class="chart-bottom-controls">
+    <div class="chart-bottom-controls" v-if="false">
       <button
         class="btn btn-secondary btn-sm"
         @click="$emit('go-to-period-analysis')"
@@ -72,6 +72,7 @@
 </template>
 
 <script>
+import { formatPeriod } from '@/utils/formatPeriod';
 import {
   Chart,
   RadarController,
@@ -131,7 +132,7 @@ export default {
       ],
       firstMount: true,
       specialNote: '',
-      evaluationHistory: [], // 내부 상태로 관리
+      evaluationHistory: null, // 최신 평가 데이터만 관리
       isChartRendering: false, // 차트 렌더링 중 플래그
       chartUpdateQueue: [], // 차트 변경 요청 큐
     };
@@ -140,17 +141,22 @@ export default {
     skillCategories() {
       return this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
     },
-    // 평가 이력 배열 반환 (role 분기 불필요, 단일 배열)
-    currentEvaluations() {
-      return Array.isArray(this.evaluationHistory) ? this.evaluationHistory : [];
+    // 최신 평가 데이터 반환
+    currentEvaluation() {
+      return this.evaluationHistory || null;
     },
     latestSpecialNote() {
-      // 현재 role에 맞는 평가 이력에서 가장 최근 평가의 special_note 추출
-      const arr = Array.isArray(this.currentEvaluations) ? this.currentEvaluations : [];
-      if (arr.length === 0) return '';
-      const sorted = [...arr].sort((a, b) => new Date(b.evaluation_date) - new Date(a.evaluation_date));
-      const pureLatest = JSON.parse(JSON.stringify(sorted[0]));
-      return pureLatest?.special_note || '';
+      // 최신 평가의 special_note 추출 (배열/객체 모두 처리)
+      const evalData = this.currentEvaluation;
+      if (!evalData) return '';
+      if (Array.isArray(evalData) && evalData.length > 0) {
+        // 최신 날짜 기준으로 정렬 후 special_note 반환
+        const latest = evalData[0].evaluation_date
+          ? [...evalData].sort((a, b) => new Date(b.evaluation_date || 0) - new Date(a.evaluation_date || 0))[0]
+          : evalData[0];
+        return latest.special_note || '';
+      }
+      return evalData.special_note || '';
     }
   },
   watch: {
@@ -174,9 +180,22 @@ export default {
       deep: false,
       immediate: false,
     },
-    selectedRole() {
+    async selectedRole() {
+      // 역할 변경 시 해당 평가 이력 API 호출
+      if (this.employee && this.employee.id) {
+        let evaluation = null;
+        if (this.selectedRole === 'leader') {
+          evaluation = await evaluationApiService.getLeaderEvaluationHistory(this.employee.id);
+        } else {
+          evaluation = await evaluationApiService.getEvaluationHistory(this.employee.id);
+        }
+        // Proxy/reactive 객체를 순수 객체로 변환
+        evaluation = evaluation ? JSON.parse(JSON.stringify(evaluation)) : null;
+        this.evaluationHistory = evaluation;
+        this.setSkillScoresFromHistory();
+      }
       this.loadSkillData();
-      this.updateChart();
+      // 중복 갱신 방지: updateChart() 직접 호출 제거
     },
     // score 값만 감지해서 차트 갱신
     'memberSkills.map(skill => skill.score)': {
@@ -196,25 +215,21 @@ export default {
     // employee.id로 평가 이력 직접 조회
     if (this.employee && this.employee.id) {
       try {
-        let history = await evaluationApiService.getEvaluationHistory(this.employee.id);
-        // Proxy/reactive 객체를 순수 객체로 변환
-        history = JSON.parse(JSON.stringify(history));
-        this.evaluationHistory = Array.isArray(history) ? history : [];
-        // 평가 이력 세팅 후 항상 점수 세팅 함수 호출
+        let evaluation = await evaluationApiService.getEvaluationHistory(this.employee.id);
+        evaluation = evaluation ? JSON.parse(JSON.stringify(evaluation)) : null;
+        this.evaluationHistory = evaluation;
         this.setSkillScoresFromHistory();
         this.loadSkillData();
         this.initChart();
         this.initHistoryChart();
       } catch (e) {
-        this.evaluationHistory = [];
-        // 평가 이력 없을 때도 점수 세팅 함수 호출
+        this.evaluationHistory = null;
         this.setSkillScoresFromHistory();
         this.loadSkillData();
         this.initChart();
         this.initHistoryChart();
       }
     } else {
-      // employee.id 없을 때도 점수 세팅 함수 호출
       this.setSkillScoresFromHistory();
       this.loadSkillData();
       this.initChart();
@@ -249,30 +264,25 @@ export default {
 
      // 평가 이력에서 최신 점수 employee에 세팅
     setSkillScoresFromHistory() {
-      // 현재 role에 맞는 평가 이력에서 최신 평가 추출
-      const arr = Array.isArray(this.currentEvaluations) ? this.currentEvaluations : [];
-      if (!this.employee || arr.length === 0) return;
-
-      function getLatestHistory(historyArr) {
-        if (!Array.isArray(historyArr) || historyArr.length === 0) return null;
-        if (historyArr[0] && historyArr[0].evaluation_date) {
-          return JSON.parse(JSON.stringify([...historyArr].sort((a, b) => new Date(b.evaluation_date || 0) - new Date(a.evaluation_date || 0))[0]));
-        }
-        return JSON.parse(JSON.stringify(historyArr[0]));
+      // 최신 평가 데이터에서 점수 추출
+      let evaluation = this.currentEvaluation;
+      // 평가 데이터가 배열로 올 경우 첫 번째 객체만 사용
+      if (Array.isArray(evaluation) && evaluation.length > 0) {
+        evaluation = evaluation[0];
       }
+      if (!this.employee || !evaluation) return;
 
       function makeScores(obj, prefix) {
         if (!obj) return [0,0,0,0,0,0];
         return [1,2,3,4,5,6].map(i => Number(obj[`${prefix}${i}`]) || 0);
       }
 
-      const pureLatest = getLatestHistory(arr);
       let memberScores = [0,0,0,0,0,0];
       let leaderScores = [0,0,0,0,0,0];
       if (this.selectedRole === 'member') {
-        memberScores = makeScores(pureLatest, 'score');
+        memberScores = makeScores(evaluation, 'score');
       } else {
-        leaderScores = makeScores(pureLatest, 'score');
+        leaderScores = makeScores(evaluation, 'score');
       }
 
       this.employee.skillScores = memberScores;
@@ -280,19 +290,16 @@ export default {
       this.memberSkills.forEach((category, idx) => { category.score = memberScores[idx]; });
       this.leaderSkills.forEach((category, idx) => { category.score = leaderScores[idx]; });
 
-      this.specialNote = pureLatest?.special_note || '';
       this.loadSkillData();
-      this.initChart();
     },
 
     loadSkillData() {
       // 이미 세팅된 memberSkills/leaderSkills의 score만 화면에 반영
       const arr = this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
-      arr.forEach((category, index) => {
+      arr.forEach((category) => {
         // score 값이 undefined/null이면 0으로 보정
         category.score = typeof category.score === 'number' && !isNaN(category.score) ? category.score : 0;
-        // label이 Proxy(Array)일 경우 실제 값으로 변환해서 출력
-        const labelStr = Array.isArray(category.label) ? category.label.join('') : String(category.label);
+        // labelStr 변수 제거 (실제 사용되지 않음)
       });
     },
 

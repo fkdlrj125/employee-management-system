@@ -86,7 +86,10 @@
 
 <script>
 import { computed, ref, nextTick, watch } from 'vue';
+import { useTableRows } from '@/composables/useTableRows';
 import { handleEmptyRowClick } from '@/utils/emptyRowAction';
+import { DEFAULT_CERTIFICATION_ROW } from '@/utils/defaultTableRows';
+import { formatPeriod } from '@/utils/formatPeriod';
 import DateRangePicker from '@/components/common/DateRangePicker.vue';
 import Button from '@/components/common/Button.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
@@ -113,25 +116,42 @@ export default {
   emits: ['update:employee'],
 
   setup(props, { emit }) {
-    // 빈 행에서 입력 시 자동 행 추가
-    const firstMount = ref(true);
-    // ToastConfirm 삭제 관련 상태
-    const toastConfirmVisible = ref(false);
-    const deleteIndex = ref(-1);
+    // 행 추가 이벤트 emit
+    function addCertificationRow() {
+      const newRow = {
+        ...DEFAULT_CERTIFICATION_ROW,
+        id: Date.now() + Math.random(),
+      };
+      addRow(newRow);
+      emit('row-add', newRow);
+    }
 
-    const showDeleteConfirm = (index) => {
-      deleteIndex.value = index;
-      toastConfirmVisible.value = true;
-    };
-
-    const confirmDelete = () => {
+    // 행 삭제 이벤트 emit
+    function confirmDeleteWithEmit() {
       if (deleteIndex.value !== -1) {
-        certifications.value = certifications.value.filter((_, i) => i !== deleteIndex.value);
+        emit('row-delete', deleteIndex.value);
       }
-      toastConfirmVisible.value = false;
-      deleteIndex.value = -1;
-    };
+      confirmDelete();
+    }
 
+    // 행 이동 이벤트 emit
+    function moveUpWithEmit(index) {
+      if (index > 0) {
+        emit('row-move', { from: index, to: index - 1 });
+      }
+      moveUp(index);
+    }
+    function moveDownWithEmit(index) {
+      if (index < rows.value.length - 1) {
+        emit('row-move', { from: index, to: index + 1 });
+      }
+      moveDown(index);
+    }
+    // 에러 메시지 렌더링 공통 함수
+    function getError(key) {
+      return props.errors && props.errors[key] ? props.errors[key] : '';
+    }
+    // computed get/set 방식으로 employee.certifications와 연결
     const certifications = computed({
       get() {
         return Array.isArray(props.employee?.certifications) ? props.employee.certifications : [];
@@ -144,54 +164,41 @@ export default {
       },
     });
 
-    // 발급일 선택 모달 상태
-    const issueDateModalVisible = ref(false);
-    const issueDateTemp = ref('');
-    const selectedIssueIndex = ref(-1);
+    // useTableRows 훅 사용
+    const {
+      rows,
+      addRow,
+      showDeleteConfirm,
+      confirmDelete,
+      moveUp,
+      moveDown,
+      toastConfirmVisible,
+      deleteIndex,
+    } = useTableRows(certifications.value);
 
-    const addCertification = () => {
-      const newCertification = {
-        cert_name: '',
-        cert_organization: '',
-        acquisition_date: '',
-      };
-      certifications.value = [...certifications.value, newCertification];
-    };
+    // rows와 employee.certifications 동기화
+    watch(rows, (newRows) => {
+      certifications.value = newRows;
+    }, { deep: true });
 
-    const moveUp = (index) => {
-      if (index > 0) {
-        const newCertifications = [...certifications.value];
-        const temp = newCertifications[index];
-        newCertifications[index] = newCertifications[index - 1];
-        newCertifications[index - 1] = temp;
-        certifications.value = newCertifications;
+    // employee.certifications가 비어 있으면 자동으로 빈 행 추가
+    watch(() => props.employee.certifications, (newVal) => {
+      if (Array.isArray(newVal) && newVal.length === 0) {
+        addRow({
+          ...DEFAULT_CERTIFICATION_ROW,
+          id: Date.now() + Math.random(),
+        });
       }
-    };
-
-    const moveDown = (index) => {
-      if (index < certifications.value.length - 1) {
-        const newCertifications = [...certifications.value];
-        const temp = newCertifications[index];
-        newCertifications[index] = newCertifications[index + 1];
-        newCertifications[index + 1] = temp;
-        certifications.value = newCertifications;
-      }
-    };
-
-    const formatIssueDate = (date) => {
-      if (!date) return '';
-      const d = new Date(date);
-      return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit' });
-    };
+    }, { deep: true, immediate: true });
 
     // 발급일(month) 변경 핸들러
     const updateIssueDate = (index, value) => {
-      const newList = [...certifications.value];
+      const newList = [...rows.value];
       newList[index] = {
         ...newList[index],
         acquisition_date: value,
       };
-      certifications.value = newList;
+      rows.value = newList;
       hideMonthInput();
     };
 
@@ -212,26 +219,30 @@ export default {
 
     // 빈 행에서 발급일 클릭 시: 공통 유틸 사용
     const handleEmptyIssueDateClick = () => {
-      handleEmptyRowClick(addCertification, showMonthInput);
+      handleEmptyRowClick(() => addRow({
+        ...DEFAULT_CERTIFICATION_ROW,
+        id: Date.now() + Math.random(),
+      }), showMonthInput);
     };
 
-    // 배열이 0개일 때 자동 행 추가
-    watch(() => props.employee.certifications, (newVal) => {
-      if (Array.isArray(newVal) && newVal.length === 0) {
-        addCertification();
-      }
-    }, { deep: true, immediate: true });
+    const firstMount = ref(true);
+
+    const formatIssueDate = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit' });
+    };
 
     setTimeout(() => { firstMount.value = false; }, 700);
     return {
-      certifications,
-      addCertification,
+      certifications: rows,
+      addCertification: addCertificationRow,
       showDeleteConfirm,
-      confirmDelete,
+      confirmDelete: confirmDeleteWithEmit,
       toastConfirmVisible,
       deleteIndex,
-      moveUp,
-      moveDown,
+      moveUp: moveUpWithEmit,
+      moveDown: moveDownWithEmit,
       formatIssueDate,
       updateIssueDate,
       activeMonthInput,
@@ -240,6 +251,7 @@ export default {
       monthInputs,
       firstMount,
       handleEmptyIssueDateClick,
+      getError,
     };
   },
 };

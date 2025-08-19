@@ -57,9 +57,11 @@
 </template>
 
 <script>
-import EmployeeSkillChart from '@/components/employee/detail/EmployeeSkillChart.vue';
-import EmployeeDetailHeader from '@/components/employee/detail/EmployeeDetailHeader.vue';
+import EmployeeSkillChart from '@/components/employee/detail/SkillChart.vue';
+import EmployeeDetailHeader from '@/components/employee/detail/DetailHeader.vue';
 import EmployeeApiService from '@/services/EmployeeApiService';
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 export default {
   name: 'PerformanceAnalysis',
@@ -75,13 +77,11 @@ export default {
   },
   methods: {
     goToDetail() {
-      console.log('[goToDetail] employee:', this.employee);
       if (this.employee && this.employee.id) {
         const route = `/employee-detail/${this.employee.id}`;
-        console.log('[goToDetail] route:', route);
         this.$router.push(route);
       } else {
-        console.warn('[goToDetail] employee or employee.id is missing');
+        toast.warn('[goToDetail] employee or employee.id is missing');
       }
     },
     onLogout() {
@@ -156,7 +156,7 @@ export default {
         }
       } catch (e) {
         this.evaluationError = '직원 정보/이력 조회 실패';
-        console.error('직원 정보/이력 조회 실패:', e);
+        toast.error(`직원 정보/이력 조회 실패: ${e}`);
       }
     }
   }

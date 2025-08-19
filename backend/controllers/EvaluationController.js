@@ -8,17 +8,35 @@ const EvaluationService = require('../services/EvaluationService');
 
 class EvaluationController {
   /**
+   * 리더 평가 이력 조회
+   * GET /api/evaluations/leader/:id
+   */
+  async getLeaderEvaluationHistory(req, res) {
+    const employeeId = req.params.id;
+    try {
+      const leaderEvaluation = await EvaluationService.getLeaderEvaluationHistory(employeeId);
+      if (!leaderEvaluation) {
+        return res.status(404).json({ success: false, message: '리더 평가 이력이 존재하지 않습니다.', data: null });
+      }
+      res.json(leaderEvaluation);
+    } catch (error) {
+      console.error('[getLeaderEvaluationHistory] error:', error);
+      res.status(500).json({ success: false, message: '리더 평가 이력 조회 중 오류가 발생했습니다.', error: error.message });
+    }
+  }
+
+  /**
    * 직원별 평가 이력 조회
    * GET /api/evaluations/:id
    */
   async getEvaluationHistory(req, res) {
     const employeeId = req.params.id;
     try {
-      const evaluations = await EvaluationService.getEvaluationHistory(employeeId);
-      if (!evaluations || evaluations.length === 0) {
-        return res.status(404).json({ success: false, message: '평가 이력이 존재하지 않습니다.', data: [] });
+      const evaluation = await EvaluationService.getEvaluationHistory(employeeId);
+      if (!evaluation) {
+        return res.status(404).json({ success: false, message: '평가 이력이 존재하지 않습니다.', data: null });
       }
-      res.json(evaluations);
+      res.json(evaluation);
     } catch (error) {
       console.error('[getEvaluationHistory] error:', error);
       res.status(500).json({ success: false, message: '평가 이력 조회 중 오류가 발생했습니다.', error: error.message });
@@ -33,8 +51,6 @@ class EvaluationController {
   async upsertEvaluation(req, res) {
     try {
       const employeeId = req.params.id;
-      console.log('[upsertEvaluation] employeeId (from url):', employeeId);
-      console.log('[upsertEvaluation] evaluation_date (from body):', req.body.evaluation_date);
       if (!employeeId) {
         return res.status(400).json({
           success: false,
@@ -66,7 +82,6 @@ class EvaluationController {
   async upsertLeaderEvaluation(req, res) {
     try {
       const employeeId = req.params.id;
-      console.log('[upsertLeaderEvaluation] employeeId (from url):', employeeId);
       if (!employeeId) {
         return res.status(400).json({
           success: false,
@@ -79,7 +94,6 @@ class EvaluationController {
       const result = await EvaluationService.upsertLeaderEvaluation(payload);
       res.json({ success: true, message: '리더 평가 이력 등록/수정 완료', data: result });
     } catch (error) {
-      console.error('[upsertLeaderEvaluation] error:', error);
       res.status(500).json({
         success: false,
         message: '리더 평가 이력 등록/수정 중 오류가 발생했습니다.',
