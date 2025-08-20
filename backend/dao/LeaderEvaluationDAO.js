@@ -27,9 +27,11 @@ class LeaderEvaluationDAO {
     if (data.evaluated_by !== undefined) createData.evaluated_by = data.evaluated_by;
     return LeaderEvaluation.create(createData);
   }
-  // 직원+연월로 리더 평가 이력 조회
-  async findByEmployeeAndMonth(employee_id, year, month) {
-    const evaluation_date = `${year}-${String(month).padStart(2, '0')}-01`;
+  // 직원+평가일로 평가 이력 조회
+  async findByEmployeeAndDate(employee_id, evaluation_date) {
+    if (!employee_id || !evaluation_date) {
+      throw new Error('employee_id, evaluation_date 값이 모두 필요합니다.');
+    }
     return LeaderEvaluation.findOne({ where: { employee_id, evaluation_date } });
   }
 
@@ -43,9 +45,11 @@ class LeaderEvaluationDAO {
 
   // 리더 평가 이력 upsert(있으면 update, 없으면 insert)
   async upsert(dto) {
-    const { employee_id, year, month } = dto;
-    const evaluation_date = `${year}-${String(month).padStart(2, '0')}-01`;
-    let evaluation = await this.findByEmployeeAndMonth(employee_id, year, month);
+    const { employee_id, evaluation_date } = dto;
+    if (!employee_id || !evaluation_date) {
+      throw new Error('employee_id, evaluation_date 값이 모두 필요합니다.');
+    }
+    let evaluation = await this.findByEmployeeAndDate(employee_id, evaluation_date);
     if (evaluation) {
       return this.update(evaluation, dto);
     } else {

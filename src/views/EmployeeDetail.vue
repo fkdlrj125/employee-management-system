@@ -136,6 +136,7 @@
 
           <!-- 기간별 성과 분석(기존) -->
           <PeriodSelector
+            v-if="false"
             class="table-container"
             :employee="employee"
             @generate-report="onGenerateReport"

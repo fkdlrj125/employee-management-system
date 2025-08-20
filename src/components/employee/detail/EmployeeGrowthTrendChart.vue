@@ -41,7 +41,7 @@ export default {
   },
   watch: {
     employeeId: 'fetchTrend',
-    selectedRole: 'fetchTrend',S
+    selectedRole: 'fetchTrend',
     from: 'fetchTrend',
     to: 'fetchTrend',
   },

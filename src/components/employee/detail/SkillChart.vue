@@ -49,7 +49,7 @@
         <div class="modal-body">
           <div class="skill-inputs">
             <div v-for="(skill, index) in skillCategories" :key="index" class="skill-input-group">
-              <label>{{ skill.label[0] + skill.label[1] }}</label>
+              <label>{{ Array.isArray(skill.label) ? skill.label.join('') : skill.label }}</label>
               <div class="score-input">
                 <input type="range" min="0" max="5" v-model="skill.score" class="skill-slider" />
                 <span class="score-display">{{ skill.score }}/5</span>
@@ -164,7 +164,7 @@ export default {
       handler(newVal, oldVal) {
         if (this.selectedRole === 'member' && JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
           this.loadSkillData();
-          this.updateChart();
+          // updateChart() 중복 호출 방지 위해 제거
         }
       },
       deep: false,
@@ -174,7 +174,7 @@ export default {
       handler(newVal, oldVal) {
         if (this.selectedRole === 'leader' && JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
           this.loadSkillData();
-          this.updateChart();
+          // updateChart() 중복 호출 방지 위해 제거
         }
       },
       deep: false,
@@ -195,6 +195,7 @@ export default {
         this.setSkillScoresFromHistory();
       }
       this.loadSkillData();
+      this.updateChart(); // 역할 변경 후 차트 갱신
       // 중복 갱신 방지: updateChart() 직접 호출 제거
     },
     // score 값만 감지해서 차트 갱신
@@ -486,14 +487,22 @@ export default {
           // 평가 이력 재조회 및 점수 갱신
           if (this.employee && this.employee.id) {
             const id = this.employee.id;
-            const history = await evaluationApiService.getEvaluationHistory(id);
+            // 저장 후 약간의 딜레이를 추가하여 백엔드 반영을 기다림
+            await new Promise(resolve => setTimeout(resolve, 350));
+            let history;
+            if (this.selectedRole === 'leader') {
+              history = await evaluationApiService.getLeaderEvaluationHistory(id);
+            } else {
+              history = await evaluationApiService.getEvaluationHistory(id);
+            }
             this.evaluationHistory = Array.isArray(history) ? history : [];
             this.setSkillScoresFromHistory();
+            this.updateChart();
           } else {
             this.setSkillScoresFromHistory();
+            this.updateChart();
           }
           this.specialNote = '';
-          this.updateChart();
           this.closeModal();
         } else {
           alert(res.error || '저장에 실패했습니다.');
@@ -501,6 +510,7 @@ export default {
       } catch (e) {
         alert('저장 중 오류가 발생했습니다.');
         this.setSkillScoresFromHistory();
+        this.updateChart();
       }
     },
 
@@ -654,7 +664,7 @@ export default {
   border-radius: 8px;
   width: 90%;
   max-width: 500px;
-  max-height: 80vh;
+  max-height: 95vh;
   overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
