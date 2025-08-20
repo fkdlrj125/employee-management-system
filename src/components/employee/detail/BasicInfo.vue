@@ -6,9 +6,10 @@
         <label class="detail-photo-container" :class="{ disabled: !editMode }">
           <img
             v-if="employee.photoUrl"
-            :src="employee.photoUrl"
+            :src="fullPhotoUrl"
             alt="직원 사진"
             class="detail-photo"
+            crossorigin="anonymous"
           />
           <div v-else class="photo-icon">
             <i class="fas fa-user"></i>
@@ -140,6 +141,9 @@
 </template>
 
 <script>
+const RAW_API_BASE_URL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:3000/api';
+const IMAGE_BASE_URL = RAW_API_BASE_URL.replace(/\/api$/, '');
+
 export default {
   name: 'EmployeeBasicInfo',
   props: {
@@ -163,6 +167,13 @@ export default {
       mitmasCareer: 0,
       totalCareer: '0년 0개월',
     };
+  },
+  computed: {
+    fullPhotoUrl() {
+      let url = this.employee.photoUrl;
+      if (!url) return url;
+      return `${IMAGE_BASE_URL}${url}`;
+    },
   },
   watch: {
     employee: {

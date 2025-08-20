@@ -8,8 +8,9 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const basename = path.basename(file.originalname, ext);
-    cb(null, `${basename}-${Date.now()}${ext}`);
+    // 영문+숫자(타임스탬프+랜덤)로 파일명 생성, 한글/특수문자 제거
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `file-${uniqueSuffix}${ext}`);
   },
 });
 

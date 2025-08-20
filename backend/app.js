@@ -50,7 +50,12 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // 정적 파일 서빙 (업로드된 이미지)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
+app.use('/uploads', cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+  credentials: true,
+  optionsSuccessStatus: 200,
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin']
+}), express.static(path.join(__dirname, 'uploads')))
 
 // 로깅 미들웨어
 app.use(logger)

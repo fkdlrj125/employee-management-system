@@ -13,7 +13,12 @@ class EmployeeDTO {
     this.hire_date = data.hire_date;
     this.mitmas_career = data.mitmas_career;
     this.total_career = data.total_career;
-    this.photoUrl = data.photoUrl;
+    // /api/uploads/로 시작하면 /uploads/로 변환
+    let photoUrl = data.photo_url;
+    if (photoUrl && typeof photoUrl === 'string' && photoUrl.startsWith('/api/uploads/')) {
+      photoUrl = photoUrl.replace('/api/uploads/', '/uploads/');
+    }
+    this.photoUrl = photoUrl;
     this.eus_career = data.eus_career;
     this.workplace = data.workplace;
     this.skills = data.skills;

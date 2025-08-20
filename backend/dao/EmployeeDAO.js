@@ -1,5 +1,6 @@
 // backend/dao/EmployeeDAO.js
 const { Sequelize, DataTypes, Op } = require('sequelize');
+const moment = require('moment');
 const sequelize = require('../config/sequelize');
 const Employee = require('../models/Employee')(sequelize);
 const Education = require('../models/Education')(sequelize);
@@ -40,131 +41,162 @@ class EmployeeDAO {
   async findById(id) {
     return Employee.findByPk(id, {
       include: [
-        { model: Education, as: 'educations' },
-        { model: Career, as: 'careers' },
-        { model: Certification, as: 'certifications' },
-        { model: ExternalProject, as: 'external_projects' }
+        { model: Education, as: 'educations', required: false },
+        { model: Career, as: 'careers', required: false },
+        { model: Certification, as: 'certifications', required: false },
+        { model: ExternalProject, as: 'external_projects', required: false }
       ]
     });
   }
 
   // 직원 생성
   async create(employeeData) {
-    return sequelize.transaction(async (t) => {
-      const { educations, careers, certifications, external_projects, ...emp } = employeeData;
-      const employee = await Employee.create(emp, { transaction: t });
-      if (educations?.length) {
-        for (const edu of educations) {
-          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
-          const params = {
-            school_name: edu.school_name || edu.school || '',
-            major: edu.major || '',
-            period_start: sanitizeDate(edu.period_start || edu.periodStart),
-            period_end: sanitizeDate(edu.period_end || edu.periodEnd),
-            employee_id: employee.id
-          };
-          console.log('[DAO][CREATE] education params:', params);
-          await Education.create(params, { transaction: t });
+    try {
+      console.log('[DAO][CREATE] 트랜잭션 시작');
+      return await sequelize.transaction(async (t) => {
+        const { educations, careers, certifications, external_projects, ...emp } = employeeData;
+        console.log('[DAO][CREATE] insert 시도 데이터(emp):', emp);
+        const employee = await Employee.create(emp, { transaction: t, logging: console.log });
+        console.log('[DAO][CREATE] Employee.create 반환값:', employee);
+        console.log('[DAO][CREATE] employee.id:', employee?.id);
+
+        if (!employee || !employee.id) {
+          const missingFields = [];
+          if (!emp.name) missingFields.push('name');
+          if (!emp.department) missingFields.push('department');
+          if (!emp.position) missingFields.push('position');
+          // 필요한 필드 추가 가능
+          const err = new Error('직원 생성에 실패했습니다. 필수값 누락 또는 DB 제약조건 오류');
+          err.code = 'NO_EMPLOYEE_ID';
+          err.missingFields = missingFields;
+          err.inputData = emp;
+          throw err;
         }
-      }
-      if (careers?.length) {
-        for (const c of careers) {
-          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
-          console.log('[DAO][CREATE] career:', c);
-          await Career.create({
-            ...c,
-            period_start: sanitizeDate(c.period_start || c.periodStart),
-            period_end: sanitizeDate(c.period_end || c.periodEnd),
-            employee_id: employee.id
-          }, { transaction: t });
+
+        if (educations?.length) {
+          for (const edu of educations) {
+            if (!edu.school_name) continue;
+            const { id, ...eduData } = edu;
+            console.log('[DAO][CREATE] education insert 시도:', eduData);
+            await Education.create({
+              ...eduData,
+              employee_id: employee.id
+            }, { transaction: t, logging: console.log });
+          }
         }
-      }
-      if (certifications?.length) {
-        for (const cert of certifications) {
-          console.log('[DAO][CREATE] certification:', cert);
-          await Certification.create({
-            ...cert,
-            employee_id: employee.id
-          }, { transaction: t });
+
+        if (careers?.length) {
+          for (const c of careers) {
+            if (!c.company_name) continue;
+            const { id, ...careerData } = c;
+            console.log('[DAO][CREATE] career insert 시도:', careerData);
+            await Career.create({
+              ...careerData,
+              employee_id: employee.id
+            }, { transaction: t, logging: console.log });
+          }
         }
-      }
-      if (external_projects?.length) {
-        for (const p of external_projects) {
-          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
-          console.log('[DAO][CREATE] external_project:', p);
-          await ExternalProject.create({
-            ...p,
-            period_start: sanitizeDate(p.period_start || p.periodStart),
-            period_end: sanitizeDate(p.period_end || p.periodEnd),
-            employee_id: employee.id
-          }, { transaction: t });
+
+        if (certifications?.length) {
+          for (const cert of certifications) {
+            const { id, ...certData } = cert;
+            console.log('[DAO][CREATE] certification insert 시도:', certData);
+            await Certification.create({
+              ...certData,
+              employee_id: employee.id
+            }, { transaction: t, logging: console.log });
+          }
         }
-      }
-      return this.findById(employee.id);
-    });
+
+        if (external_projects?.length) {
+          for (const p of external_projects) {
+            const { id, ...projectData } = p;
+            console.log('[DAO][CREATE] external_project insert 시도:', projectData);
+            await ExternalProject.create({
+              ...projectData,
+              employee_id: employee.id
+            }, { transaction: t, logging: console.log });
+          }
+        }
+        const result = await this.findById(employee.id);
+        console.log('[DAO][CREATE] findById 결과:', result);
+        console.log('[DAO][CREATE] 트랜잭션 종료');
+        return result;
+      });
+    } catch (err) {
+      console.error('[DAO][CREATE][SQL ERROR] 전체 에러 객체:', err);
+      console.error('[DAO][CREATE][SQL ERROR] sqlMessage:', err?.original?.sqlMessage);
+      console.error('[DAO][CREATE][SQL ERROR] message:', err?.message);
+      throw err;
+    }
   }
 
   // 직원 수정
   async update(id, employeeData) {
-    return sequelize.transaction(async (t) => {
-      const { educations, careers, certifications, external_projects, ...emp } = employeeData;
-      const employee = await Employee.findByPk(id, { transaction: t });
-      if (!employee) return null;
-      await employee.update(emp, { transaction: t });
-      // 기존 관련 데이터 삭제 후 재생성
-      await Education.destroy({ where: { employee_id: id }, transaction: t });
-      await Career.destroy({ where: { employee_id: id }, transaction: t });
-      await Certification.destroy({ where: { employee_id: id }, transaction: t });
-      await ExternalProject.destroy({ where: { employee_id: id }, transaction: t });
-      if (educations?.length) {
-        for (const edu of educations) {
-          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
-          const params = {
-            school_name: edu.school_name || edu.school || '',
-            major: edu.major || '',
-            period_start: sanitizeDate(edu.period_start || edu.periodStart),
-            period_end: sanitizeDate(edu.period_end || edu.periodEnd),
-            employee_id: id
-          };
-          console.log('[DAO][UPDATE] education params:', params);
-          await Education.create(params, { transaction: t });
+    try {
+      return await sequelize.transaction(async (t) => {
+        const { educations, careers, certifications, external_projects, ...emp } = employeeData;
+        const employee = await Employee.findByPk(id, { transaction: t });
+        if (!employee) return null;
+        await employee.update(emp, { transaction: t, logging: console.log });
+        // 기존 관련 데이터 삭제 후 재생성
+        await Education.destroy({ where: { employee_id: id }, transaction: t, logging: console.log });
+        await Career.destroy({ where: { employee_id: id }, transaction: t, logging: console.log });
+        await Certification.destroy({ where: { employee_id: id }, transaction: t, logging: console.log });
+        await ExternalProject.destroy({ where: { employee_id: id }, transaction: t, logging: console.log });
+
+
+        if (educations?.length) {
+          for (const edu of educations) {
+            if (!edu.school_name) continue;
+            const { id, ...eduData } = edu;
+            console.log('[DAO][CREATE] education params:', eduData);
+            await Education.create({
+              ...eduData,
+              employee_id: employee.id
+            }, { transaction: t, logging: console.log });
+          }
         }
-      }
-      if (careers?.length) {
-        for (const c of careers) {
-          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
-          console.log('[DAO][UPDATE] career:', c);
-          await Career.create({
-            ...c,
-            period_start: sanitizeDate(c.period_start || c.periodStart),
-            period_end: sanitizeDate(c.period_end || c.periodEnd),
-            employee_id: id
-          }, { transaction: t });
+
+        if (careers?.length) {
+          for (const c of careers) {
+            if (!c.company_name) continue;
+            const { id, ...careerData } = c;
+            console.log('[DAO][CREATE] career:', careerData);
+            await Career.create({
+              ...careerData,
+              employee_id: employee.id
+            }, { transaction: t, logging: console.log });
+          }
         }
-      }
-      if (certifications?.length) {
-        for (const cert of certifications) {
-          console.log('[DAO][UPDATE] certification:', cert);
-          await Certification.create({
-            ...cert,
-            employee_id: id
-          }, { transaction: t });
+
+        if (certifications?.length) {
+          for (const cert of certifications) {
+            const { id, ...certData } = cert;
+            console.log('[DAO][CREATE] certification:', certData);
+            await Certification.create({
+              ...certData,
+              employee_id: employee.id
+            }, { transaction: t, logging: console.log });
+          }
         }
-      }
-      if (external_projects?.length) {
-        for (const p of external_projects) {
-          const sanitizeDate = v => (!v || v === 'Invalid date') ? null : v;
-          console.log('[DAO][UPDATE] external_project:', p);
-          await ExternalProject.create({
-            ...p,
-            period_start: sanitizeDate(p.period_start || p.periodStart),
-            period_end: sanitizeDate(p.period_end || p.periodEnd),
-            employee_id: id
-          }, { transaction: t });
+
+        if (external_projects?.length) {
+          for (const p of external_projects) {
+            const { id, ...projectData } = p;
+            console.log('[DAO][CREATE] external_project:', projectData);
+            await ExternalProject.create({
+              ...projectData,
+              employee_id: employee.id
+            }, { transaction: t, logging: console.log });
+          }
         }
-      }
-      return this.findById(id);
-    });
+        return this.findById(id);
+      });
+    } catch (err) {
+      console.error('[DAO][UPDATE][SQL ERROR]', err?.original?.sqlMessage || err?.message, err);
+      throw err;
+    }
   }
 
   // 직원 삭제

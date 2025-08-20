@@ -72,8 +72,6 @@ class EmployeeApiService {
       if (employeeData) {
         employeeData = {
           ...employeeData,
-          certificates: employeeData.certifications || [],
-          projects: employeeData.external_projects || [],
         };
       }
       return {
@@ -89,14 +87,13 @@ class EmployeeApiService {
     // 이름(부분일치)로 사원 리스트 검색 (자동완성용)
   async searchEmployeesByName(name) {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 200)); // 로딩 시뮬레이션
-      const lower = name.trim().toLowerCase();
-      const results = dummyEmployees.filter(
-        (emp) => emp.name && emp.name.toLowerCase().includes(lower)
-      );
+      // 실제 API 호출: /employees?search=name 또는 /employees/search?name=name 등 백엔드 구현에 맞게 수정 필요
+      const response = await this.api.get('/employees', { params: { search: name } });
+      // 백엔드에서 employees 배열 반환한다고 가정
+      const employees = response.data?.data?.employees || response.data?.employees || [];
       return {
         success: true,
-        data: results.map((emp) => new Employee(emp)),
+        data: employees.map((emp) => new Employee(emp)),
         message: '검색 결과',
       };
     } catch (error) {
@@ -108,10 +105,16 @@ class EmployeeApiService {
   async createEmployee(employeeData) {
     try {
       let payload = employeeData;
+      let config = {};
       if (employeeData.photoFile) {
         payload = this.prepareFormData(employeeData);
+        config = {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        };
       }
-      const response = await this.api.post('/employees', payload);
+      const response = await this.api.post('/employees', payload, config);
       return {
         success: true,
         data: response.data,
@@ -126,10 +129,16 @@ class EmployeeApiService {
   async updateEmployee(id, employeeData) {
     try {
       let payload = employeeData;
+      let config = {};
       if (employeeData.photoFile) {
         payload = this.prepareFormData(employeeData);
+        config = {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        };
       }
-      const response = await this.api.put(`/employees/${id}`, payload);
+      const response = await this.api.put(`/employees/${id}`, payload, config);
       return {
         success: true,
         data: response.data,

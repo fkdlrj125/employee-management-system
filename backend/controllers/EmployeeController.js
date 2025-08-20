@@ -167,14 +167,14 @@ class EmployeeController {
       }
 
       // 파일 업로드 처리
-      let photoUrl = null
+      let photo_url = null;
       if (req.file) {
-        photoUrl = `/uploads/${req.file.filename}`
+        photo_url = `/uploads/${req.file.filename}`;
       }
 
       // JSON 데이터 파싱 불필요, 객체 그대로 사용
-      const employeeData = req.body
-      employeeData.photoUrl = photoUrl
+      const employeeData = req.body;
+      employeeData.photo_url = photo_url;
 
       const employee = await EmployeeService.createEmployee(employeeData)
 
@@ -185,11 +185,26 @@ class EmployeeController {
       })
     } catch (error) {
       console.error('Create employee error:', error)
+      if (!error) {
+        return res.status(500).json({
+          success: false,
+          message: '직원 생성에 실패했습니다.',
+          error: 'Unknown error (null)',
+          code: null,
+          stack: null,
+          missingFields: null,
+          inputData: null
+        });
+      }
       res.status(500).json({
         success: false,
         message: '직원 생성에 실패했습니다.',
-        error: error.message
-      })
+        error: error.original?.sqlMessage || error.message || error.toString(),
+        code: error.code || null,
+        stack: error.stack || null,
+        missingFields: error.missingFields || null,
+        inputData: error.inputData || null
+      });
     }
   }
 
@@ -227,30 +242,62 @@ class EmployeeController {
       }
 
       // 파일 업로드 처리
-      let photoUrl = existingEmployee.photoUrl
+      let photo_url = existingEmployee.photo_url;
       if (req.file) {
-        photoUrl = `/uploads/${req.file.filename}`
+        photo_url = `/uploads/${req.file.filename}`;
       }
 
-      // JSON 데이터 파싱 불필요, 객체 그대로 사용
-      const employeeData = req.body
-      employeeData.photoUrl = photoUrl
+      // JSON 데이터 파싱: 배열/객체 필드는 문자열로 들어오므로 복원 필요
+      const employeeData = req.body;
+      employeeData.photo_url = photo_url;
+      console.log('req.file:', req.file)
+
+      // 배열/객체 필드 복원
+      if (typeof employeeData.educations === 'string') {
+        try {
+          employeeData.educations = JSON.parse(employeeData.educations);
+        } catch (e) {
+          employeeData.educations = [];
+        }
+      }
+
+      if (typeof employeeData.careers === 'string') {
+        try {
+          employeeData.careers = JSON.parse(employeeData.careers);
+        } catch (e) {
+          employeeData.careers = [];
+        }
+      }
+      if (typeof employeeData.certifications === 'string') {
+        try {
+          employeeData.certifications = JSON.parse(employeeData.certifications);
+        } catch (e) {
+          employeeData.certifications = [];
+        }
+      }
+      if (typeof employeeData.external_projects === 'string') {
+        try {
+          employeeData.external_projects = JSON.parse(employeeData.external_projects);
+        } catch (e) {
+          employeeData.external_projects = [];
+        }
+      }
 
       console.log('[CONTROLLER][UPDATE] employeeData:', JSON.stringify(employeeData));
 
-      const employee = await EmployeeService.updateEmployee(parseInt(id), employeeData)
+      const employee = await EmployeeService.updateEmployee(parseInt(id), employeeData);
 
       res.json({
         success: true,
         message: '직원 정보가 성공적으로 수정되었습니다.',
         employee
-      })
+      });
     } catch (error) {
       console.error('Update employee error:', error)
       res.status(500).json({
         success: false,
         message: '직원 수정에 실패했습니다.',
-        error: error.message
+        error: error.original?.sqlMessage || error.message || error.toString()
       })
     }
   }

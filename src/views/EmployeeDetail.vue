@@ -166,6 +166,7 @@ import CareerTable from '@/components/employee/detail/CareerTable.vue';
 import CertificationTable from '@/components/employee/detail/CertificationTable.vue';
 import ExternalProjectTable from '@/components/employee/detail/ExternalProjectTable.vue';
 import ToastConfirm from '@/components/common/ToastConfirm.vue';
+import { mapGetters } from 'vuex';
 
 export default {
   name: 'EmployeeDetail',
@@ -214,7 +215,6 @@ export default {
       message: { text: '', type: '' },
       errors: {},
       searchError: '',
-      currentUser: JSON.parse(localStorage.getItem('currentUser') || '{}'),
       originalEmployee: null,
       // ToastConfirm 관련 상태
       showConfirm: false,
@@ -224,6 +224,7 @@ export default {
     };
   },
   computed: {
+    ...mapGetters('auth', ['currentUser']),
     employeeId() {
       return this.$route.params.id;
     },
@@ -545,10 +546,14 @@ export default {
         skillScores, leaderSkillScores, certifications, external_projects,
         ...baseFields
       } = this.employee;
-      const forbidden = ['id', 'photo', 'photoUrl', 'eus_career'];
+      const forbidden = ['id', 'photo', 'photoUrl', 'total_career', 'mitmas_career'];
       const payload = {};
       Object.entries(baseFields).forEach(([k, v]) => {
-        if (!forbidden.includes(k) && v !== undefined && v !== null) payload[k] = v;
+        if (!forbidden.includes(k) && v !== undefined && v !== null) {
+          // 이메일이 빈 문자열이면 필드 자체를 보내지 않음
+          if (k === 'email' && (v === '' || v === null)) return;
+          payload[k] = v;
+        }
       });
       // 서브테이블 배열 DB/백엔드 필드명에 맞게 변환
       // 서브테이블별 키 배열 정의
@@ -579,7 +584,8 @@ export default {
           department: c.department || '',
           responsibilities: c.responsibilities || c.duties || ''
         }));
-        const filtered = mapped.filter(row => !this.isSubTableEmpty([row], careerKeys));
+        // company_name이 비어 있으면 해당 row는 저장하지 않음
+        const filtered = mapped.filter(row => (row.company_name && row.company_name.trim() !== ''));
         if (filtered.length > 0) {
           payload.careers = this.sanitizePeriodFields(filtered, ['period_start', 'period_end']);
         }
