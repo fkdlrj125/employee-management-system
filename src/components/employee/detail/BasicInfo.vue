@@ -211,6 +211,7 @@ export default {
         const reader = new FileReader();
         reader.onload = (e) => {
           this.localEmployee.photoUrl = e.target.result;
+          this.localEmployee.photoFile = file; // 파일 객체 저장
           this.updateEmployee();
         };
         reader.readAsDataURL(file);
@@ -219,7 +220,12 @@ export default {
     },
 
     updateEmployee() {
-      this.$emit('update:employee', { ...this.localEmployee });
+      // photoFile이 있으면 포함해서 emit
+      const payload = { ...this.localEmployee };
+      if (this.localEmployee.photoFile) {
+        payload.photoFile = this.localEmployee.photoFile;
+      }
+      this.$emit('update:employee', payload);
     },
 
     validateField(fieldName) {

@@ -663,6 +663,7 @@ export default {
         external_projects: Array.isArray(newEmployee.external_projects)
           ? JSON.parse(JSON.stringify(newEmployee.external_projects))
           : (this.employee.external_projects || []),
+        ...(newEmployee.photoFile ? { photoFile: newEmployee.photoFile } : {}),
       };
     },
     // ...existing code...

@@ -107,7 +107,11 @@ class EmployeeApiService {
   // 직원 생성 (실제 API)
   async createEmployee(employeeData) {
     try {
-      const response = await this.api.post('/employees', employeeData);
+      let payload = employeeData;
+      if (employeeData.photoFile) {
+        payload = this.prepareFormData(employeeData);
+      }
+      const response = await this.api.post('/employees', payload);
       return {
         success: true,
         data: response.data,
@@ -121,7 +125,11 @@ class EmployeeApiService {
   // 직원 수정 (실제 API)
   async updateEmployee(id, employeeData) {
     try {
-      const response = await this.api.put(`/employees/${id}`, employeeData);
+      let payload = employeeData;
+      if (employeeData.photoFile) {
+        payload = this.prepareFormData(employeeData);
+      }
+      const response = await this.api.put(`/employees/${id}`, payload);
       return {
         success: true,
         data: response.data,
@@ -148,22 +156,19 @@ class EmployeeApiService {
   // FormData 준비 (파일 업로드 포함)
   prepareFormData(employeeData) {
     const formData = new FormData();
-
-    // 이미지 파일이 있는 경우
-    if (employeeData.photoFile) {
-      formData.append('photo', employeeData.photoFile);
-      delete employeeData.photoFile;
-    }
-
-    // 나머지 데이터는 객체 그대로 추가
+    // 파일을 제외한 모든 필드를 먼저 append
     Object.entries(employeeData).forEach(([key, value]) => {
+      if (key === 'photoFile') return; // 파일은 마지막에
       if (Array.isArray(value) || typeof value === 'object') {
         formData.append(key, JSON.stringify(value));
       } else {
         formData.append(key, value);
       }
     });
-
+    // 파일은 마지막에 append
+    if (employeeData.photoFile) {
+      formData.append('photo', employeeData.photoFile);
+    }
     return formData;
   }
 
