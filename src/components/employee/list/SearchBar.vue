@@ -1,5 +1,5 @@
 <template>
-  <form class="searchbar-root" @submit.prevent="$emit('search')">
+  <div class="searchbar-root">
     <div class="searchbar-input-group">
       <span class="searchbar-icon">
         <i class="fas fa-search"></i>
@@ -22,8 +22,7 @@
         <i class="fas fa-times"></i>
       </button>
     </div>
-    <button type="submit" class="searchbar-search-btn btn btn-primary">검색</button>
-  </form>
+  </div>
 </template>
 
 <script setup>
@@ -61,7 +60,6 @@ function onInput(e) {
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 8px;
 }
 .searchbar-input-group {
   position: relative;
@@ -106,13 +104,5 @@ function onInput(e) {
   padding: 0 4px;
   cursor: pointer;
   z-index: 3;
-}
-.searchbar-search-btn {
-  flex-shrink: 0;
-  height: 40px;
-  padding: 0 20px;
-  margin-left: 8px;
-  font-size: 15px;
-  border-radius: 4px;
 }
 </style>

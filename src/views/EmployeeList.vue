@@ -110,12 +110,13 @@ export default {
 
     setCurrentPage(page) {
       if (page < 1 || page > this.totalPages) return;
+      if (this.loading) return;
       this.$store.commit('employee/SET_CURRENT_PAGE', page);
       this.loadEmployees('pagination');
     },
 
     sortByColumn(field) {
-      console.log('[EmployeeList][sortByColumn] field:', field);
+      if (this.loading) return;
       const now = Date.now();
       if (this.lastSortClick && now - this.lastSortClick < 700) {
         toast.warn('너무 빠르게 요청 중입니다. 잠시만 기다려주세요.');
@@ -123,10 +124,8 @@ export default {
       }
       this.lastSortClick = now;
       if (this.sortBy === field) {
-        // 같은 필드 클릭 시 정렬 순서 변경
         this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
       } else {
-        // 다른 필드 클릭 시 새로운 필드로 오름차순 정렬
         this.sortBy = field;
         this.sortOrder = 'asc';
       }
@@ -135,31 +134,19 @@ export default {
     },
 
     async loadEmployees(trigger = '') {
-      console.log('[Function] loadEmployees', trigger);
+      if (this.loading) return;
       this.loading = true;
       try {
-        // 항상 store의 filters만 사용
-          const vuexFilters = { ...this.$store.state.employee.filters };
-  console.log('[loadEmployees] 파라미터:', {
-    page: this.currentPage,
-    limit: this.pageSize,
-    department: vuexFilters.department,
-    position: vuexFilters.position,
-    search: vuexFilters.search,
-    sortBy: this.sortBy,
-    sortOrder: this.sortOrder,
-  });
+        const vuexFilters = { ...this.$store.state.employee.filters };
         const params = {
           page: this.currentPage,
           limit: this.pageSize,
           department: vuexFilters.department,
           position: vuexFilters.position,
-          search: vuexFilters.search, // store의 filters를 항상 사용
+          search: vuexFilters.search,
           sortBy: this.sortBy,
           sortOrder: this.sortOrder,
         };
-        // 디버깅: API 요청 파라미터 로그 출력
-        console.log('[loadEmployees] 최종 파라미터:', params);
         await this.fetchEmployees(params);
       } catch (error) {
         toast.error('직원 목록을 불러오는데 실패했습니다.');
@@ -170,11 +157,11 @@ export default {
 
     async refreshData() {
       await this.loadEmployees('refreshData');
-      toast.success('데이터가 새로고침되었습니다.');
+      toast.success('직원 데이터가 새로고침되었습니다.');
     },
 
     handleSearch(val) {
-      console.log('[Function] handleSearch', val);
+      if (this.loading) return;
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
       }
@@ -184,7 +171,6 @@ export default {
         if (typeof this.$emit === 'function') {
           this.$emit('update:filters', { ...this.filters });
         }
-        // filters를 store에 반영한 후 반드시 then에서 loadEmployees 호출
         this.$store.dispatch('employee/setFilters', this.filters).then(() => {
           this.loadEmployees('search');
         });
@@ -192,9 +178,7 @@ export default {
     },
 
 
-
     clearSearch() {
-      console.log('[Function] clearSearch');
       this.searchQuery = '';
       this.filters.search = '';
       if (this.searchTimeout) {
@@ -209,44 +193,43 @@ export default {
       return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
     },
 
-applyFilters() {
-  console.log('[Function] applyFilters', this.filters);
-  this.$store.dispatch('employee/setFilters', this.filters).then(() => {
-    // store의 filters를 반드시 최신으로 덮어씀
-    this.filters = { ...this.$store.state.employee.filters };
-    this.setCurrentPage(1);
-    // 반드시 store의 filters를 loadEmployees에 전달
-    this.loadEmployees('filter');
-  });
-},
+    applyFilters() {
+      if (this.loading) return;
+      this.$store.dispatch('employee/setFilters', this.filters).then(() => {
+        this.filters = { ...this.$store.state.employee.filters };
+        this.setCurrentPage(1);
+        this.loadEmployees('filter');
+      });
+    },
 
-clearFilters() {
-  console.log('[Function] clearFilters');
-  this.filters = {
-    department: '',
-    position: '',
-    search: '',
-  };
-  this.searchQuery = '';
-  this.filters.search = '';
-  this.sortBy = 'position';
-  this.sortOrder = 'desc';
-  this.$store.dispatch('employee/setFilters', this.filters);
-  if (typeof this.$emit === 'function') {
-    this.$emit('update:filters', { ...this.filters });
-  }
-  this.loadEmployees('clearFilters');
-},
+    clearFilters() {
+      if (this.loading) return;
+      this.filters = {
+        department: '',
+        position: '',
+        search: '',
+      };
+      this.searchQuery = '';
+      this.filters.search = '';
+      this.sortBy = 'position';
+      this.sortOrder = 'desc';
+      this.$store.dispatch('employee/setFilters', this.filters);
+      if (typeof this.$emit === 'function') {
+        this.$emit('update:filters', { ...this.filters });
+      }
+      this.loadEmployees('clearFilters');
+    },
 
-performSearch() {
-  if (this.searchTimeout) {
-    clearTimeout(this.searchTimeout);
-    this.searchTimeout = null;
-  }
-  this.filters.search = this.searchQuery;
-  this.$store.dispatch('employee/setFilters', this.filters);
-  this.loadEmployees('search');
-},
+    performSearch() {
+      if (this.loading) return;
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = null;
+      }
+      this.filters.search = this.searchQuery;
+      this.$store.dispatch('employee/setFilters', this.filters);
+      this.loadEmployees('search');
+    },
 
     navigateToDetail(id) {
       if (id === 'new') {
