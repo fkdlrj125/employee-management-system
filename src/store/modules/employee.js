@@ -94,11 +94,11 @@ const actions = {
         });
       } else {
         commit('SET_ERROR', res.error || '직원 목록을 불러오는데 실패했습니다.');
-        toast.error(`[employee] API error: ${res.error}`);
+        toast.error(`직원 목록을 불러오는데 실패했습니다: ${res.error}`);
       }
     } catch (error) {
       commit('SET_ERROR', error.message || '직원 목록을 불러오는데 실패했습니다.');
-      toast.error(`[employee] fetchEmployees exception: ${error}`);
+      toast.error(`직원 목록을 불러오는데 실패했습니다: ${error.message}`);
     } finally {
       commit('SET_LOADING', false);
     }

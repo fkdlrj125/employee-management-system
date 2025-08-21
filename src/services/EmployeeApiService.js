@@ -34,20 +34,12 @@ class EmployeeApiService {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // 토큰 만료 시 로그인 페이지로 리다이렉트
           sessionStorage.removeItem('token');
           sessionStorage.removeItem('user');
           window.location.href = '/login';
         } else if (error.response?.status === 429) {
-          // 요청 과다 시 사용자에게 안내 메시지 표시
-          if (typeof window !== 'undefined' && window.toast) {
-            window.toast.warn('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.');
-          } else if (typeof toast !== 'undefined') {
+          if (typeof toast !== 'undefined') {
             toast.warn('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.');
-          } else {
-            if (typeof toast !== 'undefined') {
-              toast.warn('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.');
-            }
           }
         }
         return Promise.reject(error);
@@ -210,14 +202,12 @@ class EmployeeApiService {
 
   // 에러 처리
   handleError(error, defaultMessage) {
-
     let message = defaultMessage;
     if (error.response?.data?.message) {
       message = error.response.data.message;
     } else if (error.message) {
       message = error.message;
     }
-
     return {
       success: false,
       error: message,
