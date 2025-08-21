@@ -19,7 +19,6 @@
         @input="handleSearch"
         @enter="performSearch"
         @clear="clearSearch"
-        @search="performSearch"
       />
 
       <FilterControls
@@ -30,27 +29,29 @@
     </div>
 
     <!-- 직원 목록 테이블 -->
-      <EmployeeTable
-        :loading="loading"
-        :filtered-employees="filteredEmployees"
-        :paginated-employees="paginatedEmployees"
-        :current-page="currentPage"
-        :page-size="pageSize"
-        :get-sort-icon="getSortIcon"
-        :get-department-class="getDepartmentClass"
-        :get-position-class="getPositionClass"
-        :format-date="formatDate"
-        :format-career="formatCareer"
-        @sort="sortByColumn"
-        @detail="navigateToDetail"
-      />
-    <!-- 페이지네이션 -->
-    <Pagination
-      v-if="totalPages > 1"
+    <EmployeeTable
+      :employees="employees"
+      :loading="loading"
+      :get-sort-icon="getSortIcon"
+      :get-department-class="getDepartmentClass"
+      :get-position-class="getPositionClass"
+      :format-date="formatDate"
+      :format-career="formatCareer"
+      :get-mitmas-career="getMitmasCareer"
       :current-page="currentPage"
-      :total-pages="totalPages"
-      @change="changePage"
+      :page-size="pageSize"
+      @sort="sortByColumn"
+      @detail="navigateToDetail"
     />
+
+    <!-- 페이지네이션 컴포넌트 -->
+      <Pagination
+        v-if="totalPages > 1"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :page-size="pageSize"
+        @page-changed="setCurrentPage"
+      />
   </div>
 </template>
 
@@ -62,11 +63,12 @@ import Button from '@/components/common/Button.vue';
 import HeaderActions from '@/components/employee/list/ListHeader.vue';
 import CommonInput from '@/components/common/CommonInput.vue';
 import SearchBar from '@/components/employee/list/SearchBar.vue';
+import Pagination from '@/components/employee/list/Pagination.vue';
 import FilterControls from '@/components/employee/list/FilterControls.vue';
 import EmployeeTable from '@/components/employee/list/EmployeeTable.vue';
-import Pagination from '@/components/employee/list/Pagination.vue';
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
+
 
 export default {
   name: 'EmployeeList',
@@ -77,10 +79,7 @@ export default {
       filters: {
         department: '',
         position: '',
-        search: '',
       },
-      currentPage: 1,
-      pageSize: 10,
       loading: false,
       searchTimeout: null,
       sortBy: 'position', // 기본 정렬: 직급
@@ -89,157 +88,14 @@ export default {
   },
   computed: {
     ...mapGetters('auth', ['currentUser']),
-    ...mapGetters('employee', ['allEmployees', 'totalItems']),
-
-    filteredEmployees() {
-      let employees = Array.isArray(this.allEmployees) ? [...this.allEmployees] : [];
-
-      // 검색 필터 적용
-      if (this.filters.search) {
-        const searchTerm = this.filters.search.toLowerCase();
-        employees = employees.filter(
-          (employee) =>
-            employee.name?.toLowerCase().includes(searchTerm) ||
-            employee.email?.toLowerCase().includes(searchTerm) ||
-            employee.department?.toLowerCase().includes(searchTerm) ||
-            employee.position?.toLowerCase().includes(searchTerm),
-        );
-      }
-
-      // 부서 필터 적용
-      if (this.filters.department) {
-        employees = employees.filter((employee) => employee.department === this.filters.department);
-      }
-
-      // 직급 필터 적용
-      if (this.filters.position) {
-        employees = employees.filter((employee) => employee.position === this.filters.position);
-      }
-
-      // 정렬 적용
-      if (this.sortBy) {
-        employees.sort((a, b) => {
-          let aVal = a[this.sortBy];
-          let bVal = b[this.sortBy];
-
-          // 직급 필드 특별 처리 (DB 저장 순서대로)
-          if (this.sortBy === 'position') {
-            const positionOrder = [
-              '사원',
-              '대리',
-              '과장',
-              '차장',
-              '부장',
-              '실장',
-              '본부장',
-              '이사',
-              '부사장',
-              '사장',
-            ];
-            const aIndex = positionOrder.indexOf(aVal);
-            const bIndex = positionOrder.indexOf(bVal);
-
-            // 순서가 정의되지 않은 직급은 맨 끝으로
-            const aOrder = aIndex === -1 ? 999 : aIndex;
-            const bOrder = bIndex === -1 ? 999 : bIndex;
-
-            let positionResult = 0;
-            if (aOrder < bOrder) positionResult = this.sortOrder === 'asc' ? -1 : 1;
-            else if (aOrder > bOrder) positionResult = this.sortOrder === 'asc' ? 1 : -1;
-
-            // 직급이 같으면 경력으로 2차 정렬 (내림차순)
-            if (positionResult === 0) {
-              const aCareer = parseFloat(a.mitmas_total_career || 0);
-              const bCareer = parseFloat(b.mitmas_total_career || 0);
-              if (aCareer > bCareer) return -1; // 경력 내림차순
-              if (aCareer < bCareer) return 1;
-              return 0;
-            }
-
-            return positionResult;
-          }
-
-          // 날짜 필드 처리
-          if (this.sortBy === 'hire_date') {
-            aVal = new Date(aVal || 0);
-            bVal = new Date(bVal || 0);
-          }
-
-          // 숫자 필드 처리
-          if (this.sortBy === 'total_score' || this.sortBy === 'mitmas_total_career') {
-            aVal = parseFloat(aVal || 0);
-            bVal = parseFloat(bVal || 0);
-          }
-
-          // 문자열 필드 처리
-          if (typeof aVal === 'string') {
-            aVal = aVal.toLowerCase();
-            bVal = bVal.toLowerCase();
-          }
-
-          if (aVal < bVal) return this.sortOrder === 'asc' ? -1 : 1;
-          if (aVal > bVal) return this.sortOrder === 'asc' ? 1 : -1;
-          return 0;
-        });
-      } else {
-        // 기본 정렬: 직급 내림차순 → 경력 내림차순
-        employees.sort((a, b) => {
-          const positionOrder = [
-            '사원',
-            '대리',
-            '과장',
-            '차장',
-            '부장',
-            '실장',
-            '본부장',
-            '이사',
-            '부사장',
-            '사장',
-          ];
-
-          const aIndex = positionOrder.indexOf(a.position);
-          const bIndex = positionOrder.indexOf(b.position);
-          const aOrder = aIndex === -1 ? 999 : aIndex;
-          const bOrder = bIndex === -1 ? 999 : bIndex;
-
-          // 1차 정렬: 직급 내림차순
-          if (aOrder !== bOrder) {
-            return bOrder - aOrder; // 내림차순
-          }
-
-          // 2차 정렬: 경력 내림차순
-          const aCareer = parseFloat(a.mitmas_total_career || 0);
-          const bCareer = parseFloat(b.mitmas_total_career || 0);
-          return bCareer - aCareer; // 내림차순
-        });
-      }
-
-      return employees;
-    },
-
-    paginatedEmployees() {
-      const start = (this.currentPage - 1) * this.pageSize;
-      const end = start + this.pageSize;
-      return this.filteredEmployees.slice(start, end);
-    },
-
-    totalPages() {
-      return Math.ceil(this.filteredEmployees.length / this.pageSize);
-    },
-
-    visiblePages() {
-      const pages = [];
-      const start = Math.max(1, this.currentPage - 2);
-      const end = Math.min(this.totalPages, this.currentPage + 2);
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-
-      return pages;
+    ...mapGetters('employee', ['allEmployees', 'totalPages', 'currentPage', 'pageSize']),
+    employees() {
+      return this.allEmployees;
     },
   },
   async created() {
+    // 최초 진입 시 store의 state.filters를 local filters에 동기화
+    this.filters = { ...this.$store.state.employee.filters };
     await this.loadEmployees('created');
   },
   beforeUnmount() {
@@ -252,10 +108,59 @@ export default {
     ...mapActions('employee', ['fetchEmployees']),
     ...mapActions('auth', ['logout']),
 
+    setCurrentPage(page) {
+      if (page < 1 || page > this.totalPages) return;
+      this.$store.commit('employee/SET_CURRENT_PAGE', page);
+      this.loadEmployees('pagination');
+    },
+
+    sortByColumn(field) {
+      console.log('[EmployeeList][sortByColumn] field:', field);
+      const now = Date.now();
+      if (this.lastSortClick && now - this.lastSortClick < 700) {
+        toast.warn('너무 빠르게 요청 중입니다. 잠시만 기다려주세요.');
+        return;
+      }
+      this.lastSortClick = now;
+      if (this.sortBy === field) {
+        // 같은 필드 클릭 시 정렬 순서 변경
+        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        // 다른 필드 클릭 시 새로운 필드로 오름차순 정렬
+        this.sortBy = field;
+        this.sortOrder = 'asc';
+      }
+      this.currentPage = 1;
+      this.loadEmployees('sort');
+    },
+
     async loadEmployees(trigger = '') {
+      console.log('[Function] loadEmployees', trigger);
       this.loading = true;
       try {
-        await this.fetchEmployees();
+        // 항상 store의 filters만 사용
+          const vuexFilters = { ...this.$store.state.employee.filters };
+  console.log('[loadEmployees] 파라미터:', {
+    page: this.currentPage,
+    limit: this.pageSize,
+    department: vuexFilters.department,
+    position: vuexFilters.position,
+    search: vuexFilters.search,
+    sortBy: this.sortBy,
+    sortOrder: this.sortOrder,
+  });
+        const params = {
+          page: this.currentPage,
+          limit: this.pageSize,
+          department: vuexFilters.department,
+          position: vuexFilters.position,
+          search: vuexFilters.search, // store의 filters를 항상 사용
+          sortBy: this.sortBy,
+          sortOrder: this.sortOrder,
+        };
+        // 디버깅: API 요청 파라미터 로그 출력
+        console.log('[loadEmployees] 최종 파라미터:', params);
+        await this.fetchEmployees(params);
       } catch (error) {
         toast.error('직원 목록을 불러오는데 실패했습니다.');
       } finally {
@@ -268,45 +173,35 @@ export default {
       toast.success('데이터가 새로고침되었습니다.');
     },
 
-    handleSearch() {
-      // 디바운싱을 위해 기존 타이머 클리어
+    handleSearch(val) {
+      console.log('[Function] handleSearch', val);
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
       }
-
-      // 500ms 후에 검색 실행
       this.searchTimeout = setTimeout(() => {
-        this.filters.search = this.searchQuery;
-        this.currentPage = 1;
+        this.searchQuery = val;
+        this.filters.search = val;
+        if (typeof this.$emit === 'function') {
+          this.$emit('update:filters', { ...this.filters });
+        }
+        // filters를 store에 반영한 후 반드시 then에서 loadEmployees 호출
+        this.$store.dispatch('employee/setFilters', this.filters).then(() => {
+          this.loadEmployees('search');
+        });
       }, 500);
     },
 
-    performSearch() {
-      this.filters.search = this.searchQuery;
-      this.currentPage = 1;
-    },
+
 
     clearSearch() {
+      console.log('[Function] clearSearch');
       this.searchQuery = '';
       this.filters.search = '';
-      this.currentPage = 1;
-
-      // 타이머도 클리어
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
       }
-    },
-
-    sortByColumn(field) {
-      if (this.sortBy === field) {
-        // 같은 필드 클릭 시 정렬 순서 변경
-        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-      } else {
-        // 다른 필드 클릭 시 새로운 필드로 오름차순 정렬
-        this.sortBy = field;
-        this.sortOrder = 'asc';
-      }
-      this.currentPage = 1;
+      this.applyFilters();
+      this.loadEmployees('clearSearch');
     },
 
     getSortIcon(field) {
@@ -314,34 +209,44 @@ export default {
       return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
     },
 
-    applyFilters() {
-      this.currentPage = 1;
-    },
+applyFilters() {
+  console.log('[Function] applyFilters', this.filters);
+  this.$store.dispatch('employee/setFilters', this.filters).then(() => {
+    // store의 filters를 반드시 최신으로 덮어씀
+    this.filters = { ...this.$store.state.employee.filters };
+    this.setCurrentPage(1);
+    // 반드시 store의 filters를 loadEmployees에 전달
+    this.loadEmployees('filter');
+  });
+},
 
-    clearFilters() {
-      this.filters = {
-        department: '',
-        position: '',
-        search: '',
-      };
-      this.searchQuery = '';
-      this.currentPage = 1;
-      this.sortBy = '';
-      this.sortOrder = 'asc';
+clearFilters() {
+  console.log('[Function] clearFilters');
+  this.filters = {
+    department: '',
+    position: '',
+    search: '',
+  };
+  this.searchQuery = '';
+  this.filters.search = '';
+  this.sortBy = 'position';
+  this.sortOrder = 'desc';
+  this.$store.dispatch('employee/setFilters', this.filters);
+  if (typeof this.$emit === 'function') {
+    this.$emit('update:filters', { ...this.filters });
+  }
+  this.loadEmployees('clearFilters');
+},
 
-      // 타이머도 클리어
-      if (this.searchTimeout) {
-        clearTimeout(this.searchTimeout);
-      }
-    },
-
-    changePage(page) {
-      if (page >= 1 && page <= this.totalPages) {
-        this.currentPage = page;
-        // 페이지 상단으로 스크롤
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    },
+performSearch() {
+  if (this.searchTimeout) {
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = null;
+  }
+  this.filters.search = this.searchQuery;
+  this.$store.dispatch('employee/setFilters', this.filters);
+  this.loadEmployees('search');
+},
 
     navigateToDetail(id) {
       if (id === 'new') {
@@ -403,8 +308,6 @@ export default {
           return 'pos-director';
         case '실장':
           return 'pos-head';
-        case '본부장':
-          return 'pos-division';
         case '이사':
           return 'pos-executive';
         case '부사장':
@@ -414,6 +317,16 @@ export default {
         default:
           return 'pos-default';
       }
+    },
+
+    getMitmasCareer(hireDate) {
+      if (!hireDate) return '0개월';
+      const start = new Date(hireDate);
+      const now = new Date();
+      let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+      if (now.getDate() < start.getDate()) months--;
+      if (months < 0) months = 0;
+      return this.formatCareer(months);
     },
   },
 };

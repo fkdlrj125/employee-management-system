@@ -8,15 +8,15 @@
         type="text"
         class="searchbar-input"
         :placeholder="placeholder"
-        :value="modelValue"
-        @input="$emit('update:modelValue', $event.target.value); $emit('input', $event.target.value)"
+        :value="inputValue"
+        @input="onInput"
         @keyup.enter="$emit('enter')"
       />
       <button
         v-if="modelValue"
         type="button"
         class="searchbar-clear-btn"
-        @click="$emit('clear')"
+        @click="onClear"
         aria-label="검색어 지우기"
       >
         <i class="fas fa-times"></i>
@@ -27,11 +27,33 @@
 </template>
 
 <script setup>
+// clear 버튼 클릭 시 inputValue를 직접 초기화하고 부모에도 반영
+function onClear() {
+  inputValue.value = '';
+  emit('update:modelValue', '');
+  emit('input', '');
+  emit('clear');
+}
+import { ref, watch } from 'vue';
 const props = defineProps({
   modelValue: { type: String, default: '' },
   placeholder: { type: String, default: '검색...' },
 });
 const emit = defineEmits(['update:modelValue', 'input', 'enter', 'clear', 'search']);
+
+const inputValue = ref(props.modelValue);
+
+// modelValue가 변경될 때마다 inputValue를 동기화
+watch(() => props.modelValue, (newVal) => {
+  inputValue.value = newVal;
+});
+
+// input 이벤트 핸들러
+function onInput(e) {
+  inputValue.value = e.target.value;
+  emit('update:modelValue', inputValue.value);
+  emit('input', inputValue.value);
+}
 </script>
 
 <style scoped>

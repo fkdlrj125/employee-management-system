@@ -109,3 +109,26 @@
 4. 문제 해결 후 정상적으로 직원 생성/조회 동작 확인
 
 ---
+
+## 2025-08-17~2025-08-19 직원 생성 관련 사전 작업
+
+### 프론트엔드
+- 직원 상세/수정 페이지 forbidden 필드 관리 개선 (불필요 필드 제외, 필수 필드 포함)
+- eus_career, total_career, mitmas_career 등 필드 처리 로직 수정 및 payload 구조 일치
+- EmployeeDetail.vue forbidden 배열 동적 관리 및 payload 생성 로직 개선
+- 프론트에서 DB/모델에 맞는 필드만 전달하도록 검증 및 예외 처리
+
+### 백엔드
+- EmployeeService.js에서 payload 필터링 및 모델/DB 스키마 일치 검증
+- EmployeeDAO.js에서 insert 데이터, 반환값, 에러 객체 등 상세 로그 추가
+- DB employees 테이블 스키마와 모델 정의, ENUM/nullable 필드 일치 확인
+- API/DB 불일치 원인 진단 및 프론트-백엔드 데이터 흐름 개선
+- 직원 생성 실패 시 상세 에러 메시지 및 원인 로그 출력
+
+### 전체 흐름
+1. 프론트 forbidden 필드 관리 및 payload 구조 개선
+2. 백엔드에서 모델/DB 스키마 일치 검증 및 상세 로그 추가
+3. API/DB 불일치 원인 진단 및 데이터 흐름 개선
+4. 직원 생성 실패 시 원인 파악 및 예외 처리 강화
+
+---

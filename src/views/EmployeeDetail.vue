@@ -628,7 +628,7 @@ export default {
           result = await EmployeeApiService.createEmployee(payload);
           if (result.success) {
             this.showMessage('직원 정보가 성공적으로 등록되었습니다.', 'success');
-            this.$router.push(`/employee-detail/${result.data.id}`);
+            this.$router.push(`/employee-detail/${result.data.employee.id}`);
             // 등록 후 최신 데이터 fetch
             this.loadEmployee();
           } else {

@@ -230,7 +230,9 @@ export default {
           break;
         case 'custom':
           if (!this.tempStartDate || !this.tempEndDate) {
-            alert('시작일과 종료일을 모두 선택해주세요.');
+            if (typeof toast !== 'undefined') {
+              toast.warn('시작일과 종료일을 모두 선택해주세요.');
+            }
             return;
           }
           newPeriod.startDate = this.tempStartDate;
@@ -286,9 +288,9 @@ export default {
       this.$emit('generate-report', reportData);
 
       // 임시로 알림 표시
-      alert(
-        `${this.employee.name}의 ${this.formatPeriod(this.selectedPeriod)} 성과 리포트가 생성되었습니다.`,
-      );
+      if (typeof toast !== 'undefined') {
+        toast.warn(`${this.employee.name}의 ${this.formatPeriod(this.selectedPeriod)} 성과 리포트가 생성되었습니다.`);
+      }
     },
 
     closeModal() {

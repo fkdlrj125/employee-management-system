@@ -29,6 +29,9 @@ class EmployeeDTO {
     this.external_projects = data.external_projects;
     this.skillScores = data.skillScores;
     this.leaderSkillScores = data.leaderSkillScores;
+    // 평가 점수 필드 추가
+    this.member_total_score = data.member_total_score;
+    this.leader_total_score = data.leader_total_score;
   }
 }
 

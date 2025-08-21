@@ -1,7 +1,7 @@
 <template>
   <button
     :type="type"
-    :class="['btn', btnClass]"
+    :class="['btn', ...(Array.isArray(btnClass) ? btnClass : [btnClass]) ]"
     :disabled="disabled"
     @click="handleClick"
   >

@@ -61,7 +61,6 @@ class EmployeeService {
   }
 
   async createEmployee(data) {
-    console.log('[SERVICE][CREATE] 요청 데이터:', JSON.stringify(data));
     // 분리된 하위 데이터 제외
     const { educations, careers, certifications, external_projects, ...empRaw } = data;
     // Employee 모델 필드만 추출
@@ -97,13 +96,11 @@ class EmployeeService {
       }
       return new EmployeeDTO(created);
     } catch (err) {
-      console.error('[SERVICE][CREATE][SQL ERROR]', err?.original?.sqlMessage || err?.message, err);
       throw err;
     }
   }
 
   async updateEmployee(id, data) {
-    console.log('[SERVICE][UPDATE] id:', id, 'employeeData:', JSON.stringify(data));
     const { educations, careers, certifications, external_projects, ...empRaw } = data;
     const emp = sanitize(empRaw);
     if (emp.hire_date) emp.hire_date = sanitizeDate(emp.hire_date);
@@ -123,7 +120,6 @@ class EmployeeService {
       });
       return new EmployeeDTO(updated);
     } catch (err) {
-      console.error('[SERVICE][UPDATE][SQL ERROR]', err?.original?.sqlMessage || err?.message, err);
       throw err;
     }
   }

@@ -6,7 +6,7 @@ module.exports = (sequelize) => {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     name: { type: DataTypes.STRING, allowNull: false },
     department: { type: DataTypes.ENUM('DSS1', 'DSS2', 'CSC', 'HR') },
-    position: { type: DataTypes.ENUM('사원', '대리', '과장', '차장', '부장', '실장', '본부장', '이사','부사장', '사장') },
+    position: { type: DataTypes.ENUM('사원', '대리', '과장', '차장', '부장', '실장', '이사','부사장', '사장') },
     email: { type: DataTypes.STRING },
     phone: { type: DataTypes.STRING },
     address: { type: DataTypes.TEXT },

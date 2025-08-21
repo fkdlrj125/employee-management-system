@@ -505,10 +505,14 @@ export default {
           this.specialNote = '';
           this.closeModal();
         } else {
-          alert(res.error || '저장에 실패했습니다.');
+          if (typeof toast !== 'undefined') {
+            toast.error(res.error || '저장에 실패했습니다.');
+          }
         }
       } catch (e) {
-        alert('저장 중 오류가 발생했습니다.');
+        if (typeof toast !== 'undefined') {
+          toast.error('저장 중 오류가 발생했습니다.');
+        }
         this.setSkillScoresFromHistory();
         this.updateChart();
       }

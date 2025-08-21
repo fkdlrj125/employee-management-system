@@ -11,6 +11,8 @@ const getDefaultState = () => ({
   },
   currentPage: 1,
   perPage: 10,
+  totalPages: 1,
+  limit: 10,
 });
 
 /**
@@ -28,7 +30,9 @@ const getters = {
   isLoading: (state) => state.loading,
   hasError: (state) => !!state.error,
   errorMessage: (state) => state.error,
-  totalPages: (state) => Math.ceil(state.totalItems / state.perPage),
+  totalPages: (state) => state.totalPages,
+  currentPage: (state) => state.currentPage,
+  pageSize: (state) => state.limit,
   filters: (state) => state.filters,
 };
 
@@ -42,9 +46,12 @@ const mutations = {
   SET_ERROR(state, error) {
     state.error = error;
   },
-  SET_EMPLOYEES(state, { employees, total }) {
+  SET_EMPLOYEES(state, { employees, total, page, limit, totalPages }) {
     state.employees = employees;
     state.totalItems = total;
+    state.currentPage = page || 1;
+    state.limit = limit || 10;
+    state.totalPages = totalPages || 1;
   },
   SET_CURRENT_EMPLOYEE(state, employee) {
     state.currentEmployee = employee;
@@ -62,16 +69,28 @@ const actions = {
     commit('RESET_STATE');
   },
   // 직원 목록 조회 (실제 API 연동)
-  async fetchEmployees({ commit, state }) {
+  async fetchEmployees({ commit, state }, payload = {}) {
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
     try {
-      const params = { ...state.filters };
+      // payload가 null이면 빈 객체로 처리
+      if (!payload) payload = {};
+      // page, limit, filters 모두 params로 전달
+      const params = {
+        ...state.filters,
+        page: payload.page || state.currentPage || 1,
+        limit: payload.limit || state.limit || 10,
+        sortBy: payload.sortBy || state.sortBy || 'position',
+        sortOrder: payload.sortOrder || state.sortOrder || 'desc',
+      };
       const res = await EmployeeApiService.getEmployees(params);
-      if (res.success) {
+      if (res.success && res.data) {
         commit('SET_EMPLOYEES', {
           employees: res.data,
           total: res.total,
+          page: res.page || params.page,
+          limit: res.limit || params.limit,
+          totalPages: res.totalPages || 1,
         });
       } else {
         commit('SET_ERROR', res.error || '직원 목록을 불러오는데 실패했습니다.');
@@ -169,11 +188,13 @@ const actions = {
   setFilters({ commit, rootState }, filters) {
     // admin이 아니면 department를 본인 부서로 강제 고정
     const user = rootState.auth && rootState.auth.user;
+    // 디버깅: 로그인 유저 정보와 department 설정 로그 출력
     if (user && user.role !== 'admin') {
-      commit('SET_FILTERS', { ...filters, department: user.department });
+      commit('SET_FILTERS', { ...filters, department: user.role });
     } else {
       commit('SET_FILTERS', filters);
     }
+    return Promise.resolve();
   },
 
   setCurrentPage({ commit }, page) {

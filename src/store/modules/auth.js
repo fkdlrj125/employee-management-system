@@ -50,7 +50,7 @@ const mutations = {
 
 const actions = {
   // 세션스토리지에서 토큰/유저를 store에 반영 (앱 시작시 등)
-  initAuth({ commit }) {
+  initAuth({ commit, dispatch }) {
     const token = sessionStorage.getItem('token');
     const user = sessionStorage.getItem('user');
     if (token) {
@@ -58,7 +58,16 @@ const actions = {
     }
     if (user) {
       try {
-        commit('SET_USER', JSON.parse(user));
+        const parsedUser = JSON.parse(user);
+        commit('SET_USER', parsedUser);
+        // 새로고침 시에도 부서 필터 고정
+        if (parsedUser) {
+          if (parsedUser.role === 'admin') {
+            dispatch('employee/setFilters', { department: '' }, { root: true });
+          } else {
+            dispatch('employee/setFilters', { department: parsedUser.role }, { root: true });
+          }
+        }
       } catch (e) {
         commit('SET_USER', null);
       }
@@ -72,12 +81,16 @@ const actions = {
       if (res.data && res.data.token) {
         commit('SET_TOKEN', res.data.token);
         commit('SET_USER', res.data.user || null);
+        // 디버깅: 로그인 유저 정보 로그 출력
+        console.log('[auth.js:login] 로그인 유저:', res.data.user);
         // admin이면 전체, 아니면 본인 부서로 필터 고정
         if (res.data.user) {
           if (res.data.user.role === 'admin') {
+            console.log('[auth.js:login] department set to: (admin, 전체)');
             await dispatch('employee/setFilters', { department: '' }, { root: true });
-          } else if (res.data.user.department) {
-            await dispatch('employee/setFilters', { department: res.data.user.department }, { root: true });
+          } else if (res.data.user.role) {
+            console.log('[auth.js:login] department set to:', res.data.user.role);
+            await dispatch('employee/setFilters', { department: res.data.user.role }, { root: true });
           }
         }
         await dispatch('employee/fetchEmployees', null, { root: true });

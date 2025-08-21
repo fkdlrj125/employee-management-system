@@ -73,7 +73,9 @@ class EmployeeController {
         limit = 10,
         department = '',
         position = '',
-        search = ''
+        search = '',
+        sortBy = 'position',
+        sortOrder = 'desc'
       } = req.query;
 
       // 로그인 정보에서 role, department 추출 (예: req.user)
@@ -93,7 +95,9 @@ class EmployeeController {
         limit: parseInt(limit),
         department: queryDept,
         position,
-        search
+        search,
+        sortBy,
+        sortOrder
       });
 
       res.json({
@@ -177,14 +181,17 @@ class EmployeeController {
       employeeData.photo_url = photo_url;
 
       const employee = await EmployeeService.createEmployee(employeeData)
-
+      // plain object로 변환해서 반환
+      const plainEmployee = employee ? (employee.get ? employee.get({ plain: true }) : employee) : null;
+      console.log('[CONTROLLER][CREATE] employee:', employee);
+      console.log('[CONTROLLER][CREATE] plainEmployee:', plainEmployee);
+      console.log('[CONTROLLER][CREATE] plainEmployee.id:', plainEmployee?.id);
       res.status(201).json({
         success: true,
         message: '직원이 성공적으로 생성되었습니다.',
-        employee
+        employee: plainEmployee
       })
     } catch (error) {
-      console.error('Create employee error:', error)
       if (!error) {
         return res.status(500).json({
           success: false,
@@ -250,7 +257,6 @@ class EmployeeController {
       // JSON 데이터 파싱: 배열/객체 필드는 문자열로 들어오므로 복원 필요
       const employeeData = req.body;
       employeeData.photo_url = photo_url;
-      console.log('req.file:', req.file)
 
       // 배열/객체 필드 복원
       if (typeof employeeData.educations === 'string') {
@@ -282,8 +288,6 @@ class EmployeeController {
           employeeData.external_projects = [];
         }
       }
-
-      console.log('[CONTROLLER][UPDATE] employeeData:', JSON.stringify(employeeData));
 
       const employee = await EmployeeService.updateEmployee(parseInt(id), employeeData);
 

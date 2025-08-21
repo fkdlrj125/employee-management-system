@@ -38,6 +38,17 @@ class EmployeeApiService {
           sessionStorage.removeItem('token');
           sessionStorage.removeItem('user');
           window.location.href = '/login';
+        } else if (error.response?.status === 429) {
+          // 요청 과다 시 사용자에게 안내 메시지 표시
+          if (typeof window !== 'undefined' && window.toast) {
+            window.toast.warn('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.');
+          } else if (typeof toast !== 'undefined') {
+            toast.warn('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.');
+          } else {
+            if (typeof toast !== 'undefined') {
+              toast.warn('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.');
+            }
+          }
         }
         return Promise.reject(error);
       },
@@ -51,10 +62,13 @@ class EmployeeApiService {
       // 백엔드 응답 구조: { success, data: { employees, total, ... } }
       const employees = response.data?.data?.employees || [];
       const total = response.data?.data?.total || 0;
+      const limit = params.limit || 10;
+      const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
       return {
         success: true,
         data: employees,
         total,
+        totalPages,
         message: '직원 목록을 성공적으로 불러왔습니다.',
       };
     } catch (error) {
