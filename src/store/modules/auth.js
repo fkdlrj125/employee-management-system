@@ -3,7 +3,7 @@ import router from '@/router';
 
 const state = {
   token: sessionStorage.getItem('token') || null,
-  user: JSON.parse(sessionStorage.getItem('user') || 'null'),
+  user: null, // 사용자 정보는 세션스토리지에 저장하지 않음
   loading: false,
   error: null,
 };
@@ -14,7 +14,7 @@ const getters = {
   authToken: (state) => state.token,
   isAuthLoading: (state) => state.loading,
   authError: (state) => state.error,
-  currentUser: (state) => state.user, // 호환성용
+  currentUser: (state) => state.user,
 };
 
 const mutations = {
@@ -34,38 +34,34 @@ const mutations = {
   },
   SET_USER(state, user) {
     state.user = user;
-    if (user) {
-      sessionStorage.setItem('user', JSON.stringify(user));
-    } else {
-      sessionStorage.removeItem('user');
-    }
+    // 사용자 정보는 세션스토리지에 저장하지 않음
   },
   LOGOUT(state) {
     state.token = null;
     state.user = null;
     sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
+    // 사용자 정보는 세션스토리지에 저장하지 않음
   },
 };
 
 const actions = {
-  // 세션스토리지에서 토큰/유저를 store에 반영 (앱 시작시 등)
-  initAuth({ commit, dispatch }) {
+  // 세션스토리지에서 토큰만 store에 반영 (앱 시작시 등)
+  async initAuth({ commit, dispatch }) {
     const token = sessionStorage.getItem('token');
-    const user = sessionStorage.getItem('user');
     if (token) {
       commit('SET_TOKEN', token);
-    }
-    if (user) {
+      // 토큰으로 사용자 정보 조회
       try {
-        const parsedUser = JSON.parse(user);
-        commit('SET_USER', parsedUser);
-        // 새로고침 시에도 부서 필터 고정
-        if (parsedUser) {
-          if (parsedUser.role === 'admin') {
+        const res = await EmployeeApiService.api.get('/auth/verify', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data && res.data.user) {
+          commit('SET_USER', res.data.user);
+          // 권한에 따라 필터 설정
+          if (res.data.user.role === 'admin') {
             dispatch('employee/setFilters', { department: '' }, { root: true });
           } else {
-            dispatch('employee/setFilters', { department: parsedUser.role }, { root: true });
+            dispatch('employee/setFilters', { department: res.data.user.department }, { root: true });
           }
         }
       } catch (e) {
@@ -73,6 +69,7 @@ const actions = {
       }
     }
   },
+
   async login({ commit, dispatch }, { username, password }) {
     commit('SET_AUTH_LOADING', true);
     commit('SET_AUTH_ERROR', null);
@@ -80,23 +77,28 @@ const actions = {
       const res = await EmployeeApiService.api.post('/auth/login', { username, password });
       if (res.data && res.data.token) {
         commit('SET_TOKEN', res.data.token);
-        commit('SET_USER', res.data.user || null);
-        // 디버깅: 로그인 유저 정보 로그 출력
-        console.log('[auth.js:login] 로그인 유저:', res.data.user);
-        // admin이면 전체, 아니면 본인 부서로 필터 고정
-        if (res.data.user) {
-          if (res.data.user.role === 'admin') {
-            console.log('[auth.js:login] department set to: (admin, 전체)');
-            await dispatch('employee/setFilters', { department: '' }, { root: true });
-          } else if (res.data.user.role) {
-            console.log('[auth.js:login] department set to:', res.data.user.role);
-            await dispatch('employee/setFilters', { department: res.data.user.role }, { root: true });
+        // 토큰으로 사용자 정보 조회
+        let userInfo = null;
+        try {
+          const verifyRes = await EmployeeApiService.api.get('/auth/verify', {
+            headers: { Authorization: `Bearer ${res.data.token}` }
+          });
+          if (verifyRes.data && verifyRes.data.user) {
+            userInfo = verifyRes.data.user;
+            commit('SET_USER', userInfo);
+            // 권한에 따라 필터 설정
+            if (userInfo.role === 'admin') {
+              await dispatch('employee/setFilters', { department: '' }, { root: true });
+            } else {
+              await dispatch('employee/setFilters', { department: userInfo.department }, { root: true });
+            }
           }
+        } catch (e) {
+          commit('SET_USER', null);
         }
         await dispatch('employee/fetchEmployees', null, { root: true });
-        // 토큰/유저 세팅 후 라우터 이동
         router.push('/employee-list');
-        return { success: true, user: res.data.user };
+        return { success: true, user: userInfo };
       } else {
         commit('SET_AUTH_ERROR', res.data?.message || '로그인에 실패했습니다.');
         return { success: false, error: res.data?.message };
@@ -108,7 +110,8 @@ const actions = {
       commit('SET_AUTH_LOADING', false);
     }
   },
-  async logout({ commit, dispatch }) {
+  
+    async logout({ commit, dispatch }) {
     commit('LOGOUT');
     await dispatch('employee/resetState', null, { root: true });
     router.push('/login');

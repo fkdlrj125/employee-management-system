@@ -22,6 +22,19 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
+# 기타 임시/백업 파일
+*.bak
+*.tmp
+*.temp
+
+# 프론트엔드 빌드 산출물
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# DB 백업 파일
+*.sql
+
 # Backend specific
 backend/node_modules/
 backend/dist/

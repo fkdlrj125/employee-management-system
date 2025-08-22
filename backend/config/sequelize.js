@@ -6,11 +6,11 @@ const { Sequelize } = require('sequelize');
 const env = process.env.NODE_ENV || 'development';
 const config = {
   development: {
-    username: process.env.DB_USER || 'root',
+    username: process.env.DB_USER || 'user',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'employee_management_system',
     host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
+    port: process.env.DB_PORT || 3307,
     dialect: 'mysql',
     timezone: '+09:00',
     logging: false,

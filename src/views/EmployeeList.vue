@@ -2,7 +2,18 @@
   <div class="employee-list-container">
     <!-- 헤더 섹션 -->
     <div class="header-section">
-      <h1>직원 목록</h1>
+      <div class="header-left">
+        <h1>직원 목록</h1>
+        <Button
+          v-if="currentUser && currentUser.role.toLowerCase() === 'hr'"
+          btn-class="btn btn-warning"
+          @click="goToPasswordChange"
+          style="margin-left: 16px;"
+        >
+          비밀번호 변경
+        </Button>
+      </div>
+
       <HeaderActions
         :current-user="currentUser"
         @logout="logout"
@@ -45,14 +56,22 @@
     />
 
     <!-- 페이지네이션 컴포넌트 -->
-      <Pagination
-        v-if="totalPages > 1"
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :page-size="pageSize"
-        @page-changed="setCurrentPage"
-      />
+    <Pagination
+      v-if="totalPages > 1"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :page-size="pageSize"
+      @page-changed="setCurrentPage"
+    />
+    
   </div>
+  <!-- ToastConfirm: 삭제/로그아웃 등 확인용 -->
+  <ToastConfirm
+    :visible="showConfirm"
+    :message="confirmMessage"
+    @confirm="onConfirmToast"
+    @cancel="onCancelToast"
+  />
 </template>
 
 
@@ -66,13 +85,14 @@ import SearchBar from '@/components/employee/list/SearchBar.vue';
 import Pagination from '@/components/employee/list/Pagination.vue';
 import FilterControls from '@/components/employee/list/FilterControls.vue';
 import EmployeeTable from '@/components/employee/list/EmployeeTable.vue';
+import ToastConfirm from '@/components/common/ToastConfirm.vue';
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
 
 export default {
   name: 'EmployeeList',
-  components: { Button, CommonInput, HeaderActions, SearchBar, FilterControls, EmployeeTable, Pagination },
+  components: { Button, CommonInput, HeaderActions, SearchBar, FilterControls, EmployeeTable, Pagination, ToastConfirm, },
   data() {
     return {
       searchQuery: '',
@@ -82,6 +102,9 @@ export default {
       },
       loading: false,
       searchTimeout: null,
+      showConfirm: false,
+      confirmMessage: '',
+      confirmAction: null,
       sortBy: 'position', // 기본 정렬: 직급
       sortOrder: 'desc', // 내림차순
     };
@@ -107,6 +130,27 @@ export default {
   methods: {
     ...mapActions('employee', ['fetchEmployees']),
     ...mapActions('auth', ['logout']),
+
+    logout() {
+      this.confirmMessage = '로그아웃 하시겠습니까?';
+      this.confirmAction = this.confirmLogout;
+      this.showConfirm = true;
+    },
+
+    confirmLogout() {
+      this.$store.dispatch('auth/logout');
+      this.showConfirm = false;
+    },
+
+    onConfirmToast() {
+      if (typeof this.confirmAction === 'function') {
+        this.confirmAction();
+      }
+    },
+
+    onCancelToast() {
+      this.showConfirm = false;
+    },
 
     setCurrentPage(page) {
       if (page < 1 || page > this.totalPages) return;
@@ -176,7 +220,6 @@ export default {
         });
       }, 500);
     },
-
 
     clearSearch() {
       this.searchQuery = '';
@@ -311,6 +354,10 @@ export default {
       if (months < 0) months = 0;
       return this.formatCareer(months);
     },
+
+    goToPasswordChange() {
+      this.$router.push('/reset-password');
+    },
   },
 };
 </script>
@@ -323,4 +370,8 @@ export default {
   margin-bottom: 16px;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+}
 </style>

@@ -50,7 +50,6 @@
             <span class="checkmark"></span>
             아이디 기억하기
           </label>
-          <button type="button" class="change-password-link" @click="openDeptModal">비밀번호 변경</button>
         </div>
 
         <button
@@ -84,26 +83,6 @@
         </div>
 
       </form>
-    </div>
-        <!-- 비밀번호 변경 모달 (최상위) -->
-    <div v-if="showDeptModal" class="modal-overlay">
-      <div class="modal-box">
-        <h2>비밀번호 변경 요청</h2>
-        <p>비밀번호 변경을 위해 아이디를 입력해 주세요.<br>입력한 아이디에서 부서 정보를 자동 추출합니다.</p>
-        <div class="modal-info">
-          <input type="text" v-model="modalUsername" class="modal-username-input" placeholder="아이디를 입력하세요" @input="updateExtractedDept" />
-          <span class="extracted-dept">추출된 부서: <strong>{{ extractedDept || '부서 정보 없음' }}</strong></span>
-          <div v-if="isAdminAccount" class="admin-warning">관리자 계정은 비밀번호 변경 요청이 불가합니다.</div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-primary" @click="sendChangeRequest" :disabled="!extractedDept || sending || isAdminAccount">
-            <span v-if="sending"><i class="fas fa-spinner fa-spin"></i> 처리 중...</span>
-            <span v-else>확인</span>
-          </button>
-          <button class="btn btn-secondary" @click="closeDeptModal" :disabled="sending">취소</button>
-        </div>
-        <div v-if="modalMessage" class="modal-message">{{ modalMessage }}</div>
-      </div>
     </div>
   </div>
 </template>
@@ -181,25 +160,6 @@ export default {
       this.modalMessage = '';
       this.modalUsername = '';
       this.extractedDept = '';
-    },
-    async sendChangeRequest() {
-      if (!this.extractedDept || !this.modalUsername || this.isAdminAccount) return;
-      this.sending = true;
-      this.modalMessage = '';
-      try {
-        const res = await employeeApiService.requestPasswordChange({
-          department: this.extractedDept,
-          username: this.modalUsername,
-        });
-        if (res.success) {
-          this.modalMessage = res.message || '비밀번호 변경 요청이 해당 부서 관리자에게 전송되었습니다.';
-        } else {
-          this.modalMessage = res.error || '비밀번호 변경 요청에 실패했습니다.';
-        }
-      } catch (err) {
-        this.modalMessage = '비밀번호 변경 요청 중 오류가 발생했습니다.';
-      }
-      this.sending = false;
     },
     extractDeptFromUsername(username) {
       // 예시: 아이디가 'DSS1_홍길동' 또는 '홍길동-DSS1' 등일 때 부서 추출

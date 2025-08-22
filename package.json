@@ -10,20 +10,19 @@
     "frontend",
     "management-system"
   ],
-  "author": "Your Name",
-  "license": "MIT",
+  "author": "이정현",
+  "license": "MITMAS",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/employee-management-system.git"
+    "url": "https://github.com/fkdlrj125/employee-management-system.git"
   },
   "private": false,
   "scripts": {
-    "serve": "node node_modules/@vue/cli-service/bin/vue-cli-service.js serve",
+    "serve": "node node_modules/@vue/cli-service/bin/vue-cli-service.js serve --host 0.0.0.0",
     "build": "node node_modules/@vue/cli-service/bin/vue-cli-service.js build",
     "lint": "node node_modules/@vue/cli-service/bin/vue-cli-service.js lint"
   },
   "dependencies": {
-    "@binbinji/vue3-infinite-scroll": "0.0.7",
     "@vueuse/integrations": "^13.6.0",
     "axios": "^1.11.0",
     "bcrypt": "^5.1.1",
@@ -36,7 +35,6 @@
     "vue-router": "^4.4.3",
     "vue3-toastify": "^0.2.8",
     "vuex": "^4.1.0"
-    
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.12.16",
@@ -45,9 +43,10 @@
     "@vue/cli-plugin-router": "^5.0.8",
     "@vue/cli-plugin-vuex": "^5.0.8",
     "@vue/cli-service": "^5.0.8",
+    "@vue/compiler-sfc": "^3.5.19",
     "eslint": "^7.32.0",
-    "eslint-plugin-vue": "^7.20.0"
-    
+    "eslint-plugin-vue": "^7.20.0",
+    "vue-loader": "^17.4.2"
   },
   "browserslist": [
     "> 1%",

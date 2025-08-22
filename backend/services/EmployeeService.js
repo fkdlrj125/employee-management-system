@@ -60,6 +60,14 @@ class EmployeeService {
     return data ? new EmployeeDTO(data) : null;
   }
 
+  async getDepartments() {
+    return EmployeeDAO.findAllDepartments();
+  }
+
+  async getPositions() {
+    return await EmployeeDAO.findAllPositions();
+  }
+
   async createEmployee(data) {
     // 분리된 하위 데이터 제외
     const { educations, careers, certifications, external_projects, ...empRaw } = data;

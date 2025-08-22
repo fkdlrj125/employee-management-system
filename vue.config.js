@@ -4,7 +4,8 @@ module.exports = {
   transpileDependencies: [],
   lintOnSave: false, // ESLint 검증 비활성화
   devServer: {
-    port: 8080,
+    host: '0.0.0.0',
+    port: 8081,
     open: true,
     proxy: {
       '/api': {

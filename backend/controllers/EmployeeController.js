@@ -353,42 +353,38 @@ class EmployeeController {
   // 부서 목록 조회
   async getDepartments(req, res) {
     try {
-      // 실제로는 데이터베이스에서 조회해야 함
-      const departments = ['DSS1', 'DSS2', 'CSC', 'HR', '개발팀', '기획팀', '영업팀']
-      
+      // 서비스 계층을 통해 부서 목록 조회
+      const departments = await EmployeeService.getDepartments();
       res.json({
         success: true,
         message: '부서 목록을 성공적으로 조회했습니다.',
-        departments
-      })
+        departments,
+      });
     } catch (error) {
-      console.error('Get departments error:', error)
+      console.error('Get departments error:', error);
       res.status(500).json({
         success: false,
         message: '부서 목록 조회에 실패했습니다.',
-        error: error.message
-      })
+        error: error.message,
+      });
     }
   }
 
   // 직급 목록 조회
   async getPositions(req, res) {
     try {
-      // 실제로는 데이터베이스에서 조회해야 함
-      const positions = ['사원', '주임', '대리', '과장', '차장', '부장', '임원']
-      
+      const positions = await EmployeeService.getPositions();
       res.json({
         success: true,
         message: '직급 목록을 성공적으로 조회했습니다.',
-        positions
-      })
+        positions,
+      });
     } catch (error) {
-      console.error('Get positions error:', error)
       res.status(500).json({
         success: false,
         message: '직급 목록 조회에 실패했습니다.',
-        error: error.message
-      })
+        error: error.message,
+      });
     }
   }
 }

@@ -72,41 +72,6 @@ router.get('/verify', (req, res) => {
   }
 });
 
-// 비밀번호 변경 요청 API
-router.post('/request-password-change', async (req, res) => {
-  const { username, department } = req.body;
-  if (!username || !department) {
-    return res.status(400).json({ message: '아이디와 부서 정보가 필요합니다.' });
-  }
-  if (username.toLowerCase() === 'admin') {
-    return res.status(403).json({ message: '관리자 계정은 비밀번호 변경 요청이 불가합니다.' });
-  }
-  // DB에서 아이디 존재 여부 확인
-  try {
-    const userResult = await executeQuery('SELECT * FROM users WHERE username = ?', [username]);
-    if (!userResult.success) {
-      return res.status(500).json({ message: 'DB 조회 오류', error: userResult.error });
-    }
-    const user = userResult.data[0];
-    if (!user) {
-      return res.status(404).json({ message: '존재하지 않는 아이디입니다.' });
-    }
-    // 부서 관리자 이메일 예시 (실제 DB/서비스 연동 필요)
-    const deptAdminEmail = getDeptAdminEmail(department);
-    if (!deptAdminEmail) {
-      return res.status(404).json({ message: '부서 관리자 이메일을 찾을 수 없습니다.' });
-    }
-    // 비밀번호 변경 토큰 생성 (예시: JWT, 1시간 유효)
-    const resetToken = jwt.sign({ username }, SECRET, { expiresIn: '1h' });
-    // 메일 전송 (링크 포함)
-    await sendPasswordChangeMail(deptAdminEmail, username, resetToken);
-    return res.json({ message: '비밀번호 변경 요청이 정상적으로 접수되었습니다.' });
-  } catch (err) {
-    console.error('메일 전송 오류:', err);
-    return res.status(500).json({ message: '메일 전송 중 오류가 발생했습니다.' });
-  }
-});
-
 // 부서 관리자 이메일 반환 예시 함수 (실제 DB 연동 필요)
 function getDeptAdminEmail(department) {
   const deptAdminMap = {
@@ -160,23 +125,33 @@ router.post('/verify-reset-token', async (req, res) => {
   }
 });
 
-// 비밀번호 재설정 API
+// 비밀번호 재설정 API (HR만 가능)
 router.post('/reset-password', async (req, res) => {
-  const { token, newPassword } = req.body;
-  if (!token || !newPassword) {
-    return res.status(400).json({ success: false, message: '토큰과 새 비밀번호가 필요합니다.' });
+  const { token, department, newPassword } = req.body;
+  if (!token || !department || !newPassword) {
+    return res.status(400).json({ success: false, message: '토큰, 부서, 새 비밀번호가 필요합니다.' });
   }
   try {
+    // 토큰 검증 및 HR 권한 확인
     const decoded = jwt.verify(token, SECRET);
-    const username = decoded.username;
-    // 비밀번호 해시
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    // DB에 비밀번호 업데이트
-    const result = await executeQuery('UPDATE users SET password = ? WHERE username = ?', [hashedPassword, username]);
-    if (!result.success) {
-      return res.status(500).json({ success: false, message: '비밀번호 변경 중 DB 오류', error: result.error });
+    if (!decoded.role || decoded.role.toLowerCase() !== 'hr') {
+      return res.status(403).json({ success: false, message: 'HR 권한이 필요합니다.' });
     }
-    res.json({ success: true });
+    // 해당 부서의 모든 사용자 조회
+    const userResult = await executeQuery('SELECT username FROM users WHERE role = ?', [department]);
+    if (!userResult.success) {
+      return res.status(500).json({ success: false, message: 'DB 조회 오류', error: userResult.error });
+    }
+    const users = userResult.data;
+    if (!users.length) {
+      return res.status(404).json({ success: false, message: '해당 부서에 사용자가 없습니다.' });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // 모든 사용자 비밀번호 일괄 변경
+    for (const user of users) {
+      await executeQuery('UPDATE users SET password = ? WHERE username = ?', [hashedPassword, user.username]);
+    }
+    res.json({ success: true, message: `${department} 부서 모든 계정의 비밀번호가 변경되었습니다.` });
   } catch (err) {
     res.status(400).json({ success: false, message: '토큰이 만료되었거나 잘못되었습니다.' });
   }

@@ -78,8 +78,6 @@ class EmployeeDAO {
       offset,
       order
     });
-    console.log('[DAO][findAll] options:', options);
-    console.log('[DAO][findAll] order:', order);
     // 직원별 평가점수 추가
     const employeesWithScores = await Promise.all(rows.map(async (emp) => {
       // 멤버 평가점수
@@ -118,6 +116,27 @@ class EmployeeDAO {
       ],
       transaction
     });
+  }
+
+  // 직원 목록에서 부서 목록 조회
+  async findAllDepartments() {
+    const departments = await Employee.findAll({
+      attributes: [
+        [sequelize.fn('DISTINCT', sequelize.col('department')), 'department']
+      ],
+      raw: true
+    });
+    return departments.map(d => d.department);
+  }
+
+  async findAllPositions() {
+    const positions = await Employee.findAll({
+      attributes: [
+        [sequelize.fn('DISTINCT', sequelize.col('position')), 'position']
+      ],
+      raw: true
+    });
+    return positions.map(p => p.position);
   }
 
   // 직원 생성
