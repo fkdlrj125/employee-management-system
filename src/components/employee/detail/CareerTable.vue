@@ -183,13 +183,15 @@ export default {
       careers.value = newRows;
     }, { deep: true });
 
+    let initialRowAdded = true;
     // employee.careers가 비어 있으면 자동으로 빈 행 추가
     watch(() => props.employee.careers, (newVal) => {
-      if (Array.isArray(newVal) && newVal.length === 0) {
+      if (initialRowAdded && Array.isArray(newVal) && newVal.length === 0) {
         addRow({
           ...DEFAULT_CAREER_ROW,
           id: Date.now() + Math.random(),
         });
+        initialRowAdded = false;
       }
     }, { deep: true, immediate: true });
 

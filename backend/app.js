@@ -28,7 +28,7 @@ app.use(compression())
 
 // CORS 설정
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+  origin: process.env.FRONTEND_URL || 'http://59.6.197.113:8000',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -36,8 +36,8 @@ app.use(cors({
 
 // Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15분
-  max: 100, // IP당 최대 100 요청
+  windowMs: 1 * 60 * 1000, // 1분
+  max: 100, // IP당 최대 500 요청
   message: {
     success: false,
     message: '너무 많은 요청입니다. 잠시 후 다시 시도해주세요.'
@@ -45,13 +45,25 @@ const limiter = rateLimit({
 })
 app.use('/api', limiter)
 
+const loginLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1분
+  max: 5, // 1분에 5회/IP
+  message: {
+    success: false,
+    message: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.'
+  }
+});
+
+// 로그인 라우트에만 적용
+app.use('/api/auth/login', loginLimiter);
+
 // Body Parser
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // 정적 파일 서빙 (업로드된 이미지)
 app.use('/uploads', cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+  origin: process.env.FRONTEND_URL || 'http://59.6.197.113:8000',
   credentials: true,
   optionsSuccessStatus: 200,
   allowedHeaders: ['Content-Type', 'Authorization', 'Origin']
@@ -91,7 +103,7 @@ app.use(errorHandler)
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`)
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:8082'}`)
+  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://59.6.197.113:8000'}`)
 })
 
 // Graceful Shutdown

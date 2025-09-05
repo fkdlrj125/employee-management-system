@@ -167,6 +167,7 @@ import CertificationTable from '@/components/employee/detail/CertificationTable.
 import ExternalProjectTable from '@/components/employee/detail/ExternalProjectTable.vue';
 import ToastConfirm from '@/components/common/ToastConfirm.vue';
 import { mapGetters } from 'vuex';
+import EvaluationApiService from '../services/EvaluationApiService';
 
 export default {
   name: 'EmployeeDetail',
@@ -220,7 +221,6 @@ export default {
       showConfirm: false,
       confirmMessage: '',
       confirmAction: null,
-      // 평가 이력 상태 제거
     };
   },
   computed: {
@@ -531,16 +531,7 @@ export default {
         this.showMessage('입력 정보를 확인해주세요.', 'error');
         return;
       }
-      // skillScores/leaderSkillScores를 score1~score6, leader_score1~6으로 변환
-      const toScoreFields = (arr, prefix = 'score') => {
-        const obj = {};
-        if (Array.isArray(arr) && arr.length === 6) {
-          arr.forEach((v, i) => {
-            obj[`${prefix}${i+1}`] = Number(v);
-          });
-        }
-        return obj;
-      };
+      
       // payload에서 skillScores, leaderSkillScores, certifications, externalProjects만 분리, 나머지 서브테이블은 포함
       const {
         skillScores, leaderSkillScores, certifications, external_projects,
@@ -615,20 +606,32 @@ export default {
           payload.external_projects = this.sanitizePeriodFields(filtered, ['period_start', 'period_end']);
         }
       }
-      // score1~6, leader_score1~6 변환 추가
-      if (skillScores && Array.isArray(skillScores) && skillScores.length === 6) {
-        Object.assign(payload, toScoreFields(skillScores, 'score'));
-      }
-      if (leaderSkillScores && Array.isArray(leaderSkillScores) && leaderSkillScores.length === 6) {
-        Object.assign(payload, toScoreFields(leaderSkillScores, 'leader_score'));
-      }
+
       try {
         let result;
         if (this.isAddMode) {
           result = await EmployeeApiService.createEmployee(payload);
           if (result.success) {
             this.showMessage('직원 정보가 성공적으로 등록되었습니다.', 'success');
-            this.$router.push(`/employee-detail/${result.data.employee.id}`);
+            const newId = result.data.employee.id;
+            // 차트 점수 저장 (생성 후)
+            if (this.employee.skillScores && this.employee.skillScores.length === 6) {
+              await EvaluationApiService.saveSkillScores(newId, {
+                skillScores: this.employee.skillScores,
+                evaluation_date: this.employee.evaluation_date,
+                special_note: this.employee.specialNote,
+                evaluated_by: this.employee.evaluated_by
+              });
+            }
+            if (this.employee.leaderSkillScores && this.employee.leaderSkillScores.length === 6) {
+              await EvaluationApiService.saveLeaderSkillScores(newId, {
+                leaderSkillScores: this.employee.leaderSkillScores,
+                evaluation_date: this.employee.evaluation_date,
+                special_note: this.employee.specialNote,
+                evaluated_by: this.employee.evaluated_by
+              });
+            }
+            this.$router.push(`/employee-detail/${newId}`);
             // 등록 후 최신 데이터 fetch
             this.loadEmployee();
           } else {

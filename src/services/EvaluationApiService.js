@@ -116,6 +116,9 @@ class EvaluationApiService {
     } else if (error.message) {
       message = error.message;
     }
+    if (typeof toast !== 'undefined') {
+      toast.error(message);
+    }
     return {
       success: false,
       error: message,

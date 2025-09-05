@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile.2008r2
     ports:
-      - "8080:8080"
+      - "8000:8000"
     working_dir: /app
 
   backend:
@@ -14,4 +14,6 @@ services:
       dockerfile: Dockerfile.2008r2
     ports:
       - "3000:3000"
+    volumes:
+      - /home/mitmas/docker/uploads:/app/uploads
     working_dir: /app

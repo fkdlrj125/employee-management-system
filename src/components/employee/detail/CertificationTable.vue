@@ -181,13 +181,15 @@ export default {
       certifications.value = newRows;
     }, { deep: true });
 
+    let initialRowAdded = true;
     // employee.certifications가 비어 있으면 자동으로 빈 행 추가
     watch(() => props.employee.certifications, (newVal) => {
-      if (Array.isArray(newVal) && newVal.length === 0) {
+      if (initialRowAdded && Array.isArray(newVal) && newVal.length === 0) {
         addRow({
           ...DEFAULT_CERTIFICATION_ROW,
           id: Date.now() + Math.random(),
         });
+        initialRowAdded = false;
       }
     }, { deep: true, immediate: true });
 

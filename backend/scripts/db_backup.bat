@@ -21,6 +21,6 @@ cd %mysql_dir%
 set db_name=employee_management_system
 :: mysqldump를 사용하여 데이터베이스 백업 실행 및 파일로 저장
 :: mysqldump -u[username] -p[database_name] > [filename].sql
-mysqldump -u%id% -p%pw% --port 3307 %db_name% > %backup_dir%%db_name%_%date%.sql
+mysqldump -u%id% -p%pw% --port 3307 %db_name% > %backup_dir%%db_name%.sql
 
 pause

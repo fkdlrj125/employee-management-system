@@ -9,6 +9,7 @@ const Certification = require('../models/Certification')(sequelize);
 const ExternalProject = require('../models/ExternalProject')(sequelize);
 const Evaluation = require('../models/Evaluation')(sequelize, DataTypes);
 const LeaderEvaluation = require('../models/LeaderEvaluation')(sequelize, DataTypes);
+const { executeQuery } = require('../utils/database');
 
 class EmployeeDAO {
   // 직원 목록 조회 (필터/검색/페이지네이션)
@@ -120,13 +121,8 @@ class EmployeeDAO {
 
   // 직원 목록에서 부서 목록 조회
   async findAllDepartments() {
-    const departments = await Employee.findAll({
-      attributes: [
-        [sequelize.fn('DISTINCT', sequelize.col('department')), 'department']
-      ],
-      raw: true
-    });
-    return departments.map(d => d.department);
+    const departmentResult = await executeQuery('SELECT distinct(role) FROM users where role not like "admin"');
+    return departmentResult.data.map(d => d.role);
   }
 
   async findAllPositions() {

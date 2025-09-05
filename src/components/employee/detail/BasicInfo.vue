@@ -65,11 +65,8 @@
                 @change="validateField('department', localEmployee.department); updateEmployee();"
               >
                 <option value="">부서 선택</option>
-                <option value="DSS1">DSS1</option>
-                <option value="DSS2">DSS2</option>
-                <option value="CSC">CSC</option>
-                <option value="HR">HR</option>
-                <option v-if="localEmployee.department && !['DSS1','DSS2','CSC','HR'].includes(localEmployee.department)" :value="localEmployee.department">{{ localEmployee.department }}</option>
+                <option v-for="dept in filteredDepartments" :key="dept" :value="dept">{{ dept }}</option>
+                <option v-if="localEmployee.department && !filteredDepartments.includes(localEmployee.department)" :value="localEmployee.department">{{ localEmployee.department }}</option>
               </select>
               <div v-if="errors.department" class="error-message">{{ errors.department }}</div>
             </td>
@@ -141,6 +138,8 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+
 const RAW_API_BASE_URL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:3000/api';
 const IMAGE_BASE_URL = RAW_API_BASE_URL.replace(/\/api$/, '');
 
@@ -169,9 +168,22 @@ export default {
     };
   },
   computed: {
+    ...mapGetters('auth', ['currentUser']),
+    filteredDepartments() {
+      const allDepartments = ['DSS1', 'DSS2', 'CSC', 'HR'];
+      if (!this.currentUser) return [];
+      if (this.currentUser.role === 'admin') {
+        return allDepartments;
+      } else {
+        return [this.currentUser.role];
+      }
+    },
     fullPhotoUrl() {
-      let url = this.employee.photoUrl;
+      const url = this.localEmployee.photoUrl;
       if (!url) return url;
+      // base64 데이터면 그대로 반환
+      if (url.startsWith('data:image')) return url;
+      // 서버 경로면 IMAGE_BASE_URL 붙여서 반환
       return `${IMAGE_BASE_URL}${url}`;
     },
   },

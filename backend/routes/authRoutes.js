@@ -1,5 +1,4 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
@@ -71,48 +70,6 @@ router.get('/verify', (req, res) => {
     res.status(401).json({ success: false, message: '유효하지 않은 토큰입니다.' });
   }
 });
-
-// 부서 관리자 이메일 반환 예시 함수 (실제 DB 연동 필요)
-function getDeptAdminEmail(department) {
-  const deptAdminMap = {
-    'DSS1': 'mitmasljh@mitmas.com',
-    'DSS2': 'devadmin@example.com',
-    'CSC': 'salesadmin@example.com',
-    'HR': 'salesadmin@example.com',
-    // ... 기타 부서
-  };
-  return deptAdminMap[department] || null;
-}
-
-// 메일 전송 예시 함수 (nodemailer 사용)
-// 비밀번호 변경 링크 포함 메일 전송 (토큰 추가)
-async function sendPasswordChangeMail(to, username, resetToken) {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.hiworks.com',      // 하이웍스 SMTP 서버 주소
-    port: 465,                     // SSL: 465, TLS: 587 (회사 정책에 따라 다를 수 있음)
-    secure: true,                  // SSL이면 true, TLS면 false
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-  const resetUrl = `http://localhost:8080/reset-password?token=${resetToken}`;
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to,
-    subject: '[비밀번호 변경 요청] ' + username,
-    text:
-      `사용자 ${username}의 비밀번호 변경 요청이 접수되었습니다.\n\n` +
-      `비밀번호를 변경하려면 아래 링크를 클릭하세요:\n${resetUrl}\n\n` +
-      `링크는 1시간 동안만 유효합니다.`,
-    html:
-      `<p>사용자 <b>${username}</b>의 비밀번호 변경 요청이 접수되었습니다.</p>` +
-      `<p>비밀번호를 변경하려면 아래 링크를 클릭하세요:</p>` +
-      `<a href="${resetUrl}">${resetUrl}</a>` +
-      `<p style="color:#888;font-size:12px;">링크는 1시간 동안만 유효합니다.</p>`
-  };
-  await transporter.sendMail(mailOptions);
-}
 
 // 비밀번호 변경 토큰 검증 API
 router.post('/verify-reset-token', async (req, res) => {

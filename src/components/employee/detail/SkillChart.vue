@@ -456,65 +456,78 @@ export default {
     },
 
     async saveSkillScores() {
-      // skillCategories가 비어있으면 최소 1개 dummy라도 넣기
       const arr = this.selectedRole === 'leader' ? this.leaderSkills : this.memberSkills;
-      const safeCategories = arr.length > 0 ? arr : [{ label: 'N/A', score: 0 }];
-      const scores = safeCategories.map((skill) => {
+      const scores = arr.map((skill) => {
         const n = parseInt(skill.score, 10);
-        if (isNaN(n)) return 0;
-        return n > 5 ? 5 : n;
+        return isNaN(n) ? 0 : (n > 5 ? 5 : n);
       });
-      let payload = {};
+
+      // 평가 정보 공통 생성
       const now = new Date();
-      payload.evaluation_date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-01`;
-      payload.special_note = this.specialNote;
+      const evaluationDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-01`;
       const user = this.$store.getters['auth/authUser'] || this.$store.getters['auth/currentUser'];
-      if (user && user.id) {
-        payload.evaluated_by = user.id;
+      const evaluatedBy = user && user.id ? user.id : null;
+
+      // 점수와 비고를 employee 객체에 반영 (즉시 반영)
+      if (this.selectedRole === 'leader') {
+        this.employee.leaderSkillScores = [...scores];
+        this.leaderSkills.forEach((category, idx) => { category.score = scores[idx]; });
+      } else {
+        this.employee.skillScores = [...scores];
+        this.memberSkills.forEach((category, idx) => { category.score = scores[idx]; });
       }
-      let res;
-      try {
-        if (this.selectedRole === 'leader') {
-          payload.leaderSkillScores = scores;
-          // 리더 평가 저장 API 호출 (/evaluations/leader/:id)
-          res = await evaluationApiService.saveLeaderSkillScores(this.employee.id, payload);
-        } else {
-          payload.skillScores = scores;
-          // 멤버 평가 저장 API 호출 (/evaluations/:id)
-          res = await evaluationApiService.saveSkillScores(this.employee.id, payload);
+      this.updateChart();
+
+      // 직원 id가 있으면 평가 API 호출
+      if (this.employee && this.employee.id) {
+        let payload = {};
+        payload.evaluation_date = evaluationDate;
+        payload.special_note = this.specialNote;
+        if (evaluatedBy) {
+          payload.evaluated_by = evaluatedBy;
         }
-        if (res && res.success) {
-          // 평가 이력 재조회 및 점수 갱신
-          if (this.employee && this.employee.id) {
-            const id = this.employee.id;
-            // 저장 후 약간의 딜레이를 추가하여 백엔드 반영을 기다림
-            await new Promise(resolve => setTimeout(resolve, 350));
-            let history;
-            if (this.selectedRole === 'leader') {
-              history = await evaluationApiService.getLeaderEvaluationHistory(id);
-            } else {
-              history = await evaluationApiService.getEvaluationHistory(id);
-            }
-            this.evaluationHistory = Array.isArray(history) ? history : [];
-            this.setSkillScoresFromHistory();
-            this.updateChart();
+        let res;
+        try {
+          if (this.selectedRole === 'leader') {
+            payload.leaderSkillScores = scores;
+            res = await evaluationApiService.saveLeaderSkillScores(this.employee.id, payload);
           } else {
-            this.setSkillScoresFromHistory();
-            this.updateChart();
+            payload.skillScores = scores;
+            res = await evaluationApiService.saveSkillScores(this.employee.id, payload);
           }
-          this.specialNote = '';
-          this.closeModal();
-        } else {
+          if (res && res.success) {
+            // 평가 이력은 1~2초 후에 재조회 (깜빡임 방지)
+            setTimeout(async () => {
+              const id = this.employee.id;
+              let history;
+              if (this.selectedRole === 'leader') {
+                history = await evaluationApiService.getLeaderEvaluationHistory(id);
+              } else {
+                history = await evaluationApiService.getEvaluationHistory(id);
+              }
+              if (Array.isArray(history) && history.length > 0) {
+                this.evaluationHistory = history;
+                this.setSkillScoresFromHistory();
+              }
+            }, 1200);
+            this.specialNote = '';
+            this.closeModal();
+          } else {
+            if (typeof toast !== 'undefined') {
+              toast.error(res.error || '저장에 실패했습니다.');
+            }
+          }
+        } catch (e) {
           if (typeof toast !== 'undefined') {
-            toast.error(res.error || '저장에 실패했습니다.');
+            toast.error('저장 중 오류가 발생했습니다.');
           }
         }
-      } catch (e) {
-        if (typeof toast !== 'undefined') {
-          toast.error('저장 중 오류가 발생했습니다.');
-        }
-        this.setSkillScoresFromHistory();
-        this.updateChart();
+      } else {
+        // 직원 생성 단계: employee 객체에만 반영, 모달 닫기
+        this.employee.specialNote = this.specialNote;
+        this.employee.evaluation_date = evaluationDate;
+        this.employee.evaluated_by = evaluatedBy;
+        this.closeModal();
       }
     },
 

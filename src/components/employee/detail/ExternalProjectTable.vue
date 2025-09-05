@@ -175,13 +175,15 @@ export default {
       externalProjects.value = newRows;
     }, { deep: true });
 
+    let initialRowAdded = true;
     // employee.external_projects가 비어 있으면 자동으로 빈 행 추가
     watch(() => props.employee.external_projects, (newVal) => {
-      if (Array.isArray(newVal) && newVal.length === 0) {
+      if (initialRowAdded && Array.isArray(newVal) && newVal.length === 0) {
         addRow({
           ...DEFAULT_EXTERNAL_PROJECT_ROW,
           id: Date.now() + Math.random(),
         });
+        initialRowAdded = false;
       }
     }, { deep: true, immediate: true });
 

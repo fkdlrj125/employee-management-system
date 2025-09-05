@@ -41,6 +41,15 @@ class EmployeeApiService {
           if (typeof toast !== 'undefined') {
             toast.warn('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.');
           }
+          // 5초 후 재시도 (최대 1회)
+          return new Promise((resolve, reject) => {
+            setTimeout(() => {
+              // 재시도: 동일 요청
+              this.api.request(error.config)
+                .then(resolve)
+                .catch(reject);
+            }, 5000);
+          });
         }
         return Promise.reject(error);
       },
@@ -207,6 +216,9 @@ class EmployeeApiService {
       message = error.response.data.message;
     } else if (error.message) {
       message = error.message;
+    }
+    if (typeof toast !== 'undefined') {
+      toast.error(message);
     }
     return {
       success: false,

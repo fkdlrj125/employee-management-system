@@ -5,11 +5,11 @@ module.exports = {
   lintOnSave: false, // ESLint 검증 비활성화
   devServer: {
     host: '0.0.0.0',
-    port: 8081,
+    port: 8000,
     open: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://backend:3000',
         changeOrigin: true,
       },
     },

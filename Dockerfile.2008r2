@@ -13,13 +13,15 @@ COPY .env .env
 RUN npm install --legacy-peer-deps
 
 # 애플리케이션 코드 복사
-COPY . .
+COPY public/ ./public/
+COPY src/ ./src/
+COPY vue.config.js ./
 
 # 애플리케이션 빌드
 RUN npm run build || cat /root/.npm/_logs/*-debug.log
 
 # 포트 노출
-EXPOSE 8080
+EXPOSE 8000
 
 # 애플리케이션 시작
-CMD ["npm", "run", "serve", "--", "--host", "0.0.0.0"]
+CMD ["npm", "run", "serve"]
